@@ -2,9 +2,9 @@
 
 [English](README.md) · [繁體中文](README.zh-TW.md)
 
-[![版本](https://img.shields.io/github/v/tag/chgwyellow/personal_fin?label=version)](https://github.com/chgwyellow/personal_fin/tags)
-[![下載次數](https://img.shields.io/github/downloads/chgwyellow/personal_fin/total?label=downloads)](https://github.com/chgwyellow/personal_fin/releases)
-[![macOS](https://img.shields.io/badge/macOS-14%2B-000000?logo=apple&logoColor=white)](https://github.com/chgwyellow/personal_fin/releases)
+[![版本](https://img.shields.io/github/v/tag/chgwyellow/FinTrack?label=version)](https://github.com/chgwyellow/FinTrack/tags)
+[![下載次數](https://img.shields.io/github/downloads/chgwyellow/FinTrack/total?label=downloads)](https://github.com/chgwyellow/FinTrack/releases)
+[![macOS](https://img.shields.io/badge/macOS-14%2B-000000?logo=apple&logoColor=white)](https://github.com/chgwyellow/FinTrack/releases)
 [![Swift](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)](https://www.swift.org/)
 [![SwiftUI](https://img.shields.io/badge/SwiftUI-native-orange?logo=swift&logoColor=white)](https://developer.apple.com/xcode/swiftui/)
 [![SQLite](https://img.shields.io/badge/SQLite-local-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/)
@@ -95,7 +95,7 @@ FinTrack 不是券商，也不是交易終端。它不會代理股票下單、�
 
 ### 下載步驟
 
-1. 開啟 [GitHub Releases](https://github.com/chgwyellow/personal_fin/releases)。
+1. 開啟 [GitHub Releases](https://github.com/chgwyellow/FinTrack/releases)。
 2. 點開最新版本，例如 `v0.1.3`。
 3. 往下捲動到 **Assets**，必要時點擊展開。
 4. 下載 **`FinTrack-0.1.3.zip`**。
@@ -145,7 +145,7 @@ cp "$HOME/Library/Application Support/FinTrack/personal_finance.db" \
 ## 回報問題
 
 如果你發現錯誤或有不清楚的地方，請[建立 GitHub
-Issue](https://github.com/chgwyellow/personal_fin/issues/new)。
+Issue](https://github.com/chgwyellow/FinTrack/issues/new)。
 
 如果可以，請一併提供：
 
