@@ -4796,17 +4796,17 @@ struct SettingsCard: View {
                 supportLink(
                     title: "Report a problem",
                     systemImage: "exclamationmark.bubble",
-                    url: "https://github.com/chgwyellow/personal_fin/issues/new?title=%5BBug%5D%20"
+                    url: "https://github.com/chgwyellow/FinTrack/issues/new?title=%5BBug%5D%20"
                 )
                 supportLink(
                     title: "Suggest a feature",
                     systemImage: "lightbulb",
-                    url: "https://github.com/chgwyellow/personal_fin/issues/new?title=%5BFeature%5D%20"
+                    url: "https://github.com/chgwyellow/FinTrack/issues/new?title=%5BFeature%5D%20"
                 )
                 supportLink(
                     title: "Open GitHub page",
                     systemImage: "link",
-                    url: "https://github.com/chgwyellow/personal_fin"
+                    url: "https://github.com/chgwyellow/FinTrack"
                 )
             }
 

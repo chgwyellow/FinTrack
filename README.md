@@ -2,9 +2,9 @@
 
 [English](README.md) · [繁體中文](README.zh-TW.md)
 
-[![Version](https://img.shields.io/github/v/tag/chgwyellow/personal_fin?label=version)](https://github.com/chgwyellow/personal_fin/tags)
-[![Downloads](https://img.shields.io/github/downloads/chgwyellow/personal_fin/total?label=downloads)](https://github.com/chgwyellow/personal_fin/releases)
-[![macOS](https://img.shields.io/badge/macOS-14%2B-000000?logo=apple&logoColor=white)](https://github.com/chgwyellow/personal_fin/releases)
+[![Version](https://img.shields.io/github/v/tag/chgwyellow/FinTrack?label=version)](https://github.com/chgwyellow/FinTrack/tags)
+[![Downloads](https://img.shields.io/github/downloads/chgwyellow/FinTrack/total?label=downloads)](https://github.com/chgwyellow/FinTrack/releases)
+[![macOS](https://img.shields.io/badge/macOS-14%2B-000000?logo=apple&logoColor=white)](https://github.com/chgwyellow/FinTrack/releases)
 [![Swift](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)](https://www.swift.org/)
 [![SwiftUI](https://img.shields.io/badge/SwiftUI-native-orange?logo=swift&logoColor=white)](https://developer.apple.com/xcode/swiftui/)
 [![SQLite](https://img.shields.io/badge/SQLite-local-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/)
@@ -126,7 +126,7 @@ manually.
 
 ### Download step by step
 
-1. Open [GitHub Releases](https://github.com/chgwyellow/personal_fin/releases).
+1. Open [GitHub Releases](https://github.com/chgwyellow/FinTrack/releases).
 2. Open the newest release, such as `v0.1.3`.
 3. Scroll to **Assets** and expand it if necessary.
 4. Download **`FinTrack-0.1.3.zip`**.
@@ -183,7 +183,7 @@ Scheduled snapshots run while the Mac is available to run the app.
 ## Report a problem
 
 If you find a bug or something that is unclear, please [open a GitHub
-Issue](https://github.com/chgwyellow/personal_fin/issues/new).
+Issue](https://github.com/chgwyellow/FinTrack/issues/new).
 
 When possible, include:
 
