@@ -8,7 +8,7 @@
 [![Swift](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)](https://www.swift.org/)
 [![SwiftUI](https://img.shields.io/badge/SwiftUI-native-orange?logo=swift&logoColor=white)](https://developer.apple.com/xcode/swiftui/)
 [![SQLite](https://img.shields.io/badge/SQLite-local-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/)
-[![授權](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![授權](https://img.shields.io/badge/License-專有授權-blue.svg)](LICENSE)
 
 <p align="center">
   <img src="docs/assets/fintrack-hero.png" alt="FinTrack 總覽與投資組合" width="100%">
