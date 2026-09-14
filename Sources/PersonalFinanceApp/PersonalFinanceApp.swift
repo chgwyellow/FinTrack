@@ -275,6 +275,15 @@ final class AppModel: ObservableObject {
 
     func createIncomeStatementItem(section: String, parentID: Int64?, name: String, amount: Double, accountName: String) throws {
         guard let databaseManager else { throw DatabaseManager.DatabaseError.openFailed("Database is unavailable") }
+        if let parentID,
+           let parent = incomeStatementItems.first(where: { $0.id == parentID }),
+           parent.parentID != nil {
+            throw NSError(
+                domain: "IncomeStatement",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Income statement items can only have one level of children."]
+            )
+        }
         if !accountName.isEmpty { try databaseManager.ensureStatementAccount(name: accountName) }
         try databaseManager.createIncomeStatementItem(section: section, parentID: parentID, name: name, amount: amount, accountName: accountName)
         refreshIncomeStatementItems()
@@ -4686,7 +4695,9 @@ private struct IncomeStatementSectionCard: View {
         .padding(.leading, CGFloat(level) * 18)
         .contentShape(Rectangle())
         .contextMenu {
-            Button(L10n.text("Add child", language: appLanguage)) { onAddChild(item) }
+            if level == 0 {
+                Button(L10n.text("Add child", language: appLanguage)) { onAddChild(item) }
+            }
             Button(L10n.text("Edit", language: appLanguage)) { onEdit(item) }
             Divider()
             Button(L10n.text("Delete", language: appLanguage), role: .destructive) { onDelete(item) }
