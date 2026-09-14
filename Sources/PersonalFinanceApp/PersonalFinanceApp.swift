@@ -1190,7 +1190,7 @@ enum L10n {
         "Recurring Investment": "定期定額", "Recurring Rules": "定期定額規則", "Click to view investments": "點擊查看投資紀錄", "Foreign Currency": "外幣", "Stock": "股票",
         "Total NTD Equivalent": "新台幣等價總額", "Currencies Held": "持有幣別", "Rates Updated": "匯率更新", "Latest Rate": "最新匯率",
         "live exchange rates": "即時匯率", "ExchangeRate-API": "ExchangeRate-API", "converted from foreign-currency balances": "由外幣餘額換算",
-        "BALANCE": "餘額", "RATE": "匯率", "NTD VALUE": "新台幣等價", "CURRENCY": "幣別", "SECURITY": "標的", "DATE": "日期", "AMOUNT": "金額", "TRANSACTIONS": "交易紀錄", "PURPOSE": "用途", "FOREIGN": "原幣", "NTD": "新台幣", "SHARES": "股數",
+        "BALANCE": "餘額", "RATE": "匯率", "AVERAGE RATE": "平均匯率", "NTD VALUE": "新台幣等價", "CURRENCY": "幣別", "SECURITY": "標的", "DATE": "日期", "AMOUNT": "金額", "TRANSACTIONS": "交易紀錄", "PURPOSE": "用途", "FOREIGN": "原幣", "NTD": "新台幣", "SHARES": "股數",
         "Add foreign-currency transaction": "新增外幣交易", "Transaction type": "交易類型", "Exchange": "換匯", "Exchange direction": "換匯方向", "Buy foreign currency": "買入外幣", "Sell foreign currency back to NTD": "賣出外幣換回新台幣", "Other purpose": "其他用途", "Original currency": "原幣別", "Foreign amount": "原幣金額", "Foreign amount (+ income / - expense)": "原幣金額（收入＋／支出－）", "NTD amount": "新台幣金額", "Rate (NTD per unit)": "匯率（每單位新台幣）", "NTD amount (exchange only)": "新台幣金額（僅換匯）", "Rate (NTD per unit, exchange only)": "匯率（每單位新台幣，僅換匯）", "Purpose": "用途", "Date": "日期", "Exchange transactions require NTD amount and rate.": "換匯交易需要填寫新台幣金額與匯率。", "Other transactions only change the foreign-currency balance; NTD amount and rate are not required.": "其他交易只會變更外幣餘額，不需要填寫新台幣金額與匯率。", "Enter a currency and positive foreign amount.": "請輸入幣別與正的原幣金額。", "Enter a purpose, currency, and positive foreign amount.": "請輸入用途、幣別與正的原幣金額。", "Enter a valid NTD amount and rate for an exchange.": "請輸入有效的新台幣金額與匯率。", "Use a negative foreign amount for investments, spending, or exchanging foreign currency back to NTD. Leave NTD and rate blank for non-exchange transactions.": "投資、支出或換回新台幣時，原幣金額請填負值；非換匯交易的新台幣與匯率請留空。", "Enter a purpose, currency, and non-zero foreign amount.": "請輸入用途、幣別與非零的原幣金額。", "Enter both NTD amount and rate, or leave both blank.": "請同時輸入新台幣金額與匯率，或兩者都留空。", "NTD amount and rate must be greater than zero.": "新台幣金額與匯率必須大於零。",
         "ETF": "ETF", "Settings": "設定", "Help": "說明", "Add": "新增",
         "No recurring investments": "目前沒有定期定額", "No recurring rules": "目前沒有定期定額規則", "Add a rule to plan your recurring investments.": "新增規則以規劃定期定額投資。",
@@ -1594,11 +1594,19 @@ struct ForeignCurrencyView: View {
             let amount = assets.reduce(0) { $0 + $1.value }
             let rate = appModel.foreignExchangeRates[currency]
             let ntdValue = rate.map { amount * $0 } ?? assets.reduce(0) { $0 + $1.ntdValue }
+            let transactions = appModel.foreignCurrencyTransactions.filter { $0.currency == currency }
+            let exchangeTransactions = transactions.filter { $0.ntdAmount != nil }
+            let historicalForeignActivity = transactions.reduce(0) { $0 + $1.foreignAmount }
+            let openingAmount = amount - historicalForeignActivity
+            let exchangeForeignAmount = openingAmount + exchangeTransactions.reduce(0) { $0 + $1.foreignAmount }
+            let openingNTDCost = assets.reduce(0) { $0 + $1.ntdValue } - exchangeTransactions.reduce(0) { $0 + ($1.ntdAmount ?? 0) }
+            let exchangeNTDCost = openingNTDCost + exchangeTransactions.reduce(0) { $0 + ($1.ntdAmount ?? 0) }
             return ForeignCurrencySummary(
                 currency: currency,
                 amount: amount,
                 ntdValue: ntdValue,
                 rate: rate ?? (amount > 0 ? ntdValue / amount : nil),
+                averageRate: exchangeForeignAmount > 0 ? exchangeNTDCost / exchangeForeignAmount : nil,
                 assetIDs: assets.map(\.id)
             )
         }
@@ -1662,7 +1670,8 @@ struct ForeignCurrencyView: View {
                         .buttonStyle(.plain)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         Text(L10n.text("BALANCE", language: appLanguage)).frame(width: 150, alignment: .trailing)
-                        Text(L10n.text("RATE", language: appLanguage)).frame(width: 150, alignment: .trailing)
+                        Text(L10n.text("RATE", language: appLanguage)).frame(width: 130, alignment: .trailing)
+                        Text(L10n.text("AVERAGE RATE", language: appLanguage)).frame(width: 150, alignment: .trailing)
                         Button(action: { toggleSort(.ntdValue) }) {
                             HStack(spacing: 6) {
                                 sortIndicator(for: .ntdValue)
@@ -1695,6 +1704,8 @@ struct ForeignCurrencyView: View {
                                 Text(money(summary.amount, currency: summary.currency))
                                     .frame(width: 150, alignment: .trailing)
                                 Text(summary.rate.map { String(format: "NTD %.4f", $0) } ?? "—")
+                                    .frame(width: 130, alignment: .trailing)
+                                Text(summary.averageRate.map { String(format: "NTD %.4f", $0) } ?? "—")
                                     .frame(width: 150, alignment: .trailing)
                                 Text(ntd(summary.ntdValue))
                                     .font(.headline)
@@ -2138,6 +2149,7 @@ private struct ForeignCurrencySummary: Identifiable {
     let amount: Double
     let ntdValue: Double
     let rate: Double?
+    let averageRate: Double?
     let assetIDs: [Int64]
 
     var id: String { currency }
