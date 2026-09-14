@@ -1225,12 +1225,16 @@ enum L10n {
         "Display": "顯示", "Show detail percentage changes": "顯示明細百分比變化", "Performance colors": "漲跌顏色", "Green up / red down": "綠漲紅跌", "Red up / green down": "紅漲綠跌", "Analog mode": "類比模式", "Daily snapshot time": "每日快照時間", "Appearance": "外觀", "System": "跟隨系統", "Light": "淺色", "Dark": "深色", "Total Income": "總收入", "Total Expenses": "總支出", "Monthly Profit": "月結餘", "Account Allocation": "帳戶配置", "Account allocation will appear after leaf items are added.": "新增明細項目後，這裡會顯示帳戶配置。", "No items yet. Click + to add one.": "目前沒有項目，請按＋新增。", "Add child": "新增子項目", "Edit": "編輯", "Delete": "刪除", "Add item": "新增項目", "Edit item": "編輯項目", "Item name": "項目名稱", "Destination account (optional)": "轉入帳戶（選填）", "Use existing account": "使用既有帳戶", "No linked account": "不連結帳戶", "Leaf items can share a destination account. Parent items with children are totaled from their children.": "最底層項目可共用轉入帳戶；有子項目的父項目會依子項目加總。",
         "Turn this off to hide month-over-month percentages in asset and liability details.": "關閉後，資產與負債明細將隱藏月增減百分比。",
         "Language": "語言", "English": "英文", "Traditional Chinese": "繁體中文", "Total": "合計",
-        "Add Asset": "新增資產", "Asset name": "資產名稱", "Asset Name": "資產名稱",
-        "Category": "分類", "Asset group": "資產分類", "Subcategory": "子分類", "Currency": "幣別", "Amount (NTD)": "金額（新台幣）",
+        "Add Asset": "新增資產", "Edit Asset": "編輯資產", "Asset name": "資產名稱", "Asset Name": "資產名稱", "Enter asset name": "輸入資產名稱", "Enter current amount": "輸入目前金額", "Balance adjustment": "餘額調整", "Adjustment": "調整方式", "Increase": "增加", "Decrease": "減少", "Enter adjustment amount": "輸入調整金額",
+        "Category": "分類", "Asset group": "資產分類", "Subcategory": "子分類", "Currency": "幣別",
         "Original amount": "原幣金額", "Initial NTD cost": "初始新台幣成本", "Current balance cost basis (NTD)": "目前餘額成本基礎（新台幣）", "Average exchange rate": "平均匯率",
         "Only exchange or opening-fund cost is included. Dividends and investment gains are recorded separately.": "只有換匯或初始入金成本會計入；股息與投資收益會獨立記錄。",
-        "Cancel": "取消", "Save": "儲存", "Add Liability": "新增負債", "Liability name": "負債名稱",
+        "Cancel": "取消", "Save": "儲存", "Add Liability": "新增負債", "Edit Liability": "編輯負債", "Liability name": "負債名稱", "Enter liability name": "輸入負債名稱", "Enter current balance": "輸入目前餘額", "Enter interest rate (%)": "輸入利率（％）",
         "Group": "負債分類", "Balance": "餘額", "Interest rate (optional)": "利率（選填）",
+        "Add Holding": "新增持股", "Edit Holding": "編輯持股", "Symbol": "代號", "No subcategories available": "目前沒有可用子分類", "Type": "類型", "ETF type": "ETF 類型", "Equity ETF": "股票型 ETF", "Bond ETF": "債券型 ETF", "This holding will be used for recurring investment": "此持股將用於定期定額", "Shares": "股數", "Total cost": "總成本", "Complete the holding fields with valid values.": "請完整填寫持股資料。", "Holding cost and P&L stay in the original currency until an exchange transaction is recorded.": "在記錄換匯交易前，持股成本與損益會維持原幣別。",
+        "Add Foreign Currency": "新增外幣", "Currency code (e.g. EUR)": "幣別代碼（例如 EUR）", "Current balance": "目前餘額", "Average cost rate of current balance (NTD per unit)": "目前餘額平均成本匯率（每單位新台幣）", "Enter the weighted-average cost rate of the remaining balance, not the total exchanged amount. For example, USD 497.30 at NTD 31.5220 creates an NTD cost basis of about NTD 15,675.89.": "請輸入剩餘餘額的加權平均成本匯率，而不是換匯總額的匯率。例如 USD 497.30、匯率 NTD 31.5220，台幣成本約為 NTD 15,675.89。", "Enter a valid currency code, balance, and average rate.": "請輸入有效的幣別代碼、餘額與平均匯率。",
+        "Add Dividend": "新增股利", "Edit Dividend": "編輯股利", "Select a holding": "選擇持股", "Payment date": "入帳日期", "Receiving account": "收款帳戶", "Dividends are recorded separately and are not included in exchange-rate cost calculations.": "股利會獨立記錄，不會納入換匯成本計算。",
+        "Edit Recurring Rule": "編輯定期定額規則", "Add Recurring Rule": "新增定期定額規則", "Holding": "持股", "Planned amount": "預計金額", "Funding account": "扣款帳戶", "Frequency": "頻率", "Monthly": "每月", "Weekly": "每週", "Execution day": "執行日", "Record Purchase": "記錄投資", "Edit Purchase": "編輯投資紀錄", "Purchase date (yyyy-MM-dd)": "投資日期（yyyy-MM-dd）", "Amount": "金額", "Amount (USD)": "金額（美元）", "Enter an amount greater than zero.": "請輸入大於零的金額。", "Enter shares and amount greater than zero.": "請輸入大於零的股數與金額。", "Enter the date as yyyy-MM-dd.": "請以 yyyy-MM-dd 格式輸入日期。", "Enter a valid date, shares, and amount.": "請輸入有效的日期、股數與金額。",
         "Short-term Liability": "短期負債", "Long-term Liability": "長期負債", "Add holding": "新增持股"
     ]
 
@@ -2065,9 +2069,9 @@ private struct AddForeignCurrencySheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Add Foreign Currency")
+            Text(L10n.text("Add Foreign Currency", language: appLanguage))
                 .font(.title2.weight(.bold))
-            TextField("Currency code (e.g. EUR)", text: $currency)
+            TextField(L10n.text("Currency code (e.g. EUR)", language: appLanguage), text: $currency)
                 .textFieldStyle(.roundedBorder)
             if !matchingCurrencies.isEmpty {
                 VStack(alignment: .leading, spacing: 2) {
@@ -2094,18 +2098,18 @@ private struct AddForeignCurrencySheet: View {
                 .padding(8)
                 .background(FinTrackTheme.surfaceHover, in: RoundedRectangle(cornerRadius: 8))
             }
-            TextField("Current balance", text: $balance)
+            TextField(L10n.text("Current balance", language: appLanguage), text: $balance)
                 .textFieldStyle(.roundedBorder)
-            TextField("Average cost rate of current balance (NTD per unit)", text: $averageRate)
+            TextField(L10n.text("Average cost rate of current balance (NTD per unit)", language: appLanguage), text: $averageRate)
                 .textFieldStyle(.roundedBorder)
-            Text("Enter the weighted-average cost rate of the remaining balance, not the total exchanged amount. For example, USD 497.30 at NTD 31.5220 creates an NTD cost basis of about NTD 15,675.89.")
+            Text(L10n.text("Enter the weighted-average cost rate of the remaining balance, not the total exchanged amount. For example, USD 497.30 at NTD 31.5220 creates an NTD cost basis of about NTD 15,675.89.", language: appLanguage))
                 .font(.caption)
                 .foregroundStyle(FinTrackTheme.textSecondary)
 
             HStack {
                 Spacer()
-                Button("Cancel") { dismiss() }
-                Button("Save") { save() }
+                Button(L10n.text("Cancel", language: appLanguage)) { dismiss() }
+                Button(L10n.text("Save", language: appLanguage)) { save() }
                     .buttonStyle(.borderedProminent)
             }
             if let errorMessage {
@@ -2635,6 +2639,7 @@ struct EditAssetSheet: View {
     let asset: DatabaseManager.AssetRecord
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appModel: AppModel
+    @AppStorage("appLanguage") private var appLanguage = AppLanguage.english.rawValue
     @State private var name: String
     @State private var currency: String
     @State private var amount: String
@@ -2655,34 +2660,34 @@ struct EditAssetSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text("Edit Asset").font(.title2.weight(.bold))
-            LabeledContent("Asset name") {
-                TextField("Enter asset name", text: $name).textFieldStyle(.roundedBorder)
+            Text(L10n.text("Edit Asset", language: appLanguage)).font(.title2.weight(.bold))
+            LabeledContent(L10n.text("Asset name", language: appLanguage)) {
+                TextField(L10n.text("Enter asset name", language: appLanguage), text: $name).textFieldStyle(.roundedBorder)
             }
-            Picker("Currency", selection: $currency) {
+            Picker(L10n.text("Currency", language: appLanguage), selection: $currency) {
                 ForEach(currencies, id: \.self) { Text($0).tag($0) }
             }
             .pickerStyle(.menu)
-            LabeledContent("Amount") {
-                TextField("Enter current amount", text: $amount).textFieldStyle(.roundedBorder)
+            LabeledContent(L10n.text("Amount", language: appLanguage)) {
+                TextField(L10n.text("Enter current amount", language: appLanguage), text: $amount).textFieldStyle(.roundedBorder)
             }
             if asset.assetGroup != "liquid_investment" {
-                Text("Balance adjustment")
+                Text(L10n.text("Balance adjustment", language: appLanguage))
                     .font(.headline)
-                Picker("Adjustment", selection: $adjustmentType) {
-                    Text("Increase").tag("increase")
-                    Text("Decrease").tag("decrease")
+                Picker(L10n.text("Adjustment", language: appLanguage), selection: $adjustmentType) {
+                    Text(L10n.text("Increase", language: appLanguage)).tag("increase")
+                    Text(L10n.text("Decrease", language: appLanguage)).tag("decrease")
                 }
                 .pickerStyle(.segmented)
-                LabeledContent("Amount") {
-                    TextField("Enter adjustment amount", text: $adjustmentAmount)
+                LabeledContent(L10n.text("Amount", language: appLanguage)) {
+                    TextField(L10n.text("Enter adjustment amount", language: appLanguage), text: $adjustmentAmount)
                         .textFieldStyle(.roundedBorder)
                 }
             }
             HStack {
                 Spacer()
-                Button("Cancel") { dismiss() }
-                Button("Save") { save() }.buttonStyle(.borderedProminent)
+                Button(L10n.text("Cancel", language: appLanguage)) { dismiss() }
+                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(.borderedProminent)
             }
             if let errorMessage {
                 Text(errorMessage).font(.caption).foregroundStyle(.red)
@@ -2758,11 +2763,11 @@ struct EditLiabilitySheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text("Edit Liability").font(.title2.weight(.bold))
-            LabeledContent("Liability name") {
-                TextField("Enter liability name", text: $name).textFieldStyle(.roundedBorder)
+            Text(L10n.text("Edit Liability", language: appLanguage)).font(.title2.weight(.bold))
+            LabeledContent(L10n.text("Liability name", language: appLanguage)) {
+                TextField(L10n.text("Enter liability name", language: appLanguage), text: $name).textFieldStyle(.roundedBorder)
             }
-            Picker("Group", selection: $group) {
+            Picker(L10n.text("Group", language: appLanguage), selection: $group) {
                 ForEach(groups, id: \.self) { Text($0).tag($0) }
             }
             .pickerStyle(.menu)
@@ -2772,31 +2777,31 @@ struct EditLiabilitySheet: View {
                 }
             }
             .pickerStyle(.menu)
-            Picker("Currency", selection: $currency) {
+            Picker(L10n.text("Currency", language: appLanguage), selection: $currency) {
                 ForEach(currencies, id: \.self) { Text($0).tag($0) }
             }
             .pickerStyle(.menu)
-            LabeledContent("Balance") {
-                TextField("Enter current balance", text: $balance).textFieldStyle(.roundedBorder)
+            LabeledContent(L10n.text("Balance", language: appLanguage)) {
+                TextField(L10n.text("Enter current balance", language: appLanguage), text: $balance).textFieldStyle(.roundedBorder)
             }
-            LabeledContent("Interest rate (optional)") {
-                TextField("Enter interest rate (%)", text: $interestRate).textFieldStyle(.roundedBorder)
+            LabeledContent(L10n.text("Interest rate (optional)", language: appLanguage)) {
+                TextField(L10n.text("Enter interest rate (%)", language: appLanguage), text: $interestRate).textFieldStyle(.roundedBorder)
             }
-            Text("Balance adjustment")
+            Text(L10n.text("Balance adjustment", language: appLanguage))
                 .font(.headline)
-            Picker("Adjustment", selection: $adjustmentType) {
-                Text("Increase").tag("increase")
-                Text("Decrease").tag("decrease")
+            Picker(L10n.text("Adjustment", language: appLanguage), selection: $adjustmentType) {
+                Text(L10n.text("Increase", language: appLanguage)).tag("increase")
+                Text(L10n.text("Decrease", language: appLanguage)).tag("decrease")
             }
             .pickerStyle(.segmented)
-            LabeledContent("Amount") {
-                TextField("Enter adjustment amount", text: $adjustmentAmount)
+            LabeledContent(L10n.text("Amount", language: appLanguage)) {
+                TextField(L10n.text("Enter adjustment amount", language: appLanguage), text: $adjustmentAmount)
                     .textFieldStyle(.roundedBorder)
             }
             HStack {
                 Spacer()
-                Button("Cancel") { dismiss() }
-                Button("Save") { save() }.buttonStyle(.borderedProminent)
+                Button(L10n.text("Cancel", language: appLanguage)) { dismiss() }
+                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(.borderedProminent)
             }
             if let errorMessage {
                 Text(errorMessage).font(.caption).foregroundStyle(.red)
@@ -2849,6 +2854,7 @@ struct EditLiabilitySheet: View {
 struct AddHoldingSheet: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appModel: AppModel
+    @AppStorage("appLanguage") private var appLanguage = AppLanguage.english.rawValue
     @State private var subcategory = ""
     @State private var symbol = ""
     @State private var securityName = ""
@@ -2876,9 +2882,9 @@ struct AddHoldingSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Add Holding").font(.title2.weight(.bold))
+            Text(L10n.text("Add Holding", language: appLanguage)).font(.title2.weight(.bold))
             VStack(alignment: .leading, spacing: 4) {
-                TextField("Symbol", text: $symbol).textFieldStyle(.roundedBorder)
+                TextField(L10n.text("Symbol", language: appLanguage), text: $symbol).textFieldStyle(.roundedBorder)
                 if !symbolSuggestions.isEmpty {
                     VStack(alignment: .leading, spacing: 0) {
                         ForEach(symbolSuggestions) { suggestion in
@@ -2904,15 +2910,15 @@ struct AddHoldingSheet: View {
                     .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
                 }
             }
-            Picker("Asset group", selection: $assetGroup) {
+            Picker(L10n.text("Asset group", language: appLanguage), selection: $assetGroup) {
                 ForEach(groups, id: \.0) { group in
-                    Text(group.1).tag(group.0)
+                    Text(L10n.text(group.1, language: appLanguage)).tag(group.0)
                 }
             }
             .pickerStyle(.menu)
-            Picker("Subcategory", selection: $subcategory) {
+            Picker(L10n.text("Subcategory", language: appLanguage), selection: $subcategory) {
                 if availableSubcategories.isEmpty {
-                    Text("No subcategories available").tag("")
+                    Text(L10n.text("No subcategories available", language: appLanguage)).tag("")
                 } else {
                     ForEach(availableSubcategories, id: \.self) { category in
                         Text(category).tag(category)
@@ -2921,34 +2927,34 @@ struct AddHoldingSheet: View {
             }
             .pickerStyle(.menu)
 
-            Picker("Type", selection: $instrumentType) {
-                Text("Stock").tag("stock")
-                Text("ETF").tag("etf")
+            Picker(L10n.text("Type", language: appLanguage), selection: $instrumentType) {
+                Text(L10n.text("Stock", language: appLanguage)).tag("stock")
+                Text(L10n.text("ETF", language: appLanguage)).tag("etf")
             }
             .pickerStyle(.segmented)
             if instrumentType == "etf" {
-                Picker("ETF type", selection: $etfType) {
-                    Text("Equity ETF").tag("equity")
-                    Text("Bond ETF").tag("bond")
+                Picker(L10n.text("ETF type", language: appLanguage), selection: $etfType) {
+                    Text(L10n.text("Equity ETF", language: appLanguage)).tag("equity")
+                    Text(L10n.text("Bond ETF", language: appLanguage)).tag("bond")
                 }
                 .pickerStyle(.menu)
             }
-            Picker("Currency", selection: $currency) {
+            Picker(L10n.text("Currency", language: appLanguage), selection: $currency) {
                 Text("NTD").tag("NTD")
                 Text("USD").tag("USD")
             }
             .pickerStyle(.menu)
-            Toggle("This holding will be used for recurring investment", isOn: $isRecurringHolding)
-            TextField("Shares", text: $shares).textFieldStyle(.roundedBorder)
-            TextField("Total cost (\(currency))", text: $totalCost).textFieldStyle(.roundedBorder)
-            Text("Holding cost and P&L stay in the original currency until an exchange transaction is recorded.")
+            Toggle(L10n.text("This holding will be used for recurring investment", language: appLanguage), isOn: $isRecurringHolding)
+            TextField(L10n.text("Shares", language: appLanguage), text: $shares).textFieldStyle(.roundedBorder)
+            TextField("\(L10n.text("Total cost", language: appLanguage)) (\(currency))", text: $totalCost).textFieldStyle(.roundedBorder)
+            Text(L10n.text("Holding cost and P&L stay in the original currency until an exchange transaction is recorded.", language: appLanguage))
                 .font(.caption)
                 .foregroundStyle(FinTrackTheme.textSecondary)
 
             HStack {
                 Spacer()
-                Button("Cancel") { dismiss() }
-                Button("Save") { save() }.buttonStyle(.borderedProminent)
+                Button(L10n.text("Cancel", language: appLanguage)) { dismiss() }
+                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(.borderedProminent)
             }
             if let errorMessage {
                 Text(errorMessage).font(.caption).foregroundStyle(.red)
@@ -3013,6 +3019,7 @@ struct EditHoldingSheet: View {
     let holding: DatabaseManager.HoldingRecord
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appModel: AppModel
+    @AppStorage("appLanguage") private var appLanguage = AppLanguage.english.rawValue
     @State private var symbol: String
     @State private var securityName: String
     @State private var instrumentType: String
@@ -3036,8 +3043,8 @@ struct EditHoldingSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Edit Holding").font(.title2.weight(.bold))
-            TextField("Symbol", text: $symbol).textFieldStyle(.roundedBorder)
+            Text(L10n.text("Edit Holding", language: appLanguage)).font(.title2.weight(.bold))
+            TextField(L10n.text("Symbol", language: appLanguage), text: $symbol).textFieldStyle(.roundedBorder)
             if !suggestions.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     ForEach(suggestions) { suggestion in
@@ -3059,29 +3066,29 @@ struct EditHoldingSheet: View {
                 .padding(8)
                 .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
             }
-            Picker("Type", selection: $instrumentType) {
-                Text("Stock").tag("stock")
-                Text("ETF").tag("etf")
+            Picker(L10n.text("Type", language: appLanguage), selection: $instrumentType) {
+                Text(L10n.text("Stock", language: appLanguage)).tag("stock")
+                Text(L10n.text("ETF", language: appLanguage)).tag("etf")
             }
             .pickerStyle(.segmented)
             if instrumentType == "etf" {
-                Picker("ETF type", selection: $etfType) {
-                    Text("Equity ETF").tag("equity")
-                    Text("Bond ETF").tag("bond")
+                Picker(L10n.text("ETF type", language: appLanguage), selection: $etfType) {
+                    Text(L10n.text("Equity ETF", language: appLanguage)).tag("equity")
+                    Text(L10n.text("Bond ETF", language: appLanguage)).tag("bond")
                 }
                 .pickerStyle(.menu)
             }
-            Picker("Currency", selection: $currency) {
+            Picker(L10n.text("Currency", language: appLanguage), selection: $currency) {
                 Text("NTD").tag("NTD")
                 Text("USD").tag("USD")
             }
             .pickerStyle(.menu)
-            TextField("Shares", text: $shares).textFieldStyle(.roundedBorder)
-            TextField("Total cost (\(currency))", text: $totalCost).textFieldStyle(.roundedBorder)
+            TextField(L10n.text("Shares", language: appLanguage), text: $shares).textFieldStyle(.roundedBorder)
+            TextField("\(L10n.text("Total cost", language: appLanguage)) (\(currency))", text: $totalCost).textFieldStyle(.roundedBorder)
             HStack {
                 Spacer()
-                Button("Cancel") { dismiss() }
-                Button("Save") { save() }.buttonStyle(.borderedProminent)
+                Button(L10n.text("Cancel", language: appLanguage)) { dismiss() }
+                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(.borderedProminent)
             }
             if let errorMessage {
                 Text(errorMessage).font(.caption).foregroundStyle(.red)
@@ -3504,6 +3511,7 @@ struct DividendManagementView: View {
 struct AddDividendManagementSheet: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appModel: AppModel
+    @AppStorage("appLanguage") private var appLanguage = AppLanguage.english.rawValue
     @State private var holdingID: Int64?
     @State private var payDate = Date()
     @State private var amount = ""
@@ -3525,19 +3533,19 @@ struct AddDividendManagementSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Add Dividend").font(.title2.weight(.bold))
-            Picker("Security", selection: $holdingID) {
-                Text("Select a holding").tag(nil as Int64?)
+            Text(L10n.text("Add Dividend", language: appLanguage)).font(.title2.weight(.bold))
+            Picker(L10n.text("Security", language: appLanguage), selection: $holdingID) {
+                Text(L10n.text("Select a holding", language: appLanguage)).tag(nil as Int64?)
                 ForEach(appModel.holdingRecords) { holding in
                     Text("\(holding.securityName) (\(holding.symbol))").tag(holding.id as Int64?)
                 }
             }
             .pickerStyle(.menu)
-            DatePicker("Payment date", selection: $payDate, displayedComponents: .date)
-            TextField("Amount", text: $amount).textFieldStyle(.roundedBorder)
-            LabeledContent("Currency") { Text(currency) }
-            Picker("Receiving account", selection: $receivingAssetID) {
-                Text("No linked account").tag(Int64(0))
+            DatePicker(L10n.text("Payment date", language: appLanguage), selection: $payDate, displayedComponents: .date)
+            TextField(L10n.text("Amount", language: appLanguage), text: $amount).textFieldStyle(.roundedBorder)
+            LabeledContent(L10n.text("Currency", language: appLanguage)) { Text(currency) }
+            Picker(L10n.text("Receiving account", language: appLanguage), selection: $receivingAssetID) {
+                Text(L10n.text("No linked account", language: appLanguage)).tag(Int64(0))
                 ForEach(receivingAssets) { asset in
                     Text("\(asset.name) (\(asset.currency))").tag(asset.id)
                 }
@@ -3567,6 +3575,7 @@ struct EditDividendSheet: View {
     let dividend: DatabaseManager.DividendRecord
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appModel: AppModel
+    @AppStorage("appLanguage") private var appLanguage = AppLanguage.english.rawValue
     @State private var payDate: Date
     @State private var amount: String
     @State private var receivingAssetID: Int64
@@ -3593,13 +3602,13 @@ struct EditDividendSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Edit Dividend").font(.title2.weight(.bold))
+            Text(L10n.text("Edit Dividend", language: appLanguage)).font(.title2.weight(.bold))
             Text(dividend.securityName).foregroundStyle(.secondary)
-            DatePicker("Payment date", selection: $payDate, displayedComponents: .date)
-            TextField("Amount", text: $amount).textFieldStyle(.roundedBorder)
-            LabeledContent("Currency") { Text(currency) }
-            Picker("Receiving account", selection: $receivingAssetID) {
-                Text("No linked account").tag(Int64(0))
+            DatePicker(L10n.text("Payment date", language: appLanguage), selection: $payDate, displayedComponents: .date)
+            TextField(L10n.text("Amount", language: appLanguage), text: $amount).textFieldStyle(.roundedBorder)
+            LabeledContent(L10n.text("Currency", language: appLanguage)) { Text(currency) }
+            Picker(L10n.text("Receiving account", language: appLanguage), selection: $receivingAssetID) {
+                Text(L10n.text("No linked account", language: appLanguage)).tag(Int64(0))
                 ForEach(receivingAssets) { asset in
                     Text("\(asset.name) (\(asset.currency))").tag(asset.id)
                 }
@@ -3625,6 +3634,7 @@ struct AddDividendSheet: View {
     let holding: DatabaseManager.HoldingRecord
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appModel: AppModel
+    @AppStorage("appLanguage") private var appLanguage = AppLanguage.english.rawValue
     @State private var payDate = Date()
     @State private var amount = ""
     @State private var receivingAssetID: Int64 = 0
@@ -3647,19 +3657,19 @@ struct AddDividendSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Add Dividend").font(.title2.weight(.bold))
+            Text(L10n.text("Add Dividend", language: appLanguage)).font(.title2.weight(.bold))
             Text(holding.securityName).foregroundStyle(.secondary)
-            DatePicker("Payment date", selection: $payDate, displayedComponents: .date)
-            TextField("Amount", text: $amount).textFieldStyle(.roundedBorder)
-            LabeledContent("Currency") { Text(currency) }
-            Picker("Receiving account", selection: $receivingAssetID) {
-                Text("No linked account").tag(Int64(0))
+            DatePicker(L10n.text("Payment date", language: appLanguage), selection: $payDate, displayedComponents: .date)
+            TextField(L10n.text("Amount", language: appLanguage), text: $amount).textFieldStyle(.roundedBorder)
+            LabeledContent(L10n.text("Currency", language: appLanguage)) { Text(currency) }
+            Picker(L10n.text("Receiving account", language: appLanguage), selection: $receivingAssetID) {
+                Text(L10n.text("No linked account", language: appLanguage)).tag(Int64(0))
                 ForEach(receivingAssets) { asset in
                     Text("\(asset.name) (\(asset.currency))").tag(asset.id)
                 }
             }
             .pickerStyle(.menu)
-            Text("Dividends are recorded separately and are not included in exchange-rate cost calculations.")
+            Text(L10n.text("Dividends are recorded separately and are not included in exchange-rate cost calculations.", language: appLanguage))
                 .font(.caption)
                 .foregroundStyle(.secondary)
             HStack {
@@ -5502,6 +5512,7 @@ struct EditRecurringRuleSheet: View {
     let schedule: DatabaseManager.RecurringSchedule
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appModel: AppModel
+    @AppStorage("appLanguage") private var appLanguage = AppLanguage.english.rawValue
     @State private var plannedAmount: String
     @State private var currency: String
     @State private var frequency: String
@@ -5529,31 +5540,31 @@ struct EditRecurringRuleSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Edit Recurring Rule").font(.title2.weight(.bold))
-            TextField("Planned amount", text: $plannedAmount).textFieldStyle(.roundedBorder)
-            Picker("Currency", selection: $currency) {
+            Text(L10n.text("Edit Recurring Rule", language: appLanguage)).font(.title2.weight(.bold))
+            TextField(L10n.text("Planned amount", language: appLanguage), text: $plannedAmount).textFieldStyle(.roundedBorder)
+            Picker(L10n.text("Currency", language: appLanguage), selection: $currency) {
                 Text("NTD").tag("NTD")
                 Text("USD").tag("USD")
                 Text("JPY").tag("JPY")
             }
             .pickerStyle(.menu)
-            Picker("Funding account", selection: $fundingAssetID) {
-                Text("No linked account").tag(Int64(0))
+            Picker(L10n.text("Funding account", language: appLanguage), selection: $fundingAssetID) {
+                Text(L10n.text("No linked account", language: appLanguage)).tag(Int64(0))
                 ForEach(fundingAssets) { asset in
                     Text("\(asset.name) (\(asset.currency))").tag(asset.id)
                 }
             }
             .pickerStyle(.menu)
-            Picker("Frequency", selection: $frequency) {
-                Text("Monthly").tag("monthly")
-                Text("Weekly").tag("weekly")
+            Picker(L10n.text("Frequency", language: appLanguage), selection: $frequency) {
+                Text(L10n.text("Monthly", language: appLanguage)).tag("monthly")
+                Text(L10n.text("Weekly", language: appLanguage)).tag("weekly")
             }
             .pickerStyle(.menu)
-            Stepper("Execution day: \(executionDay)", value: $executionDay, in: 1...31)
+            Stepper("\(L10n.text("Execution day", language: appLanguage)): \(executionDay)", value: $executionDay, in: 1...31)
             HStack {
                 Spacer()
-                Button("Cancel") { dismiss() }
-                Button("Save") { save() }.buttonStyle(.borderedProminent)
+                Button(L10n.text("Cancel", language: appLanguage)) { dismiss() }
+                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(.borderedProminent)
             }
             if let errorMessage {
                 Text(errorMessage).font(.caption).foregroundStyle(.red)
@@ -5589,6 +5600,7 @@ struct AddRecurringPurchaseSheet: View {
     let onSaved: () -> Void
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appModel: AppModel
+    @AppStorage("appLanguage") private var appLanguage = AppLanguage.english.rawValue
     @State private var tradeDate = Self.isoDateFormatter.string(from: Date())
     @State private var shares = ""
     @State private var amount = ""
@@ -5606,14 +5618,14 @@ struct AddRecurringPurchaseSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Record Purchase").font(.title2.weight(.bold))
+            Text(L10n.text("Record Purchase", language: appLanguage)).font(.title2.weight(.bold))
             Text(rule.securityName).foregroundStyle(.secondary)
-            TextField("Purchase date (yyyy-MM-dd)", text: $tradeDate)
+            TextField(L10n.text("Purchase date (yyyy-MM-dd)", language: appLanguage), text: $tradeDate)
                 .textFieldStyle(.roundedBorder)
-            TextField("Shares", text: $shares).textFieldStyle(.roundedBorder)
-            TextField("Amount (\(rule.currency))", text: $amount).textFieldStyle(.roundedBorder)
-            Picker("Funding account", selection: $fundingAssetID) {
-                Text("No linked account").tag(Int64(0))
+            TextField(L10n.text("Shares", language: appLanguage), text: $shares).textFieldStyle(.roundedBorder)
+            TextField("\(L10n.text("Amount", language: appLanguage)) (\(rule.currency))", text: $amount).textFieldStyle(.roundedBorder)
+            Picker(L10n.text("Funding account", language: appLanguage), selection: $fundingAssetID) {
+                Text(L10n.text("No linked account", language: appLanguage)).tag(Int64(0))
                 ForEach(fundingAssets) { asset in
                     Text("\(asset.name) (\(asset.currency))").tag(asset.id)
                 }
@@ -5621,8 +5633,8 @@ struct AddRecurringPurchaseSheet: View {
             .pickerStyle(.menu)
             HStack {
                 Spacer()
-                Button("Cancel") { dismiss() }
-                Button("Save") { save() }.buttonStyle(.borderedProminent)
+                Button(L10n.text("Cancel", language: appLanguage)) { dismiss() }
+                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(.borderedProminent)
             }
             if let errorMessage {
                 Text(errorMessage).font(.caption).foregroundStyle(.red)
@@ -5677,6 +5689,7 @@ struct EditRecurringPurchaseSheet: View {
     let onSaved: () -> Void
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appModel: AppModel
+    @AppStorage("appLanguage") private var appLanguage = AppLanguage.english.rawValue
     @State private var tradeDate: String
     @State private var shares: String
     @State private var amount: String
@@ -5703,15 +5716,15 @@ struct EditRecurringPurchaseSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Edit Purchase").font(.title2.weight(.bold))
-            TextField("Purchase date (yyyy-MM-dd)", text: $tradeDate)
+            Text(L10n.text("Edit Purchase", language: appLanguage)).font(.title2.weight(.bold))
+            TextField(L10n.text("Purchase date (yyyy-MM-dd)", language: appLanguage), text: $tradeDate)
                 .textFieldStyle(.roundedBorder)
-            TextField("Shares", text: $shares)
+            TextField(L10n.text("Shares", language: appLanguage), text: $shares)
                 .textFieldStyle(.roundedBorder)
-            TextField("Amount (\(purchase.currency))", text: $amount)
+            TextField("\(L10n.text("Amount", language: appLanguage)) (\(purchase.currency))", text: $amount)
                 .textFieldStyle(.roundedBorder)
-            Picker("Funding account", selection: $fundingAssetID) {
-                Text("No linked account").tag(Int64(0))
+            Picker(L10n.text("Funding account", language: appLanguage), selection: $fundingAssetID) {
+                Text(L10n.text("No linked account", language: appLanguage)).tag(Int64(0))
                 ForEach(fundingAssets) { asset in
                     Text("\(asset.name) (\(asset.currency))").tag(asset.id)
                 }
@@ -5719,8 +5732,8 @@ struct EditRecurringPurchaseSheet: View {
             .pickerStyle(.menu)
             HStack {
                 Spacer()
-                Button("Cancel") { dismiss() }
-                Button("Save") { save() }.buttonStyle(.borderedProminent)
+                Button(L10n.text("Cancel", language: appLanguage)) { dismiss() }
+                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(.borderedProminent)
             }
             if let errorMessage {
                 Text(errorMessage).font(.caption).foregroundStyle(.red)
@@ -5764,6 +5777,7 @@ struct EditRecurringPurchaseSheet: View {
 struct AddRecurringRuleSheet: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appModel: AppModel
+    @AppStorage("appLanguage") private var appLanguage = AppLanguage.english.rawValue
     @State private var selectedHoldingID: Int64?
     @State private var plannedAmount = ""
     @State private var currency = "NTD"
@@ -5783,41 +5797,41 @@ struct AddRecurringRuleSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Add Recurring Rule").font(.title2.weight(.bold))
+            Text(L10n.text("Add Recurring Rule", language: appLanguage)).font(.title2.weight(.bold))
 
-            Picker("Holding", selection: $selectedHoldingID) {
-                Text("Select a holding").tag(nil as Int64?)
+            Picker(L10n.text("Holding", language: appLanguage), selection: $selectedHoldingID) {
+                Text(L10n.text("Select a holding", language: appLanguage)).tag(nil as Int64?)
                 ForEach(appModel.holdingRecords) { holding in
                     Text("\(holding.securityName) (\(holding.symbol))").tag(holding.id as Int64?)
                 }
             }
             .pickerStyle(.menu)
 
-            TextField("Planned amount", text: $plannedAmount)
+            TextField(L10n.text("Planned amount", language: appLanguage), text: $plannedAmount)
                 .textFieldStyle(.roundedBorder)
-            Picker("Currency", selection: $currency) {
+            Picker(L10n.text("Currency", language: appLanguage), selection: $currency) {
                 Text("NTD").tag("NTD")
                 Text("USD").tag("USD")
                 Text("JPY").tag("JPY")
             }
             .pickerStyle(.menu)
-            Picker("Funding account", selection: $fundingAssetID) {
-                Text("No linked account").tag(Int64(0))
+            Picker(L10n.text("Funding account", language: appLanguage), selection: $fundingAssetID) {
+                Text(L10n.text("No linked account", language: appLanguage)).tag(Int64(0))
                 ForEach(fundingAssets) { asset in
                     Text("\(asset.name) (\(asset.currency))").tag(asset.id)
                 }
             }
             .pickerStyle(.menu)
-            Picker("Frequency", selection: $frequency) {
-                Text("Monthly").tag("monthly")
-                Text("Weekly").tag("weekly")
+            Picker(L10n.text("Frequency", language: appLanguage), selection: $frequency) {
+                Text(L10n.text("Monthly", language: appLanguage)).tag("monthly")
+                Text(L10n.text("Weekly", language: appLanguage)).tag("weekly")
             }
             .pickerStyle(.menu)
-            Stepper("Execution day: \(executionDay)", value: $executionDay, in: 1...31)
+            Stepper("\(L10n.text("Execution day", language: appLanguage)): \(executionDay)", value: $executionDay, in: 1...31)
             HStack {
                 Spacer()
-                Button("Cancel") { dismiss() }
-                Button("Save") { save() }.buttonStyle(.borderedProminent)
+                Button(L10n.text("Cancel", language: appLanguage)) { dismiss() }
+                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(.borderedProminent)
             }
             if let errorMessage {
                 Text(errorMessage).font(.caption).foregroundStyle(.red)
