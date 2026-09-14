@@ -364,6 +364,7 @@ final class DatabaseManager {
             try addForeignTransactionSourceColumnIfNeeded()
             try normalizeLegacyLiabilityCategories()
             try backfillRecurringPurchaseForeignTransactions()
+            try removeInvalidRecurringPurchaseForeignTransactions()
             try removeHoldingMarketConstraintIfNeeded()
         } catch {
             sqlite3_close(database)
@@ -799,7 +800,8 @@ final class DatabaseManager {
             try adjustHolding(holdingID: holdingID, shares: shares, amount: amount)
             if let fundingAssetID {
                 try adjustFundingAsset(id: fundingAssetID, amount: -amount)
-                let transactionID = try insertForeignCurrencyTransaction(
+                if currency != "NTD" {
+                    let transactionID = try insertForeignCurrencyTransaction(
                     purpose: "Recurring Investment",
                     currency: currency,
                     foreignAmount: -amount,
@@ -808,9 +810,10 @@ final class DatabaseManager {
                     tradeDate: tradeDate,
                     sourceRecurringPurchaseID: purchaseID
                 )
-                try executePrepared("UPDATE recurring_purchases SET foreign_transaction_id = ? WHERE id = ?;") { statement in
-                    sqlite3_bind_int64(statement, 1, transactionID)
-                    sqlite3_bind_int64(statement, 2, purchaseID)
+                    try executePrepared("UPDATE recurring_purchases SET foreign_transaction_id = ? WHERE id = ?;") { statement in
+                        sqlite3_bind_int64(statement, 1, transactionID)
+                        sqlite3_bind_int64(statement, 2, purchaseID)
+                    }
                 }
             }
             try execute("COMMIT;")
@@ -840,7 +843,7 @@ final class DatabaseManager {
             if let oldAssetID = existing.fundingAssetID { try adjustFundingAsset(id: oldAssetID, amount: existing.amount) }
             if let fundingAssetID { try adjustFundingAsset(id: fundingAssetID, amount: -amount) }
             if let oldTransactionID = existing.foreignTransactionID {
-                if fundingAssetID != nil {
+                if fundingAssetID != nil && existing.currency != "NTD" {
                     try executePrepared("""
                     UPDATE foreign_currency_transactions
                     SET foreign_amount = ?, trade_date = ?, source_recurring_purchase_id = ?
@@ -855,7 +858,7 @@ final class DatabaseManager {
                 } else {
                     try execute("DELETE FROM foreign_currency_transactions WHERE id = \(oldTransactionID);")
                 }
-            } else if fundingAssetID != nil {
+            } else if fundingAssetID != nil && existing.currency != "NTD" {
                 let transactionID = try insertForeignCurrencyTransaction(
                     purpose: "Recurring Investment",
                     currency: existing.currency,
@@ -1852,6 +1855,7 @@ final class DatabaseManager {
         SELECT id, trade_date, amount, currency
         FROM recurring_purchases
         WHERE funding_asset_id IS NOT NULL AND foreign_transaction_id IS NULL
+          AND currency != 'NTD'
         ORDER BY id;
         """
         var statement: OpaquePointer?
@@ -1885,6 +1889,23 @@ final class DatabaseManager {
                 sqlite3_bind_int64(update, 2, purchase.id)
             }
         }
+    }
+
+    private func removeInvalidRecurringPurchaseForeignTransactions() throws {
+        try execute("""
+        DELETE FROM foreign_currency_transactions
+        WHERE id IN (
+            SELECT rp.foreign_transaction_id
+            FROM recurring_purchases rp
+            WHERE rp.currency = 'NTD'
+              AND rp.foreign_transaction_id IS NOT NULL
+        );
+        """)
+        try execute("""
+        UPDATE recurring_purchases
+        SET foreign_transaction_id = NULL
+        WHERE currency = 'NTD' AND foreign_transaction_id IS NOT NULL;
+        """)
     }
 
     private func removeHoldingMarketConstraintIfNeeded() throws {
