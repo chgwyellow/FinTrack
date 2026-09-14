@@ -1669,9 +1669,9 @@ struct ForeignCurrencyView: View {
                         }
                         .buttonStyle(.plain)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        Text(L10n.text("BALANCE", language: appLanguage)).frame(width: 150, alignment: .trailing)
                         Text(L10n.text("RATE", language: appLanguage)).frame(width: 130, alignment: .trailing)
                         Text(L10n.text("AVERAGE RATE", language: appLanguage)).frame(width: 150, alignment: .trailing)
+                        Text(L10n.text("BALANCE", language: appLanguage)).frame(width: 150, alignment: .trailing)
                         Button(action: { toggleSort(.ntdValue) }) {
                             HStack(spacing: 6) {
                                 sortIndicator(for: .ntdValue)
@@ -1701,11 +1701,11 @@ struct ForeignCurrencyView: View {
                                         .font(.headline)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                Text(money(summary.amount, currency: summary.currency))
-                                    .frame(width: 150, alignment: .trailing)
                                 Text(summary.rate.map { String(format: "NTD %.4f", $0) } ?? "—")
                                     .frame(width: 130, alignment: .trailing)
                                 Text(summary.averageRate.map { String(format: "NTD %.4f", $0) } ?? "—")
+                                    .frame(width: 150, alignment: .trailing)
+                                Text(money(summary.amount, currency: summary.currency))
                                     .frame(width: 150, alignment: .trailing)
                                 Text(ntd(summary.ntdValue))
                                     .font(.headline)
@@ -2638,7 +2638,8 @@ struct EditAssetSheet: View {
     @State private var name: String
     @State private var currency: String
     @State private var amount: String
-    @State private var ntdCost: String
+    @State private var adjustmentType = "increase"
+    @State private var adjustmentAmount = ""
     @State private var errorMessage: String?
 
     private var currencies: [String] {
@@ -2650,7 +2651,6 @@ struct EditAssetSheet: View {
         _name = State(initialValue: asset.name)
         _currency = State(initialValue: asset.currency)
         _amount = State(initialValue: String(asset.value))
-        _ntdCost = State(initialValue: String(asset.ntdValue))
     }
 
     var body: some View {
@@ -2662,8 +2662,16 @@ struct EditAssetSheet: View {
             }
             .pickerStyle(.menu)
             TextField("Amount", text: $amount).textFieldStyle(.roundedBorder)
-            if currency != "NTD" {
-                TextField("Current balance cost basis (NTD)", text: $ntdCost).textFieldStyle(.roundedBorder)
+            if asset.assetGroup != "liquid_investment" {
+                Text("Balance adjustment")
+                    .font(.headline)
+                Picker("Adjustment", selection: $adjustmentType) {
+                    Text("Increase").tag("increase")
+                    Text("Decrease").tag("decrease")
+                }
+                .pickerStyle(.segmented)
+                TextField("Adjustment amount (optional)", text: $adjustmentAmount)
+                    .textFieldStyle(.roundedBorder)
             }
             HStack {
                 Spacer()
@@ -2684,15 +2692,19 @@ struct EditAssetSheet: View {
             errorMessage = "Enter a valid name and amount."
             return
         }
-        let ntdValue: Double
-        if currency == "NTD" {
-            ntdValue = value
-        } else if let cost = Double(ntdCost), cost >= 0 {
-            ntdValue = cost
-        } else {
-            errorMessage = "Enter a valid initial NTD cost."
+        let adjustment = adjustmentAmount.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? 0
+            : (Double(adjustmentAmount) ?? -1)
+        guard adjustment >= 0 else {
+            errorMessage = "Enter a valid adjustment amount."
             return
         }
+        let adjustedValue = adjustmentType == "increase" ? value + adjustment : value - adjustment
+        guard adjustedValue >= 0 else {
+            errorMessage = "The balance cannot be less than zero."
+            return
+        }
+        let ntdValue = currency == "NTD" ? adjustedValue : asset.ntdValue
         do {
             try appModel.updateAsset(
                 id: asset.id,
@@ -2700,7 +2712,7 @@ struct EditAssetSheet: View {
                 assetGroup: asset.assetGroup,
                 category: name,
                 currency: currency,
-                value: value,
+                value: adjustedValue,
                 ntdValue: ntdValue
             )
             dismiss()
@@ -2720,6 +2732,8 @@ struct EditLiabilitySheet: View {
     @State private var currency: String
     @State private var balance: String
     @State private var interestRate: String
+    @State private var adjustmentType = "increase"
+    @State private var adjustmentAmount = ""
     @State private var errorMessage: String?
     @AppStorage("appLanguage") private var appLanguage = AppLanguage.english.rawValue
 
@@ -2755,6 +2769,15 @@ struct EditLiabilitySheet: View {
             }
             .pickerStyle(.menu)
             TextField("Balance", text: $balance).textFieldStyle(.roundedBorder)
+            Text("Balance adjustment")
+                .font(.headline)
+            Picker("Adjustment", selection: $adjustmentType) {
+                Text("Increase").tag("increase")
+                Text("Decrease").tag("decrease")
+            }
+            .pickerStyle(.segmented)
+            TextField("Adjustment amount (optional)", text: $adjustmentAmount)
+                .textFieldStyle(.roundedBorder)
             TextField("Interest rate (optional)", text: $interestRate).textFieldStyle(.roundedBorder)
             HStack {
                 Spacer()
@@ -2775,6 +2798,18 @@ struct EditLiabilitySheet: View {
             errorMessage = "Enter a valid name and balance."
             return
         }
+        let adjustment = adjustmentAmount.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? 0
+            : (Double(adjustmentAmount) ?? -1)
+        guard adjustment >= 0 else {
+            errorMessage = "Enter a valid adjustment amount."
+            return
+        }
+        let adjustedBalance = adjustmentType == "increase" ? balanceValue + adjustment : balanceValue - adjustment
+        guard adjustedBalance >= 0 else {
+            errorMessage = "The balance cannot be less than zero."
+            return
+        }
         let parsedInterest = interestRate.isEmpty ? nil : Double(interestRate)
         guard interestRate.isEmpty || parsedInterest != nil else {
             errorMessage = "Enter a valid interest rate."
@@ -2787,7 +2822,7 @@ struct EditLiabilitySheet: View {
                 liabilityGroup: group == "Short-term Liability" ? "short_term" : "long_term",
                 category: category,
                 currency: currency,
-                balance: balanceValue,
+                balance: adjustedBalance,
                 interestRate: parsedInterest
             )
             dismiss()
