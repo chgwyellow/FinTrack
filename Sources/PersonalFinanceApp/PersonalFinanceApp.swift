@@ -3446,9 +3446,12 @@ struct AddDividendManagementSheet: View {
     @State private var holdingID: Int64?
     @State private var payDate = Date()
     @State private var amount = ""
-    @State private var currency = "NTD"
     @State private var receivingAssetID: Int64 = 0
     @State private var errorMessage: String?
+
+    private var currency: String {
+        appModel.holdingRecords.first(where: { $0.id == holdingID })?.currency ?? "NTD"
+    }
 
     private var receivingAssets: [DatabaseManager.AssetRecord] {
         appModel.assets.filter { asset in
@@ -3471,12 +3474,7 @@ struct AddDividendManagementSheet: View {
             .pickerStyle(.menu)
             DatePicker("Payment date", selection: $payDate, displayedComponents: .date)
             TextField("Amount", text: $amount).textFieldStyle(.roundedBorder)
-            Picker("Currency", selection: $currency) {
-                Text("NTD").tag("NTD")
-                Text("USD").tag("USD")
-                Text("JPY").tag("JPY")
-            }
-            .pickerStyle(.menu)
+            LabeledContent("Currency") { Text(currency) }
             Picker("Receiving account", selection: $receivingAssetID) {
                 Text("No linked account").tag(Int64(0))
                 ForEach(receivingAssets) { asset in
@@ -3510,9 +3508,10 @@ struct EditDividendSheet: View {
     @EnvironmentObject private var appModel: AppModel
     @State private var payDate: Date
     @State private var amount: String
-    @State private var currency: String
     @State private var receivingAssetID: Int64
     @State private var errorMessage: String?
+
+    private var currency: String { dividend.currency }
 
     private var receivingAssets: [DatabaseManager.AssetRecord] {
         appModel.assets.filter { asset in
@@ -3528,7 +3527,6 @@ struct EditDividendSheet: View {
         let formatter = ISO8601DateFormatter(); formatter.formatOptions = [.withFullDate]
         _payDate = State(initialValue: formatter.date(from: dividend.payDate) ?? Date())
         _amount = State(initialValue: String(dividend.amount))
-        _currency = State(initialValue: dividend.currency)
         _receivingAssetID = State(initialValue: dividend.receivingAssetID ?? 0)
     }
 
@@ -3538,9 +3536,7 @@ struct EditDividendSheet: View {
             Text(dividend.securityName).foregroundStyle(.secondary)
             DatePicker("Payment date", selection: $payDate, displayedComponents: .date)
             TextField("Amount", text: $amount).textFieldStyle(.roundedBorder)
-            Picker("Currency", selection: $currency) {
-                Text("NTD").tag("NTD"); Text("USD").tag("USD"); Text("JPY").tag("JPY")
-            }.pickerStyle(.menu)
+            LabeledContent("Currency") { Text(currency) }
             Picker("Receiving account", selection: $receivingAssetID) {
                 Text("No linked account").tag(Int64(0))
                 ForEach(receivingAssets) { asset in
@@ -3570,9 +3566,10 @@ struct AddDividendSheet: View {
     @EnvironmentObject private var appModel: AppModel
     @State private var payDate = Date()
     @State private var amount = ""
-    @State private var currency: String
     @State private var receivingAssetID: Int64 = 0
     @State private var errorMessage: String?
+
+    private var currency: String { holding.currency }
 
     private var receivingAssets: [DatabaseManager.AssetRecord] {
         appModel.assets.filter { asset in
@@ -3585,7 +3582,6 @@ struct AddDividendSheet: View {
 
     init(holding: DatabaseManager.HoldingRecord) {
         self.holding = holding
-        _currency = State(initialValue: holding.currency)
     }
 
     var body: some View {
@@ -3594,12 +3590,7 @@ struct AddDividendSheet: View {
             Text(holding.securityName).foregroundStyle(.secondary)
             DatePicker("Payment date", selection: $payDate, displayedComponents: .date)
             TextField("Amount", text: $amount).textFieldStyle(.roundedBorder)
-            Picker("Currency", selection: $currency) {
-                Text("NTD").tag("NTD")
-                Text("USD").tag("USD")
-                Text("JPY").tag("JPY")
-            }
-            .pickerStyle(.menu)
+            LabeledContent("Currency") { Text(currency) }
             Picker("Receiving account", selection: $receivingAssetID) {
                 Text("No linked account").tag(Int64(0))
                 ForEach(receivingAssets) { asset in
