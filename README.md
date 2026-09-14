@@ -62,7 +62,9 @@ portfolio reflects your actual holdings.
 ### Track dividends and income
 
 Manage dividends and income-statement items alongside the rest of your
-financial information.
+financial information. Income-statement sections support a group and one level
+of details only. Detail items can optionally link to an existing destination
+account or a custom account name.
 
 ### Manage foreign currencies
 
@@ -127,9 +129,9 @@ manually.
 ### Download step by step
 
 1. Open [GitHub Releases](https://github.com/chgwyellow/FinTrack/releases).
-2. Open the newest release, such as `v0.1.4`.
+2. Open the newest release, such as `v0.1.5`.
 3. Scroll to **Assets** and expand it if necessary.
-4. Download **`FinTrack-0.1.4.zip`**.
+4. Download **`FinTrack-0.1.5.zip`**.
 5. Open the downloaded ZIP from your Downloads folder.
 6. Move the extracted `FinTrack.app` to `/Applications`.
 7. Right-click the app and select **Open** on its first launch.
