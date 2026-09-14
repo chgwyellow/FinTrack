@@ -133,6 +133,7 @@ final class DatabaseManager {
         let payDate: String
         let amount: Double
         let currency: String
+        let receivingAssetID: Int64?
     }
 
     struct ForeignCurrencyTransactionRecord: Identifiable {
@@ -364,6 +365,7 @@ final class DatabaseManager {
             try addRecurringInvestmentFundingColumnIfNeeded()
             try addRecurringPurchaseTransactionColumnsIfNeeded()
             try addForeignTransactionSourceColumnIfNeeded()
+            try addDividendReceivingAssetColumnIfNeeded()
             try normalizeLegacyLiabilityCategories()
             try backfillRecurringPurchaseForeignTransactions()
             try removeInvalidRecurringPurchaseForeignTransactions()
@@ -981,16 +983,25 @@ final class DatabaseManager {
         return records
     }
 
-    func addDividend(holdingID: Int64, payDate: String, amount: Double, currency: String) throws {
-        try insertObservation(
-            sql: "INSERT INTO dividends (holding_id, pay_date, amount, currency) VALUES (?, ?, ?, ?);",
-            values: [String(holdingID), payDate, String(amount), currency]
-        )
+    func addDividend(holdingID: Int64, payDate: String, amount: Double, currency: String, receivingAssetID: Int64?) throws {
+        try execute("BEGIN TRANSACTION;")
+        do {
+            try executePrepared("INSERT INTO dividends (holding_id, pay_date, amount, currency, receiving_asset_id) VALUES (?, ?, ?, ?, ?);") { statement in
+                let destructor = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+                sqlite3_bind_int64(statement, 1, holdingID)
+                sqlite3_bind_text(statement, 2, payDate, -1, destructor)
+                sqlite3_bind_double(statement, 3, amount)
+                sqlite3_bind_text(statement, 4, currency, -1, destructor)
+                if let receivingAssetID { sqlite3_bind_int64(statement, 5, receivingAssetID) } else { sqlite3_bind_null(statement, 5) }
+            }
+            if let receivingAssetID { try adjustFundingAsset(id: receivingAssetID, amount: amount) }
+            try execute("COMMIT;")
+        } catch { try? execute("ROLLBACK;"); throw error }
     }
 
     func listDividends() throws -> [DividendRecord] {
         let sql = """
-        SELECT d.id, d.holding_id, h.symbol, h.security_name, d.pay_date, d.amount, d.currency
+        SELECT d.id, d.holding_id, h.symbol, h.security_name, d.pay_date, d.amount, d.currency, d.receiving_asset_id
         FROM dividends d
         JOIN holdings h ON h.id = d.holding_id
         ORDER BY d.pay_date DESC, d.id DESC;
@@ -1007,27 +1018,61 @@ final class DatabaseManager {
                 securityName: String(cString: sqlite3_column_text(statement, 3)),
                 payDate: String(cString: sqlite3_column_text(statement, 4)),
                 amount: sqlite3_column_double(statement, 5),
-                currency: String(cString: sqlite3_column_text(statement, 6))
+                currency: String(cString: sqlite3_column_text(statement, 6)),
+                receivingAssetID: sqlite3_column_type(statement, 7) == SQLITE_NULL ? nil : sqlite3_column_int64(statement, 7)
             ))
         }
         return records
     }
 
-    func updateDividend(id: Int64, payDate: String, amount: Double, currency: String) throws {
-        let sql = "UPDATE dividends SET pay_date = ?, amount = ?, currency = ? WHERE id = ?;"
+    private func dividend(id: Int64) throws -> DividendRecord? {
+        let sql = """
+        SELECT d.id, d.holding_id, h.symbol, h.security_name, d.pay_date, d.amount, d.currency, d.receiving_asset_id
+        FROM dividends d JOIN holdings h ON h.id = d.holding_id WHERE d.id = ?;
+        """
         var statement: OpaquePointer?
         defer { sqlite3_finalize(statement) }
         guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK else { throw DatabaseError.queryFailed(databaseMessage) }
-        let destructor = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
-        sqlite3_bind_text(statement, 1, payDate, -1, destructor)
-        sqlite3_bind_double(statement, 2, amount)
-        sqlite3_bind_text(statement, 3, currency, -1, destructor)
-        sqlite3_bind_int64(statement, 4, id)
-        guard sqlite3_step(statement) == SQLITE_DONE else { throw DatabaseError.queryFailed(databaseMessage) }
+        sqlite3_bind_int64(statement, 1, id)
+        guard sqlite3_step(statement) == SQLITE_ROW else { return nil }
+        return DividendRecord(
+            id: sqlite3_column_int64(statement, 0),
+            holdingID: sqlite3_column_int64(statement, 1),
+            symbol: String(cString: sqlite3_column_text(statement, 2)),
+            securityName: String(cString: sqlite3_column_text(statement, 3)),
+            payDate: String(cString: sqlite3_column_text(statement, 4)),
+            amount: sqlite3_column_double(statement, 5),
+            currency: String(cString: sqlite3_column_text(statement, 6)),
+            receivingAssetID: sqlite3_column_type(statement, 7) == SQLITE_NULL ? nil : sqlite3_column_int64(statement, 7)
+        )
+    }
+
+    func updateDividend(id: Int64, payDate: String, amount: Double, currency: String, receivingAssetID: Int64?) throws {
+        guard let existing = try dividend(id: id) else { return }
+        try execute("BEGIN TRANSACTION;")
+        do {
+            if let oldAssetID = existing.receivingAssetID { try adjustFundingAsset(id: oldAssetID, amount: -existing.amount) }
+            try executePrepared("UPDATE dividends SET pay_date = ?, amount = ?, currency = ?, receiving_asset_id = ? WHERE id = ?;") { statement in
+                let destructor = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+                sqlite3_bind_text(statement, 1, payDate, -1, destructor)
+                sqlite3_bind_double(statement, 2, amount)
+                sqlite3_bind_text(statement, 3, currency, -1, destructor)
+                if let receivingAssetID { sqlite3_bind_int64(statement, 4, receivingAssetID) } else { sqlite3_bind_null(statement, 4) }
+                sqlite3_bind_int64(statement, 5, id)
+            }
+            if let receivingAssetID { try adjustFundingAsset(id: receivingAssetID, amount: amount) }
+            try execute("COMMIT;")
+        } catch { try? execute("ROLLBACK;"); throw error }
     }
 
     func deleteDividend(id: Int64) throws {
-        try execute("DELETE FROM dividends WHERE id = \(id);")
+        guard let existing = try dividend(id: id) else { return }
+        try execute("BEGIN TRANSACTION;")
+        do {
+            if let receivingAssetID = existing.receivingAssetID { try adjustFundingAsset(id: receivingAssetID, amount: -existing.amount) }
+            try execute("DELETE FROM dividends WHERE id = \(id);")
+            try execute("COMMIT;")
+        } catch { try? execute("ROLLBACK;"); throw error }
     }
 
     func listIncomeStatementItems() throws -> [IncomeStatementItem] {
@@ -1863,6 +1908,14 @@ final class DatabaseManager {
     private func addForeignTransactionSourceColumnIfNeeded() throws {
         do {
             try execute("ALTER TABLE foreign_currency_transactions ADD COLUMN source_recurring_purchase_id INTEGER;")
+        } catch DatabaseError.queryFailed(let message) where message.contains("duplicate column name") {
+            // The column already exists.
+        }
+    }
+
+    private func addDividendReceivingAssetColumnIfNeeded() throws {
+        do {
+            try execute("ALTER TABLE dividends ADD COLUMN receiving_asset_id INTEGER;")
         } catch DatabaseError.queryFailed(let message) where message.contains("duplicate column name") {
             // The column already exists.
         }

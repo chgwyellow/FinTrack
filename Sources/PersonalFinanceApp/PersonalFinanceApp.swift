@@ -213,9 +213,9 @@ final class AppModel: ObservableObject {
         return (try? databaseManager.listRecurringPurchases(holdingID: holdingID)) ?? []
     }
 
-    func addDividend(holdingID: Int64, payDate: String, amount: Double, currency: String) throws {
+    func addDividend(holdingID: Int64, payDate: String, amount: Double, currency: String, receivingAssetID: Int64?) throws {
         guard let databaseManager else { throw DatabaseManager.DatabaseError.openFailed("Database is unavailable") }
-        try databaseManager.addDividend(holdingID: holdingID, payDate: payDate, amount: amount, currency: currency)
+        try databaseManager.addDividend(holdingID: holdingID, payDate: payDate, amount: amount, currency: currency, receivingAssetID: receivingAssetID)
         refreshDividends()
         refreshHoldings()
         refreshPortfolioTotals()
@@ -299,9 +299,9 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func updateDividend(id: Int64, payDate: String, amount: Double, currency: String) throws {
+    func updateDividend(id: Int64, payDate: String, amount: Double, currency: String, receivingAssetID: Int64?) throws {
         guard let databaseManager else { throw DatabaseManager.DatabaseError.openFailed("Database is unavailable") }
-        try databaseManager.updateDividend(id: id, payDate: payDate, amount: amount, currency: currency)
+        try databaseManager.updateDividend(id: id, payDate: payDate, amount: amount, currency: currency, receivingAssetID: receivingAssetID)
         refreshDividends()
         refreshHoldings()
         refreshPortfolioTotals()
@@ -3447,7 +3447,17 @@ struct AddDividendManagementSheet: View {
     @State private var payDate = Date()
     @State private var amount = ""
     @State private var currency = "NTD"
+    @State private var receivingAssetID: Int64 = 0
     @State private var errorMessage: String?
+
+    private var receivingAssets: [DatabaseManager.AssetRecord] {
+        appModel.assets.filter { asset in
+            if currency == "NTD" {
+                return asset.assetGroup == "liquid_asset" && asset.currency == "NTD" && asset.category != "Foreign Currency"
+            }
+            return asset.category == "Foreign Currency" && asset.currency == currency
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -3467,6 +3477,13 @@ struct AddDividendManagementSheet: View {
                 Text("JPY").tag("JPY")
             }
             .pickerStyle(.menu)
+            Picker("Receiving account", selection: $receivingAssetID) {
+                Text("No linked account").tag(Int64(0))
+                ForEach(receivingAssets) { asset in
+                    Text("\(asset.name) (\(asset.currency))").tag(asset.id)
+                }
+            }
+            .pickerStyle(.menu)
             HStack { Spacer(); Button("Cancel") { dismiss() }; Button("Save") { save() }.buttonStyle(.borderedProminent) }
             if let errorMessage { Text(errorMessage).font(.caption).foregroundStyle(.red) }
         }
@@ -3481,7 +3498,7 @@ struct AddDividendManagementSheet: View {
         }
         let formatter = ISO8601DateFormatter(); formatter.formatOptions = [.withFullDate]
         do {
-            try appModel.addDividend(holdingID: holdingID, payDate: formatter.string(from: payDate), amount: value, currency: currency)
+            try appModel.addDividend(holdingID: holdingID, payDate: formatter.string(from: payDate), amount: value, currency: currency, receivingAssetID: receivingAssetID == 0 ? nil : receivingAssetID)
             dismiss()
         } catch { errorMessage = error.localizedDescription }
     }
@@ -3494,7 +3511,17 @@ struct EditDividendSheet: View {
     @State private var payDate: Date
     @State private var amount: String
     @State private var currency: String
+    @State private var receivingAssetID: Int64
     @State private var errorMessage: String?
+
+    private var receivingAssets: [DatabaseManager.AssetRecord] {
+        appModel.assets.filter { asset in
+            if currency == "NTD" {
+                return asset.assetGroup == "liquid_asset" && asset.currency == "NTD" && asset.category != "Foreign Currency"
+            }
+            return asset.category == "Foreign Currency" && asset.currency == currency
+        }
+    }
 
     init(dividend: DatabaseManager.DividendRecord) {
         self.dividend = dividend
@@ -3502,6 +3529,7 @@ struct EditDividendSheet: View {
         _payDate = State(initialValue: formatter.date(from: dividend.payDate) ?? Date())
         _amount = State(initialValue: String(dividend.amount))
         _currency = State(initialValue: dividend.currency)
+        _receivingAssetID = State(initialValue: dividend.receivingAssetID ?? 0)
     }
 
     var body: some View {
@@ -3512,6 +3540,12 @@ struct EditDividendSheet: View {
             TextField("Amount", text: $amount).textFieldStyle(.roundedBorder)
             Picker("Currency", selection: $currency) {
                 Text("NTD").tag("NTD"); Text("USD").tag("USD"); Text("JPY").tag("JPY")
+            }.pickerStyle(.menu)
+            Picker("Receiving account", selection: $receivingAssetID) {
+                Text("No linked account").tag(Int64(0))
+                ForEach(receivingAssets) { asset in
+                    Text("\(asset.name) (\(asset.currency))").tag(asset.id)
+                }
             }.pickerStyle(.menu)
             HStack { Spacer(); Button("Cancel") { dismiss() }; Button("Save") { save() }.buttonStyle(.borderedProminent) }
             if let errorMessage { Text(errorMessage).font(.caption).foregroundStyle(.red) }
@@ -3524,7 +3558,7 @@ struct EditDividendSheet: View {
         guard let value = Double(amount), value > 0 else { errorMessage = "Enter an amount greater than zero."; return }
         let formatter = ISO8601DateFormatter(); formatter.formatOptions = [.withFullDate]
         do {
-            try appModel.updateDividend(id: dividend.id, payDate: formatter.string(from: payDate), amount: value, currency: currency)
+            try appModel.updateDividend(id: dividend.id, payDate: formatter.string(from: payDate), amount: value, currency: currency, receivingAssetID: receivingAssetID == 0 ? nil : receivingAssetID)
             dismiss()
         } catch { errorMessage = error.localizedDescription }
     }
@@ -3537,7 +3571,17 @@ struct AddDividendSheet: View {
     @State private var payDate = Date()
     @State private var amount = ""
     @State private var currency: String
+    @State private var receivingAssetID: Int64 = 0
     @State private var errorMessage: String?
+
+    private var receivingAssets: [DatabaseManager.AssetRecord] {
+        appModel.assets.filter { asset in
+            if currency == "NTD" {
+                return asset.assetGroup == "liquid_asset" && asset.currency == "NTD" && asset.category != "Foreign Currency"
+            }
+            return asset.category == "Foreign Currency" && asset.currency == currency
+        }
+    }
 
     init(holding: DatabaseManager.HoldingRecord) {
         self.holding = holding
@@ -3554,6 +3598,13 @@ struct AddDividendSheet: View {
                 Text("NTD").tag("NTD")
                 Text("USD").tag("USD")
                 Text("JPY").tag("JPY")
+            }
+            .pickerStyle(.menu)
+            Picker("Receiving account", selection: $receivingAssetID) {
+                Text("No linked account").tag(Int64(0))
+                ForEach(receivingAssets) { asset in
+                    Text("\(asset.name) (\(asset.currency))").tag(asset.id)
+                }
             }
             .pickerStyle(.menu)
             Text("Dividends are recorded separately and are not included in exchange-rate cost calculations.")
@@ -3584,7 +3635,8 @@ struct AddDividendSheet: View {
                 holdingID: holding.id,
                 payDate: formatter.string(from: payDate),
                 amount: value,
-                currency: currency
+                currency: currency,
+                receivingAssetID: receivingAssetID == 0 ? nil : receivingAssetID
             )
             dismiss()
         } catch {
