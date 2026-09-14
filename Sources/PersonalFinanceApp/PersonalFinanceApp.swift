@@ -1669,9 +1669,9 @@ struct ForeignCurrencyView: View {
                         }
                         .buttonStyle(.plain)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        Text(L10n.text("BALANCE", language: appLanguage)).frame(width: 150, alignment: .trailing)
                         Text(L10n.text("RATE", language: appLanguage)).frame(width: 130, alignment: .trailing)
                         Text(L10n.text("AVERAGE RATE", language: appLanguage)).frame(width: 150, alignment: .trailing)
+                        Text(L10n.text("BALANCE", language: appLanguage)).frame(width: 150, alignment: .trailing)
                         Button(action: { toggleSort(.ntdValue) }) {
                             HStack(spacing: 6) {
                                 sortIndicator(for: .ntdValue)
@@ -1701,11 +1701,11 @@ struct ForeignCurrencyView: View {
                                         .font(.headline)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                Text(money(summary.amount, currency: summary.currency))
-                                    .frame(width: 150, alignment: .trailing)
                                 Text(summary.rate.map { String(format: "NTD %.4f", $0) } ?? "—")
                                     .frame(width: 130, alignment: .trailing)
                                 Text(summary.averageRate.map { String(format: "NTD %.4f", $0) } ?? "—")
+                                    .frame(width: 150, alignment: .trailing)
+                                Text(money(summary.amount, currency: summary.currency))
                                     .frame(width: 150, alignment: .trailing)
                                 Text(ntd(summary.ntdValue))
                                     .font(.headline)
