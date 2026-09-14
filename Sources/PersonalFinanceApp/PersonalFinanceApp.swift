@@ -1222,7 +1222,7 @@ enum L10n {
         "CHANGE": "變化", "VALUE": "市值", "P&L": "損益", "ALLOCATION": "資產配置",
         "ASSETS": "資產", "ETFs 57%": "ETF 57%", "Stocks 43%": "股票 43%",
         "About": "關於", "Version": "版本", "Support & Feedback": "支援與回饋", "Report a problem": "回報問題", "Suggest a feature": "建議功能", "Open GitHub page": "開啟 GitHub 頁面",
-        "Display": "顯示", "Show detail percentage changes": "顯示明細百分比變化", "Performance colors": "漲跌顏色", "Green up / red down": "綠漲紅跌", "Red up / green down": "紅漲綠跌", "Analog mode": "類比模式", "Daily snapshot time": "每日快照時間", "Appearance": "外觀", "System": "跟隨系統", "Light": "淺色", "Dark": "深色", "Total Income": "總收入", "Total Expenses": "總支出", "Monthly Profit": "月結餘", "Account Allocation": "帳戶配置", "Account allocation will appear after leaf items are added.": "新增明細項目後，這裡會顯示帳戶配置。", "No items yet. Click + to add one.": "目前沒有項目，請按＋新增。", "Add child": "新增子項目", "Edit": "編輯", "Delete": "刪除", "Add item": "新增項目", "Edit item": "編輯項目", "Item name": "項目名稱", "Destination account (optional)": "轉入帳戶（選填）", "Use existing account": "使用既有帳戶", "No linked account": "不連結帳戶", "Leaf items can share a destination account. Parent items with children are totaled from their children.": "最底層項目可共用轉入帳戶；有子項目的父項目會依子項目加總。",
+        "Display": "顯示", "Show detail percentage changes": "顯示明細百分比變化", "Performance colors": "漲跌顏色", "Green up / red down": "綠漲紅跌", "Red up / green down": "紅漲綠跌", "Analog mode": "類比模式", "Daily snapshot time": "每日快照時間", "Appearance": "外觀", "System": "跟隨系統", "Light": "淺色", "Dark": "深色", "Total Income": "總收入", "Total Expenses": "總支出", "Monthly Profit": "月結餘", "Account Allocation": "帳戶配置", "Account allocation will appear after leaf items are added.": "新增明細項目後，這裡會顯示帳戶配置。", "No items yet. Click + to add one.": "目前沒有項目，請按＋新增。", "Add child": "新增子項目", "Edit": "編輯", "Delete": "刪除", "Add item": "新增項目", "Edit item": "編輯項目", "Item name": "項目名稱", "Enter item name": "輸入項目名稱", "Enter amount": "輸入金額", "Destination account (optional)": "轉入帳戶（選填）", "Use existing account": "使用既有帳戶", "No linked account": "不連結帳戶", "Custom account": "自訂帳戶", "Enter account name": "輸入帳戶名稱", "Leaf items can share a destination account. Parent items with children are totaled from their children.": "最底層項目可共用轉入帳戶；有子項目的父項目會依子項目加總。",
         "Turn this off to hide month-over-month percentages in asset and liability details.": "關閉後，資產與負債明細將隱藏月增減百分比。",
         "Language": "語言", "English": "英文", "Traditional Chinese": "繁體中文", "Total": "合計",
         "Add Asset": "新增資產", "Edit Asset": "編輯資產", "Asset name": "資產名稱", "Asset Name": "資產名稱", "Enter asset name": "輸入資產名稱", "Enter current amount": "輸入目前金額", "Balance adjustment": "餘額調整", "Adjustment": "調整方式", "Increase": "增加", "Decrease": "減少", "Enter adjustment amount": "輸入調整金額", "Amount (NTD)": "金額（新台幣）",
@@ -1231,7 +1231,7 @@ enum L10n {
         "Only exchange or opening-fund cost is included. Dividends and investment gains are recorded separately.": "只有換匯或初始入金成本會計入；股息與投資收益會獨立記錄。",
         "Cancel": "取消", "Save": "儲存", "Add Liability": "新增負債", "Edit Liability": "編輯負債", "Liability name": "負債名稱", "Enter liability name": "輸入負債名稱", "Enter current balance": "輸入目前餘額", "Enter interest rate (%)": "輸入利率（％）",
         "Group": "負債分類", "Balance": "餘額", "Interest rate (optional)": "利率（選填）",
-        "Add Holding": "新增持股", "Edit Holding": "編輯持股", "Symbol": "代號", "No subcategories available": "目前沒有可用子分類", "Type": "類型", "ETF type": "ETF 類型", "Equity ETF": "股票型 ETF", "Bond ETF": "債券型 ETF", "This holding will be used for recurring investment": "此持股將用於定期定額", "Shares": "股數", "Total cost": "總成本", "Complete the holding fields with valid values.": "請完整填寫持股資料。", "Holding cost and P&L stay in the original currency until an exchange transaction is recorded.": "在記錄換匯交易前，持股成本與損益會維持原幣別。",
+        "Add Holding": "新增持股", "Edit Holding": "編輯持股", "Symbol": "代號", "Enter symbol": "輸入代號", "No subcategories available": "目前沒有可用子分類", "Type": "類型", "ETF type": "ETF 類型", "Equity ETF": "股票型 ETF", "Bond ETF": "債券型 ETF", "This holding will be used for recurring investment": "此持股將用於定期定額", "Shares": "股數", "Enter shares": "輸入股數", "Total cost": "總成本", "Enter total cost": "輸入總成本", "Complete the holding fields with valid values.": "請完整填寫持股資料。", "Holding cost and P&L stay in the original currency until an exchange transaction is recorded.": "在記錄換匯交易前，持股成本與損益會維持原幣別。",
         "Add Foreign Currency": "新增外幣", "Currency code (e.g. EUR)": "幣別代碼（例如 EUR）", "Current balance": "目前餘額", "Average cost rate of current balance (NTD per unit)": "目前餘額平均成本匯率（每單位新台幣）", "Enter the weighted-average cost rate of the remaining balance, not the total exchanged amount. For example, USD 497.30 at NTD 31.5220 creates an NTD cost basis of about NTD 15,675.89.": "請輸入剩餘餘額的加權平均成本匯率，而不是換匯總額的匯率。例如 USD 497.30、匯率 NTD 31.5220，台幣成本約為 NTD 15,675.89。", "Enter a valid currency code, balance, and average rate.": "請輸入有效的幣別代碼、餘額與平均匯率。",
         "Add Dividend": "新增股利", "Edit Dividend": "編輯股利", "Security": "標的", "Select a holding": "選擇持股", "Payment date": "入帳日期", "Receiving account": "收款帳戶", "Dividends are recorded separately and are not included in exchange-rate cost calculations.": "股利會獨立記錄，不會納入換匯成本計算。",
         "Edit Recurring Rule": "編輯定期定額規則", "Add Recurring Rule": "新增定期定額規則", "Holding": "持股", "Planned amount": "預計金額", "Funding account": "扣款帳戶", "Frequency": "頻率", "Monthly": "每月", "Weekly": "每週", "Execution day": "執行日", "Record Purchase": "記錄投資", "Edit Purchase": "編輯投資紀錄", "Purchase date (yyyy-MM-dd)": "投資日期（yyyy-MM-dd）", "Amount": "金額", "Amount (USD)": "金額（美元）", "Enter an amount greater than zero.": "請輸入大於零的金額。", "Enter shares and amount greater than zero.": "請輸入大於零的股數與金額。", "Enter the date as yyyy-MM-dd.": "請以 yyyy-MM-dd 格式輸入日期。", "Enter a valid date, shares, and amount.": "請輸入有效的日期、股數與金額。",
@@ -2884,7 +2884,10 @@ struct AddHoldingSheet: View {
         VStack(alignment: .leading, spacing: 16) {
             Text(L10n.text("Add Holding", language: appLanguage)).font(.title2.weight(.bold))
             VStack(alignment: .leading, spacing: 4) {
-                TextField(L10n.text("Symbol", language: appLanguage), text: $symbol).textFieldStyle(.roundedBorder)
+                LabeledContent(L10n.text("Symbol", language: appLanguage)) {
+                    TextField(L10n.text("Enter symbol", language: appLanguage), text: $symbol)
+                        .textFieldStyle(.roundedBorder)
+                }
                 if !symbolSuggestions.isEmpty {
                     VStack(alignment: .leading, spacing: 0) {
                         ForEach(symbolSuggestions) { suggestion in
@@ -2945,8 +2948,14 @@ struct AddHoldingSheet: View {
             }
             .pickerStyle(.menu)
             Toggle(L10n.text("This holding will be used for recurring investment", language: appLanguage), isOn: $isRecurringHolding)
-            TextField(L10n.text("Shares", language: appLanguage), text: $shares).textFieldStyle(.roundedBorder)
-            TextField("\(L10n.text("Total cost", language: appLanguage)) (\(currency))", text: $totalCost).textFieldStyle(.roundedBorder)
+            LabeledContent(L10n.text("Shares", language: appLanguage)) {
+                TextField(L10n.text("Enter shares", language: appLanguage), text: $shares)
+                    .textFieldStyle(.roundedBorder)
+            }
+            LabeledContent("\(L10n.text("Total cost", language: appLanguage)) (\(currency))") {
+                TextField(L10n.text("Enter total cost", language: appLanguage), text: $totalCost)
+                    .textFieldStyle(.roundedBorder)
+            }
             Text(L10n.text("Holding cost and P&L stay in the original currency until an exchange transaction is recorded.", language: appLanguage))
                 .font(.caption)
                 .foregroundStyle(FinTrackTheme.textSecondary)
@@ -3044,7 +3053,10 @@ struct EditHoldingSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(L10n.text("Edit Holding", language: appLanguage)).font(.title2.weight(.bold))
-            TextField(L10n.text("Symbol", language: appLanguage), text: $symbol).textFieldStyle(.roundedBorder)
+            LabeledContent(L10n.text("Symbol", language: appLanguage)) {
+                TextField(L10n.text("Enter symbol", language: appLanguage), text: $symbol)
+                    .textFieldStyle(.roundedBorder)
+            }
             if !suggestions.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     ForEach(suggestions) { suggestion in
@@ -3083,8 +3095,14 @@ struct EditHoldingSheet: View {
                 Text("USD").tag("USD")
             }
             .pickerStyle(.menu)
-            TextField(L10n.text("Shares", language: appLanguage), text: $shares).textFieldStyle(.roundedBorder)
-            TextField("\(L10n.text("Total cost", language: appLanguage)) (\(currency))", text: $totalCost).textFieldStyle(.roundedBorder)
+            LabeledContent(L10n.text("Shares", language: appLanguage)) {
+                TextField(L10n.text("Enter shares", language: appLanguage), text: $shares)
+                    .textFieldStyle(.roundedBorder)
+            }
+            LabeledContent("\(L10n.text("Total cost", language: appLanguage)) (\(currency))") {
+                TextField(L10n.text("Enter total cost", language: appLanguage), text: $totalCost)
+                    .textFieldStyle(.roundedBorder)
+            }
             HStack {
                 Spacer()
                 Button(L10n.text("Cancel", language: appLanguage)) { dismiss() }
@@ -4717,6 +4735,7 @@ private struct AccountAllocationCard: View {
 }
 
 private struct StatementItemSheet: View {
+    private static let customAccountSelection = "__custom_account__"
     let item: DatabaseManager.IncomeStatementItem?
     let section: String
     let parentID: Int64?
@@ -4726,6 +4745,8 @@ private struct StatementItemSheet: View {
     @State private var name: String
     @State private var amount: String
     @State private var accountName: String
+    @State private var accountSelection: String
+    @State private var customAccountName: String
     @State private var errorMessage: String?
 
     init(section: String, parentID: Int64?) {
@@ -4735,6 +4756,8 @@ private struct StatementItemSheet: View {
         _name = State(initialValue: "")
         _amount = State(initialValue: "0")
         _accountName = State(initialValue: "")
+        _accountSelection = State(initialValue: "")
+        _customAccountName = State(initialValue: "")
     }
 
     init(item: DatabaseManager.IncomeStatementItem) {
@@ -4744,21 +4767,41 @@ private struct StatementItemSheet: View {
         _name = State(initialValue: item.name)
         _amount = State(initialValue: String(item.amount))
         _accountName = State(initialValue: item.accountName ?? "")
+        _accountSelection = State(initialValue: item.accountName ?? "")
+        _customAccountName = State(initialValue: item.accountName ?? "")
+    }
+
+    private var availableAccounts: [String] {
+        var accounts = appModel.statementAccounts
+        if !accountName.isEmpty && !accounts.contains(accountName) {
+            accounts.append(accountName)
+        }
+        return accounts.sorted()
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(L10n.text(item == nil ? "Add item" : "Edit item", language: appLanguage)).font(.title2.weight(.bold))
-            TextField(L10n.text("Item name", language: appLanguage), text: $name).textFieldStyle(.roundedBorder)
-            TextField(L10n.text("Amount (NTD)", language: appLanguage), text: $amount).textFieldStyle(.roundedBorder)
-            TextField(L10n.text("Destination account (optional)", language: appLanguage), text: $accountName)
-                .textFieldStyle(.roundedBorder)
-            if !appModel.statementAccounts.isEmpty {
-                Menu(L10n.text("Use existing account", language: appLanguage)) {
-                    ForEach(appModel.statementAccounts, id: \.self) { existingAccount in
-                        Button(existingAccount) { accountName = existingAccount }
-                    }
-                    Button(L10n.text("No linked account", language: appLanguage)) { accountName = "" }
+            LabeledContent(L10n.text("Item name", language: appLanguage)) {
+                TextField(L10n.text("Enter item name", language: appLanguage), text: $name)
+                    .textFieldStyle(.roundedBorder)
+            }
+            LabeledContent(L10n.text("Amount (NTD)", language: appLanguage)) {
+                TextField(L10n.text("Enter amount", language: appLanguage), text: $amount)
+                    .textFieldStyle(.roundedBorder)
+            }
+            Picker(L10n.text("Destination account (optional)", language: appLanguage), selection: $accountSelection) {
+                Text(L10n.text("No linked account", language: appLanguage)).tag("")
+                ForEach(availableAccounts, id: \.self) { existingAccount in
+                    Text(existingAccount).tag(existingAccount)
+                }
+                Text(L10n.text("Custom account", language: appLanguage)).tag(Self.customAccountSelection)
+            }
+            .pickerStyle(.menu)
+            if accountSelection == Self.customAccountSelection {
+                LabeledContent(L10n.text("Custom account", language: appLanguage)) {
+                    TextField(L10n.text("Enter account name", language: appLanguage), text: $customAccountName)
+                        .textFieldStyle(.roundedBorder)
                 }
             }
             Text(L10n.text("Leaf items can share a destination account. Parent items with children are totaled from their children.", language: appLanguage))
@@ -4782,10 +4825,11 @@ private struct StatementItemSheet: View {
             return
         }
         do {
+            let selectedAccount = accountSelection == Self.customAccountSelection ? customAccountName : accountSelection
             if let item {
-                try appModel.updateIncomeStatementItem(id: item.id, name: name, amount: value, accountName: accountName)
+                try appModel.updateIncomeStatementItem(id: item.id, name: name, amount: value, accountName: selectedAccount)
             } else {
-                try appModel.createIncomeStatementItem(section: section, parentID: parentID, name: name, amount: value, accountName: accountName)
+                try appModel.createIncomeStatementItem(section: section, parentID: parentID, name: name, amount: value, accountName: selectedAccount)
             }
             dismiss()
         } catch { errorMessage = error.localizedDescription }
