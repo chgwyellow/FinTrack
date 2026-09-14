@@ -3363,8 +3363,9 @@ struct DividendManagementView: View {
     @State private var pendingDelete: DatabaseManager.DividendRecord?
 
     var body: some View {
-        VStack(spacing: 16) {
-            VStack(spacing: 0) {
+        ScrollView {
+            VStack(spacing: 16) {
+                VStack(spacing: 0) {
                 HStack {
                     Spacer()
                     Button(action: { showingAdd = true }) { Image(systemName: "plus") }
@@ -3386,48 +3387,46 @@ struct DividendManagementView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 10)
 
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        if appModel.dividendRecords.isEmpty {
-                            Text("No dividends recorded. Click + to add one.")
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, minHeight: 180)
-                        } else {
-                            ForEach(appModel.dividendRecords) { dividend in
-                                HStack(alignment: .top) {
-                                    VStack(alignment: .leading, spacing: 3) {
-                                        Text(dividend.securityName)
-                                            .font(.headline)
-                                            .lineLimit(1)
-                                        Text(dividend.symbol).font(.caption).foregroundStyle(.secondary)
-                                    }
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    Text(dividend.payDate)
-                                        .frame(width: 130, alignment: .trailing)
-                                        .padding(.top, 2)
-                                    Text(money(dividend.amount, currency: dividend.currency))
-                                        .frame(width: 140, alignment: .trailing)
-                                        .padding(.top, 2)
+                LazyVStack(spacing: 0) {
+                    if appModel.dividendRecords.isEmpty {
+                        Text("No dividends recorded. Click + to add one.")
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, minHeight: 180)
+                    } else {
+                        ForEach(appModel.dividendRecords) { dividend in
+                            HStack(alignment: .top) {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(dividend.securityName)
+                                        .font(.headline)
+                                        .lineLimit(1)
+                                    Text(dividend.symbol).font(.caption).foregroundStyle(.secondary)
                                 }
-                                .padding(.horizontal, 48)
-                                .padding(.vertical, 11)
-                                .contentShape(Rectangle())
-                                .contextMenu {
-                                    Button("Edit") { editing = dividend }
-                                    Divider()
-                                    Button("Delete", role: .destructive) { pendingDelete = dividend }
-                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                Text(dividend.payDate)
+                                    .frame(width: 130, alignment: .trailing)
+                                    .padding(.top, 2)
+                                Text(money(dividend.amount, currency: dividend.currency))
+                                    .frame(width: 140, alignment: .trailing)
+                                    .padding(.top, 2)
+                            }
+                            .padding(.horizontal, 48)
+                            .padding(.vertical, 11)
+                            .contentShape(Rectangle())
+                            .contextMenu {
+                                Button("Edit") { editing = dividend }
+                                Divider()
+                                Button("Delete", role: .destructive) { pendingDelete = dividend }
                             }
                         }
                     }
                 }
-                .frame(maxHeight: 520)
+                }
+                .background(FinTrackTheme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(FinTrackTheme.border))
             }
-            .background(FinTrackTheme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(FinTrackTheme.border))
+            .padding(.horizontal, 24)
+            .padding(.bottom, 24)
         }
-        .padding(.horizontal, 24)
-        .padding(.bottom, 24)
         .sheet(isPresented: $showingAdd) { AddDividendManagementSheet() }
         .sheet(item: $editing) { dividend in EditDividendSheet(dividend: dividend) }
         .alert(item: $pendingDelete) { dividend in
