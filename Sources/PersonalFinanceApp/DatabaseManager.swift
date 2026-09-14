@@ -98,6 +98,7 @@ final class DatabaseManager {
         let frequency: String
         let executionDay: Int
         let startDate: String
+        let fundingAssetID: Int64?
     }
 
     struct RecurringRecord: Identifiable {
@@ -360,6 +361,7 @@ final class DatabaseManager {
             try addNTDValueColumnIfNeeded()
             try addHoldingsClassificationColumnsIfNeeded()
             try addRecurringPurchaseFundingColumnIfNeeded()
+            try addRecurringInvestmentFundingColumnIfNeeded()
             try addRecurringPurchaseTransactionColumnsIfNeeded()
             try addForeignTransactionSourceColumnIfNeeded()
             try normalizeLegacyLiabilityCategories()
@@ -431,12 +433,13 @@ final class DatabaseManager {
         startDate: String,
         plannedAmount: Double = 0,
         frequency: String = "monthly",
-        executionDay: Int = 1
+        executionDay: Int = 1,
+        fundingAssetID: Int64? = nil
     ) throws {
         let sql = """
         INSERT INTO recurring_investments
-            (holding_id, planned_amount, currency, frequency, execution_day, start_date)
-        VALUES (?, ?, ?, ?, ?, ?);
+            (holding_id, planned_amount, currency, frequency, execution_day, start_date, funding_asset_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?);
         """
         var statement: OpaquePointer?
         defer { sqlite3_finalize(statement) }
@@ -451,6 +454,7 @@ final class DatabaseManager {
         sqlite3_bind_text(statement, 4, frequency, -1, transientDestructor)
         sqlite3_bind_int(statement, 5, Int32(executionDay))
         sqlite3_bind_text(statement, 6, startDate, -1, transientDestructor)
+        if let fundingAssetID { sqlite3_bind_int64(statement, 7, fundingAssetID) } else { sqlite3_bind_null(statement, 7) }
 
         guard sqlite3_step(statement) == SQLITE_DONE else {
             throw DatabaseError.queryFailed(databaseMessage)
@@ -714,7 +718,7 @@ final class DatabaseManager {
     func listRecurringInvestments() throws -> [RecurringRecord] {
         let sql = """
         SELECT ri.id, ri.holding_id, h.symbol, h.security_name,
-               ri.planned_amount, ri.currency, ri.frequency, ri.execution_day, ri.start_date
+               ri.planned_amount, ri.currency, ri.frequency, ri.execution_day, ri.start_date, ri.funding_asset_id
         FROM recurring_investments ri
         JOIN holdings h ON h.id = ri.holding_id
         WHERE ri.is_active = 1
@@ -735,7 +739,8 @@ final class DatabaseManager {
                 currency: String(cString: sqlite3_column_text(statement, 5)),
                 frequency: String(cString: sqlite3_column_text(statement, 6)),
                 executionDay: Int(sqlite3_column_int(statement, 7)),
-                startDate: String(cString: sqlite3_column_text(statement, 8))
+                startDate: String(cString: sqlite3_column_text(statement, 8)),
+                fundingAssetID: sqlite3_column_type(statement, 9) == SQLITE_NULL ? nil : sqlite3_column_int64(statement, 9)
             )
             if var existing = grouped[holdingID] {
                 existing.schedules.append(schedule)
@@ -763,10 +768,10 @@ final class DatabaseManager {
         try execute("DELETE FROM recurring_investments WHERE id = \(id);")
     }
 
-    func updateRecurringInvestment(id: Int64, plannedAmount: Double, currency: String, frequency: String, executionDay: Int) throws {
+    func updateRecurringInvestment(id: Int64, plannedAmount: Double, currency: String, frequency: String, executionDay: Int, fundingAssetID: Int64?) throws {
         let sql = """
         UPDATE recurring_investments
-        SET planned_amount = ?, currency = ?, frequency = ?, execution_day = ?
+        SET planned_amount = ?, currency = ?, frequency = ?, execution_day = ?, funding_asset_id = ?
         WHERE id = ?;
         """
         var statement: OpaquePointer?
@@ -777,7 +782,8 @@ final class DatabaseManager {
         sqlite3_bind_text(statement, 2, currency, -1, destructor)
         sqlite3_bind_text(statement, 3, frequency, -1, destructor)
         sqlite3_bind_int(statement, 4, Int32(executionDay))
-        sqlite3_bind_int64(statement, 5, id)
+        if let fundingAssetID { sqlite3_bind_int64(statement, 5, fundingAssetID) } else { sqlite3_bind_null(statement, 5) }
+        sqlite3_bind_int64(statement, 6, id)
         guard sqlite3_step(statement) == SQLITE_DONE else { throw DatabaseError.queryFailed(databaseMessage) }
     }
 
@@ -915,11 +921,15 @@ final class DatabaseManager {
         SET value = MAX(0, value + ?),
             ntd_value = MAX(0, ntd_value + ?),
             updated_at = CURRENT_TIMESTAMP
-        WHERE id = ? AND is_active = 1;
+        WHERE id = ? AND is_active = 1 AND value + ? >= -0.0000001;
         """) { statement in
             sqlite3_bind_double(statement, 1, amount)
             sqlite3_bind_double(statement, 2, amount)
             sqlite3_bind_int64(statement, 3, id)
+            sqlite3_bind_double(statement, 4, amount)
+        }
+        guard sqlite3_changes(database) > 0 else {
+            throw DatabaseError.queryFailed("The funding account does not have enough balance.")
         }
     }
 
@@ -1831,6 +1841,14 @@ final class DatabaseManager {
             try execute("ALTER TABLE recurring_purchases ADD COLUMN funding_asset_id INTEGER;")
         } catch DatabaseError.queryFailed(let message) where message.contains("duplicate column name") {
             // The column already exists in databases created by newer versions.
+        }
+    }
+
+    private func addRecurringInvestmentFundingColumnIfNeeded() throws {
+        do {
+            try execute("ALTER TABLE recurring_investments ADD COLUMN funding_asset_id INTEGER;")
+        } catch DatabaseError.queryFailed(let message) where message.contains("duplicate column name") {
+            // The column already exists.
         }
     }
 

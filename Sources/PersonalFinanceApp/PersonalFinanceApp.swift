@@ -132,7 +132,8 @@ final class AppModel: ObservableObject {
         currency: String,
         frequency: String,
         executionDay: Int,
-        startDate: String
+        startDate: String,
+        fundingAssetID: Int64?
     ) throws {
         guard let databaseManager else {
             throw DatabaseManager.DatabaseError.openFailed("Database is unavailable")
@@ -143,7 +144,8 @@ final class AppModel: ObservableObject {
             startDate: startDate,
             plannedAmount: plannedAmount,
             frequency: frequency,
-            executionDay: executionDay
+            executionDay: executionDay,
+            fundingAssetID: fundingAssetID
         )
         refreshRecurringInvestments()
     }
@@ -193,14 +195,15 @@ final class AppModel: ObservableObject {
         refreshForeignCurrencyTransactions()
     }
 
-    func updateRecurringRule(id: Int64, plannedAmount: Double, currency: String, frequency: String, executionDay: Int) throws {
+    func updateRecurringRule(id: Int64, plannedAmount: Double, currency: String, frequency: String, executionDay: Int, fundingAssetID: Int64?) throws {
         guard let databaseManager else { throw DatabaseManager.DatabaseError.openFailed("Database is unavailable") }
         try databaseManager.updateRecurringInvestment(
             id: id,
             plannedAmount: plannedAmount,
             currency: currency,
             frequency: frequency,
-            executionDay: executionDay
+            executionDay: executionDay,
+            fundingAssetID: fundingAssetID
         )
         refreshRecurringInvestments()
     }
@@ -694,7 +697,8 @@ final class AppModel: ObservableObject {
             try databaseManager.createRecurringInvestment(
                 holdingID: holdingID,
                 currency: currency,
-                startDate: formatter.string(from: Date())
+                startDate: formatter.string(from: Date()),
+                fundingAssetID: nil
             )
         }
         refreshAssets()
@@ -5399,7 +5403,17 @@ struct EditRecurringRuleSheet: View {
     @State private var currency: String
     @State private var frequency: String
     @State private var executionDay: Int
+    @State private var fundingAssetID: Int64
     @State private var errorMessage: String?
+
+    private var fundingAssets: [DatabaseManager.AssetRecord] {
+        appModel.assets.filter { asset in
+            if currency == "NTD" {
+                return asset.assetGroup == "liquid_asset" && asset.currency == "NTD" && asset.category != "Foreign Currency"
+            }
+            return asset.category == "Foreign Currency" && asset.currency == currency
+        }
+    }
 
     init(schedule: DatabaseManager.RecurringSchedule) {
         self.schedule = schedule
@@ -5407,6 +5421,7 @@ struct EditRecurringRuleSheet: View {
         _currency = State(initialValue: schedule.currency)
         _frequency = State(initialValue: schedule.frequency)
         _executionDay = State(initialValue: schedule.executionDay)
+        _fundingAssetID = State(initialValue: schedule.fundingAssetID ?? 0)
     }
 
     var body: some View {
@@ -5417,6 +5432,13 @@ struct EditRecurringRuleSheet: View {
                 Text("NTD").tag("NTD")
                 Text("USD").tag("USD")
                 Text("JPY").tag("JPY")
+            }
+            .pickerStyle(.menu)
+            Picker("Funding account", selection: $fundingAssetID) {
+                Text("No linked account").tag(Int64(0))
+                ForEach(fundingAssets) { asset in
+                    Text("\(asset.name) (\(asset.currency))").tag(asset.id)
+                }
             }
             .pickerStyle(.menu)
             Picker("Frequency", selection: $frequency) {
@@ -5449,7 +5471,8 @@ struct EditRecurringRuleSheet: View {
                 plannedAmount: amount,
                 currency: currency,
                 frequency: frequency,
-                executionDay: executionDay
+                executionDay: executionDay,
+                fundingAssetID: fundingAssetID == 0 ? nil : fundingAssetID
             )
             dismiss()
         } catch {
@@ -5470,7 +5493,12 @@ struct AddRecurringPurchaseSheet: View {
     @State private var errorMessage: String?
 
     private var fundingAssets: [DatabaseManager.AssetRecord] {
-        appModel.assets.filter { $0.category == "Foreign Currency" && $0.currency == rule.currency }
+        appModel.assets.filter { asset in
+            if rule.currency == "NTD" {
+                return asset.assetGroup == "liquid_asset" && asset.currency == "NTD" && asset.category != "Foreign Currency"
+            }
+            return asset.category == "Foreign Currency" && asset.currency == rule.currency
+        }
     }
 
     var body: some View {
@@ -5499,6 +5527,11 @@ struct AddRecurringPurchaseSheet: View {
         }
         .padding(24)
         .frame(width: 420)
+        .onAppear {
+            if fundingAssetID == 0 {
+                fundingAssetID = rule.schedules.first?.fundingAssetID ?? 0
+            }
+        }
     }
 
     private func save() {
@@ -5548,7 +5581,12 @@ struct EditRecurringPurchaseSheet: View {
     @State private var errorMessage: String?
 
     private var fundingAssets: [DatabaseManager.AssetRecord] {
-        appModel.assets.filter { $0.category == "Foreign Currency" && $0.currency == purchase.currency }
+        appModel.assets.filter { asset in
+            if purchase.currency == "NTD" {
+                return asset.assetGroup == "liquid_asset" && asset.currency == "NTD" && asset.category != "Foreign Currency"
+            }
+            return asset.category == "Foreign Currency" && asset.currency == purchase.currency
+        }
     }
 
     init(purchase: DatabaseManager.RecurringPurchaseRecord, onSaved: @escaping () -> Void) {
@@ -5628,7 +5666,17 @@ struct AddRecurringRuleSheet: View {
     @State private var currency = "NTD"
     @State private var frequency = "monthly"
     @State private var executionDay = 1
+    @State private var fundingAssetID: Int64 = 0
     @State private var errorMessage: String?
+
+    private var fundingAssets: [DatabaseManager.AssetRecord] {
+        appModel.assets.filter { asset in
+            if currency == "NTD" {
+                return asset.assetGroup == "liquid_asset" && asset.currency == "NTD" && asset.category != "Foreign Currency"
+            }
+            return asset.category == "Foreign Currency" && asset.currency == currency
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -5648,6 +5696,13 @@ struct AddRecurringRuleSheet: View {
                 Text("NTD").tag("NTD")
                 Text("USD").tag("USD")
                 Text("JPY").tag("JPY")
+            }
+            .pickerStyle(.menu)
+            Picker("Funding account", selection: $fundingAssetID) {
+                Text("No linked account").tag(Int64(0))
+                ForEach(fundingAssets) { asset in
+                    Text("\(asset.name) (\(asset.currency))").tag(asset.id)
+                }
             }
             .pickerStyle(.menu)
             Picker("Frequency", selection: $frequency) {
@@ -5682,7 +5737,8 @@ struct AddRecurringRuleSheet: View {
                 currency: currency,
                 frequency: frequency,
                 executionDay: executionDay,
-                startDate: ISO8601DateFormatter().string(from: Date())
+                startDate: ISO8601DateFormatter().string(from: Date()),
+                fundingAssetID: fundingAssetID == 0 ? nil : fundingAssetID
             )
             dismiss()
         } catch {
