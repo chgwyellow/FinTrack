@@ -5257,7 +5257,12 @@ struct HelpView: View {
             ])
             HelpSectionLabel(text: helpText("ORGANIZE YOUR MONEY", "整理你的金錢流向"))
             HelpIntroCard(title: helpText("Groups and details", "分類與明細"), description: helpText("Use a group for a broad category, then add details underneath it. The totals of a group come from its details.", "先用大分類整理方向，再在下面建立明細；有明細的大分類會依明細自動加總。"))
-            HelpActionRow(symbol: "plus", title: helpText("Add a detail", "新增明細"), description: helpText("Use + in the relevant section. Right-click an item to edit or delete it.", "在對應區塊按下＋；在項目上按右鍵即可編輯或刪除。"))
+            HelpDefinitionSection(rows: [
+                (helpText("Two levels of details", "兩層明細"), helpText("Each section supports a group and one level of details: Income → Salary → Salary or Bonus. Detail items cannot contain another child item.", "每個區段支援大項目與一層明細：收入 → 薪資 → 薪資或獎金。最底層明細不能再新增子項目。")),
+                (helpText("Destination account", "轉入帳戶"), helpText("A detail can optionally be linked to an existing account, or you can create a custom account name. Saved custom accounts will appear in the menu next time.", "明細可以選擇不連結帳戶、連結既有帳戶，或建立自訂帳戶名稱；儲存後的自訂帳戶會在下次出現在選單中。")),
+                (helpText("Account allocation", "帳戶配置"), helpText("Expenses and savings linked to destination accounts are grouped in Account Allocation. Income items do not appear there.", "有設定轉入帳戶的支出與儲蓄會集中顯示在帳戶配置；收入項目不會列入其中。"))
+            ])
+            HelpActionRow(symbol: "plus", title: helpText("Add a detail", "新增明細"), description: helpText("Use + in the relevant section to add a group, then use the group's context menu to add one level of details. Right-click an item to edit or delete it.", "在對應區塊按下＋新增大項目，再於大項目的右鍵選單新增一層明細；在項目上按右鍵即可編輯或刪除。"))
         }
     }
 
