@@ -2656,12 +2656,16 @@ struct EditAssetSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             Text("Edit Asset").font(.title2.weight(.bold))
-            TextField("Asset name", text: $name).textFieldStyle(.roundedBorder)
+            LabeledContent("Asset name") {
+                TextField("Enter asset name", text: $name).textFieldStyle(.roundedBorder)
+            }
             Picker("Currency", selection: $currency) {
                 ForEach(currencies, id: \.self) { Text($0).tag($0) }
             }
             .pickerStyle(.menu)
-            TextField("Amount", text: $amount).textFieldStyle(.roundedBorder)
+            LabeledContent("Amount") {
+                TextField("Enter current amount", text: $amount).textFieldStyle(.roundedBorder)
+            }
             if asset.assetGroup != "liquid_investment" {
                 Text("Balance adjustment")
                     .font(.headline)
@@ -2670,8 +2674,10 @@ struct EditAssetSheet: View {
                     Text("Decrease").tag("decrease")
                 }
                 .pickerStyle(.segmented)
-                TextField("Adjustment amount (optional)", text: $adjustmentAmount)
-                    .textFieldStyle(.roundedBorder)
+                LabeledContent("Amount") {
+                    TextField("Enter adjustment amount", text: $adjustmentAmount)
+                        .textFieldStyle(.roundedBorder)
+                }
             }
             HStack {
                 Spacer()
@@ -2753,7 +2759,9 @@ struct EditLiabilitySheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             Text("Edit Liability").font(.title2.weight(.bold))
-            TextField("Liability name", text: $name).textFieldStyle(.roundedBorder)
+            LabeledContent("Liability name") {
+                TextField("Enter liability name", text: $name).textFieldStyle(.roundedBorder)
+            }
             Picker("Group", selection: $group) {
                 ForEach(groups, id: \.self) { Text($0).tag($0) }
             }
@@ -2768,7 +2776,12 @@ struct EditLiabilitySheet: View {
                 ForEach(currencies, id: \.self) { Text($0).tag($0) }
             }
             .pickerStyle(.menu)
-            TextField("Balance", text: $balance).textFieldStyle(.roundedBorder)
+            LabeledContent("Balance") {
+                TextField("Enter current balance", text: $balance).textFieldStyle(.roundedBorder)
+            }
+            LabeledContent("Interest rate (optional)") {
+                TextField("Enter interest rate (%)", text: $interestRate).textFieldStyle(.roundedBorder)
+            }
             Text("Balance adjustment")
                 .font(.headline)
             Picker("Adjustment", selection: $adjustmentType) {
@@ -2776,9 +2789,10 @@ struct EditLiabilitySheet: View {
                 Text("Decrease").tag("decrease")
             }
             .pickerStyle(.segmented)
-            TextField("Adjustment amount (optional)", text: $adjustmentAmount)
-                .textFieldStyle(.roundedBorder)
-            TextField("Interest rate (optional)", text: $interestRate).textFieldStyle(.roundedBorder)
+            LabeledContent("Amount") {
+                TextField("Enter adjustment amount", text: $adjustmentAmount)
+                    .textFieldStyle(.roundedBorder)
+            }
             HStack {
                 Spacer()
                 Button("Cancel") { dismiss() }
