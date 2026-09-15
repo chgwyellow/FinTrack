@@ -12,7 +12,9 @@ enum YahooMarketStream {
     }
 
     static func subscribeMessage(symbols: [String]) -> String? {
-        guard let data = try? JSONSerialization.data(withJSONObject: ["subscribe": symbols]) else { return nil }
+        guard let data = try? JSONSerialization.data(withJSONObject: ["subscribe": symbols]) else {
+            return nil
+        }
         return String(data: data, encoding: .utf8)
     }
 
@@ -36,11 +38,16 @@ enum YahooMarketStream {
         }
 
         guard let symbol, let price, price > 0 else { return nil }
-        return Tick(symbol: symbol, price: price, currency: currency, previousClose: previousClose, marketHours: marketHours)
+        return Tick(
+            symbol: symbol, price: price, currency: currency, previousClose: previousClose,
+            marketHours: marketHours)
     }
 
     private struct ProtobufReader {
-        struct Field { let number: Int; let wireType: Int }
+        struct Field {
+            let number: Int
+            let wireType: Int
+        }
         let bytes: [UInt8]
         var index = 0
 

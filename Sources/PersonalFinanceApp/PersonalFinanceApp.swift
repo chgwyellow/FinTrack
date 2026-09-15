@@ -44,7 +44,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var holdingRecords: [DatabaseManager.HoldingRecord] = []
     @Published private(set) var recurringRecords: [DatabaseManager.RecurringRecord] = []
     @Published private(set) var dividendRecords: [DatabaseManager.DividendRecord] = []
-    @Published private(set) var foreignCurrencyTransactions: [DatabaseManager.ForeignCurrencyTransactionRecord] = []
+    @Published private(set) var foreignCurrencyTransactions:
+        [DatabaseManager.ForeignCurrencyTransactionRecord] = []
     @Published private(set) var incomeStatementItems: [DatabaseManager.IncomeStatementItem] = []
     @Published private(set) var statementAccounts: [String] = []
     @Published private(set) var foreignExchangeRates: [String: Double] = [:]
@@ -162,9 +163,16 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func addRecurringPurchase(holdingID: Int64, tradeDate: String, shares: Double, amount: Double, currency: String, fundingAssetID: Int64?) throws {
-        guard let databaseManager else { throw DatabaseManager.DatabaseError.openFailed("Database is unavailable") }
-        try databaseManager.addRecurringPurchase(holdingID: holdingID, tradeDate: tradeDate, shares: shares, amount: amount, currency: currency, fundingAssetID: fundingAssetID)
+    func addRecurringPurchase(
+        holdingID: Int64, tradeDate: String, shares: Double, amount: Double, currency: String,
+        fundingAssetID: Int64?
+    ) throws {
+        guard let databaseManager else {
+            throw DatabaseManager.DatabaseError.openFailed("Database is unavailable")
+        }
+        try databaseManager.addRecurringPurchase(
+            holdingID: holdingID, tradeDate: tradeDate, shares: shares, amount: amount,
+            currency: currency, fundingAssetID: fundingAssetID)
         refreshAssets()
         refreshHoldings()
         refreshPortfolioTotals()
@@ -173,9 +181,15 @@ final class AppModel: ObservableObject {
         refreshForeignCurrencyTransactions()
     }
 
-    func updateRecurringPurchase(id: Int64, tradeDate: String, shares: Double, amount: Double, fundingAssetID: Int64?) throws {
-        guard let databaseManager else { throw DatabaseManager.DatabaseError.openFailed("Database is unavailable") }
-        try databaseManager.updateRecurringPurchase(id: id, tradeDate: tradeDate, shares: shares, amount: amount, fundingAssetID: fundingAssetID)
+    func updateRecurringPurchase(
+        id: Int64, tradeDate: String, shares: Double, amount: Double, fundingAssetID: Int64?
+    ) throws {
+        guard let databaseManager else {
+            throw DatabaseManager.DatabaseError.openFailed("Database is unavailable")
+        }
+        try databaseManager.updateRecurringPurchase(
+            id: id, tradeDate: tradeDate, shares: shares, amount: amount,
+            fundingAssetID: fundingAssetID)
         refreshAssets()
         refreshHoldings()
         refreshPortfolioTotals()
@@ -185,7 +199,9 @@ final class AppModel: ObservableObject {
     }
 
     func deleteRecurringPurchase(id: Int64) throws {
-        guard let databaseManager else { throw DatabaseManager.DatabaseError.openFailed("Database is unavailable") }
+        guard let databaseManager else {
+            throw DatabaseManager.DatabaseError.openFailed("Database is unavailable")
+        }
         try databaseManager.deleteRecurringPurchase(id: id)
         refreshAssets()
         refreshHoldings()
@@ -195,8 +211,13 @@ final class AppModel: ObservableObject {
         refreshForeignCurrencyTransactions()
     }
 
-    func updateRecurringRule(id: Int64, plannedAmount: Double, currency: String, frequency: String, executionDay: Int, fundingAssetID: Int64?) throws {
-        guard let databaseManager else { throw DatabaseManager.DatabaseError.openFailed("Database is unavailable") }
+    func updateRecurringRule(
+        id: Int64, plannedAmount: Double, currency: String, frequency: String, executionDay: Int,
+        fundingAssetID: Int64?
+    ) throws {
+        guard let databaseManager else {
+            throw DatabaseManager.DatabaseError.openFailed("Database is unavailable")
+        }
         try databaseManager.updateRecurringInvestment(
             id: id,
             plannedAmount: plannedAmount,
@@ -213,9 +234,16 @@ final class AppModel: ObservableObject {
         return (try? databaseManager.listRecurringPurchases(holdingID: holdingID)) ?? []
     }
 
-    func addDividend(holdingID: Int64, payDate: String, amount: Double, currency: String, receivingAssetID: Int64?) throws {
-        guard let databaseManager else { throw DatabaseManager.DatabaseError.openFailed("Database is unavailable") }
-        try databaseManager.addDividend(holdingID: holdingID, payDate: payDate, amount: amount, currency: currency, receivingAssetID: receivingAssetID)
+    func addDividend(
+        holdingID: Int64, payDate: String, amount: Double, currency: String,
+        receivingAssetID: Int64?
+    ) throws {
+        guard let databaseManager else {
+            throw DatabaseManager.DatabaseError.openFailed("Database is unavailable")
+        }
+        try databaseManager.addDividend(
+            holdingID: holdingID, payDate: payDate, amount: amount, currency: currency,
+            receivingAssetID: receivingAssetID)
         refreshDividends()
         refreshHoldings()
         refreshPortfolioTotals()
@@ -239,7 +267,9 @@ final class AppModel: ObservableObject {
         rate: Double?,
         tradeDate: String
     ) throws {
-        guard let databaseManager else { throw DatabaseManager.DatabaseError.openFailed("Database is unavailable") }
+        guard let databaseManager else {
+            throw DatabaseManager.DatabaseError.openFailed("Database is unavailable")
+        }
         try databaseManager.createForeignCurrencyTransaction(
             purpose: purpose,
             currency: currency,
@@ -259,7 +289,9 @@ final class AppModel: ObservableObject {
             refreshForeignCurrencyTransactions()
             refreshAssets()
         } catch {
-            NSLog("FinTrack foreign-currency transaction deletion failed: %@", error.localizedDescription)
+            NSLog(
+                "FinTrack foreign-currency transaction deletion failed: %@",
+                error.localizedDescription)
         }
     }
 
@@ -273,27 +305,42 @@ final class AppModel: ObservableObject {
         statementAccounts = (try? databaseManager.listStatementAccounts()) ?? []
     }
 
-    func createIncomeStatementItem(section: String, parentID: Int64?, name: String, amount: Double, accountName: String) throws {
-        guard let databaseManager else { throw DatabaseManager.DatabaseError.openFailed("Database is unavailable") }
+    func createIncomeStatementItem(
+        section: String, parentID: Int64?, name: String, amount: Double, accountName: String
+    ) throws {
+        guard let databaseManager else {
+            throw DatabaseManager.DatabaseError.openFailed("Database is unavailable")
+        }
         if let parentID,
-           let parent = incomeStatementItems.first(where: { $0.id == parentID }),
-           parent.parentID != nil {
+            let parent = incomeStatementItems.first(where: { $0.id == parentID }),
+            parent.parentID != nil
+        {
             throw NSError(
                 domain: "IncomeStatement",
                 code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Income statement items can only have one level of children."]
+                userInfo: [
+                    NSLocalizedDescriptionKey:
+                        "Income statement items can only have one level of children."
+                ]
             )
         }
         if !accountName.isEmpty { try databaseManager.ensureStatementAccount(name: accountName) }
-        try databaseManager.createIncomeStatementItem(section: section, parentID: parentID, name: name, amount: amount, accountName: accountName)
+        try databaseManager.createIncomeStatementItem(
+            section: section, parentID: parentID, name: name, amount: amount,
+            accountName: accountName)
         refreshIncomeStatementItems()
         refreshStatementAccounts()
     }
 
-    func updateIncomeStatementItem(id: Int64, name: String, amount: Double, accountName: String) throws {
-        guard let databaseManager else { throw DatabaseManager.DatabaseError.openFailed("Database is unavailable") }
+    func updateIncomeStatementItem(id: Int64, name: String, amount: Double, accountName: String)
+        throws
+    {
+        guard let databaseManager else {
+            throw DatabaseManager.DatabaseError.openFailed("Database is unavailable")
+        }
         if !accountName.isEmpty { try databaseManager.ensureStatementAccount(name: accountName) }
-        try databaseManager.updateIncomeStatementItem(id: id, name: name, amount: amount, accountName: accountName)
+        try databaseManager.updateIncomeStatementItem(
+            id: id, name: name, amount: amount, accountName: accountName)
         refreshIncomeStatementItems()
         refreshStatementAccounts()
     }
@@ -308,9 +355,15 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func updateDividend(id: Int64, payDate: String, amount: Double, currency: String, receivingAssetID: Int64?) throws {
-        guard let databaseManager else { throw DatabaseManager.DatabaseError.openFailed("Database is unavailable") }
-        try databaseManager.updateDividend(id: id, payDate: payDate, amount: amount, currency: currency, receivingAssetID: receivingAssetID)
+    func updateDividend(
+        id: Int64, payDate: String, amount: Double, currency: String, receivingAssetID: Int64?
+    ) throws {
+        guard let databaseManager else {
+            throw DatabaseManager.DatabaseError.openFailed("Database is unavailable")
+        }
+        try databaseManager.updateDividend(
+            id: id, payDate: payDate, amount: amount, currency: currency,
+            receivingAssetID: receivingAssetID)
         refreshDividends()
         refreshHoldings()
         refreshPortfolioTotals()
@@ -419,11 +472,15 @@ final class AppModel: ObservableObject {
                     dailyQuotes.append((holding, quote))
                 }
             } catch {
-                NSLog("FinTrack price refresh failed for %@: %@", holding.symbol, error.localizedDescription)
+                NSLog(
+                    "FinTrack price refresh failed for %@: %@", holding.symbol,
+                    error.localizedDescription)
             }
         }
 
-        for currency in Set((records.map(\.currency) + assets.map(\.currency))).filter({ $0 != "NTD" }) {
+        for currency in Set((records.map(\.currency) + assets.map(\.currency))).filter({
+            $0 != "NTD"
+        }) {
             do {
                 if let rate = try await marketDataClient.fetchExchangeRate(baseCurrency: currency) {
                     try databaseManager.insertExchangeRate(
@@ -435,11 +492,14 @@ final class AppModel: ObservableObject {
                     )
                 }
             } catch {
-                NSLog("FinTrack exchange-rate refresh failed for %@: %@", currency, error.localizedDescription)
+                NSLog(
+                    "FinTrack exchange-rate refresh failed for %@: %@", currency,
+                    error.localizedDescription)
             }
         }
 
-        updateTodayProfitLoss(records: records, quotes: dailyQuotes, databaseManager: databaseManager)
+        updateTodayProfitLoss(
+            records: records, quotes: dailyQuotes, databaseManager: databaseManager)
 
         refreshAssets()
         refreshHoldings()
@@ -453,14 +513,17 @@ final class AppModel: ObservableObject {
         quotes: [(DatabaseManager.HoldingRecord, MarketDataClient.Quote)],
         databaseManager: DatabaseManager
     ) {
-        let freshQuotes = Dictionary(uniqueKeysWithValues: quotes.map { ("\($0.0.market)|\($0.0.symbol)", $0.1) })
+        let freshQuotes = Dictionary(
+            uniqueKeysWithValues: quotes.map { ("\($0.0.market)|\($0.0.symbol)", $0.1) })
         var dailyPnL = 0.0
         var hasValidResult = false
         for holding in records {
             let key = "\(holding.market)|\(holding.symbol)"
             let quoteRecord = freshQuotes[key]
-            let cachedCurrentPrice: Double? = try? databaseManager.latestMarketPrice(symbol: holding.symbol, market: holding.market)
-            let cachedPreviousClose: Double? = try? databaseManager.latestPreviousClose(symbol: holding.symbol, market: holding.market)
+            let cachedCurrentPrice: Double? = try? databaseManager.latestMarketPrice(
+                symbol: holding.symbol, market: holding.market)
+            let cachedPreviousClose: Double? = try? databaseManager.latestPreviousClose(
+                symbol: holding.symbol, market: holding.market)
             // A quote is normalized to the regular session price only.  After
             // the session closes this is the latest regular close; if the
             // network is unavailable, the last persisted regular price is the
@@ -468,9 +531,11 @@ final class AppModel: ObservableObject {
             let currentPrice: Double = quoteRecord?.price ?? cachedCurrentPrice ?? 0
             let previousClose: Double = quoteRecord?.previousClose ?? cachedPreviousClose ?? 0
             guard currentPrice > 0, previousClose > 0 else { continue }
-            let rate = holding.currency == "NTD"
+            let rate =
+                holding.currency == "NTD"
                 ? 1
-                : ((try? databaseManager.latestExchangeRate(base: holding.currency, quote: "NTD")) ?? 0)
+                : ((try? databaseManager.latestExchangeRate(base: holding.currency, quote: "NTD"))
+                    ?? 0)
             guard rate > 0 else { continue }
             dailyPnL += (currentPrice - previousClose) * holding.shares * rate
             hasValidResult = true
@@ -503,7 +568,8 @@ final class AppModel: ObservableObject {
 
     private func runMarketPriceStream(symbols: [String]) async {
         guard let url = URL(string: "wss://streamer.finance.yahoo.com/?version=2"),
-              let subscription = YahooMarketStream.subscribeMessage(symbols: symbols) else { return }
+            let subscription = YahooMarketStream.subscribeMessage(symbols: symbols)
+        else { return }
 
         while !Task.isCancelled {
             let socket = URLSession.shared.webSocketTask(with: url)
@@ -513,8 +579,9 @@ final class AppModel: ObservableObject {
                 while !Task.isCancelled {
                     let message = try await socket.receive()
                     guard case .data(let data) = message,
-                          let tick = YahooMarketStream.decode(data),
-                          tick.marketHours == 1 else { continue }
+                        let tick = YahooMarketStream.decode(data),
+                        tick.marketHours == 1
+                    else { continue }
                     applyMarketStreamTick(tick)
                 }
             } catch {
@@ -528,7 +595,8 @@ final class AppModel: ObservableObject {
 
     private func applyMarketStreamTick(_ tick: YahooMarketStream.Tick) {
         guard let databaseManager,
-              let holding = holdingRecords.first(where: { $0.symbol == tick.symbol }) else { return }
+            let holding = holdingRecords.first(where: { $0.symbol == tick.symbol })
+        else { return }
         let timestamp = ISO8601DateFormatter().string(from: Date())
         do {
             try databaseManager.insertMarketPrice(
@@ -548,12 +616,15 @@ final class AppModel: ObservableObject {
                     observedAt: timestamp
                 )
             }
-            updateTodayProfitLoss(records: holdingRecords, quotes: [], databaseManager: databaseManager)
+            updateTodayProfitLoss(
+                records: holdingRecords, quotes: [], databaseManager: databaseManager)
             refreshHoldings()
             refreshPortfolioTotals()
             refreshAllocations()
         } catch {
-            NSLog("FinTrack WebSocket price update failed for %@: %@", tick.symbol, error.localizedDescription)
+            NSLog(
+                "FinTrack WebSocket price update failed for %@: %@", tick.symbol,
+                error.localizedDescription)
         }
     }
 
@@ -564,7 +635,8 @@ final class AppModel: ObservableObject {
         guard parts.count == 2 else { return }
         let now = Calendar.current.dateComponents([.hour, .minute], from: Date())
         guard let hour = now.hour, let minute = now.minute,
-              hour > parts[0] || (hour == parts[0] && minute >= parts[1]) else { return }
+            hour > parts[0] || (hour == parts[0] && minute >= parts[1])
+        else { return }
         let formatter = DateFormatter()
         formatter.calendar = Calendar(identifier: .gregorian)
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -635,8 +707,12 @@ final class AppModel: ObservableObject {
                     refreshedRates[currency] = rate
                 }
             } catch {
-                NSLog("FinTrack foreign-currency refresh failed for %@: %@", currency, error.localizedDescription)
-                if let cached = try? databaseManager.latestExchangeRate(base: currency, quote: "NTD") {
+                NSLog(
+                    "FinTrack foreign-currency refresh failed for %@: %@", currency,
+                    error.localizedDescription)
+                if let cached = try? databaseManager.latestExchangeRate(
+                    base: currency, quote: "NTD")
+                {
                     refreshedRates[currency] = cached
                 }
             }
@@ -867,9 +943,11 @@ private enum SnapshotBackgroundAgent {
             formatter.calendar = Calendar(identifier: .gregorian)
             formatter.locale = Locale(identifier: "en_US_POSIX")
             formatter.dateFormat = "yyyy-MM-dd"
-            let snapshotDate = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
+            let snapshotDate =
+                Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
             let dateString = formatter.string(from: snapshotDate)
-            guard !(try databaseManager.listSnapshots()).contains(where: { $0.date == dateString }) else {
+            guard !(try databaseManager.listSnapshots()).contains(where: { $0.date == dateString })
+            else {
                 return
             }
             try databaseManager.saveSnapshot(
@@ -910,9 +988,11 @@ private enum TodayBaselineBackgroundAgent {
             var baselineValue = 0.0
             for (holding, quote) in quotes {
                 guard let previousClose = quote.previousClose else { return }
-                let rate = holding.currency == "NTD"
+                let rate =
+                    holding.currency == "NTD"
                     ? 1
-                    : ((try databaseManager.latestExchangeRate(base: holding.currency, quote: "NTD")) ?? 0)
+                    : ((try databaseManager.latestExchangeRate(base: holding.currency, quote: "NTD"))
+                        ?? 0)
                 guard rate > 0 else { return }
                 baselineValue += previousClose * holding.shares * rate
             }
@@ -945,23 +1025,25 @@ private enum SnapshotScheduler {
         let configuredTime = UserDefaults.standard.string(forKey: "snapshotTime") ?? "23:00"
         let components = configuredTime.split(separator: ":").compactMap { Int($0) }
         guard components.count == 2,
-              (0...23).contains(components[0]),
-              (0...59).contains(components[1]) else { return }
+            (0...23).contains(components[0]),
+            (0...59).contains(components[1])
+        else { return }
 
         let launchAgent: [String: Any] = [
             "Label": label,
             "ProgramArguments": [executablePath, "--fintrack-snapshot"],
             "StartCalendarInterval": [
                 "Hour": components[0],
-                "Minute": components[1]
+                "Minute": components[1],
             ],
             "ProcessType": "Background",
-            "RunAtLoad": false
+            "RunAtLoad": false,
         ]
 
         do {
             let directoryURL = launchAgentURL.deletingLastPathComponent()
-            try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(
+                at: directoryURL, withIntermediateDirectories: true)
             let data = try PropertyListSerialization.data(
                 fromPropertyList: launchAgent,
                 format: .xml,
@@ -979,16 +1061,18 @@ private enum SnapshotScheduler {
     }
 
     private static func installTodayBaselineAgent(executablePath: String, domain: String) {
-        let url = launchAgentURL.deletingLastPathComponent().appendingPathComponent("com.fintrack.today-baseline.plist")
+        let url = launchAgentURL.deletingLastPathComponent().appendingPathComponent(
+            "com.fintrack.today-baseline.plist")
         let agent: [String: Any] = [
             "Label": "com.fintrack.today-baseline",
             "ProgramArguments": [executablePath, "--fintrack-today-baseline"],
             "StartCalendarInterval": ["Hour": 8, "Minute": 0],
             "ProcessType": "Background",
-            "RunAtLoad": false
+            "RunAtLoad": false,
         ]
         do {
-            let data = try PropertyListSerialization.data(fromPropertyList: agent, format: .xml, options: 0)
+            let data = try PropertyListSerialization.data(
+                fromPropertyList: agent, format: .xml, options: 0)
             try data.write(to: url, options: .atomic)
             runLaunchctl(["bootout", domain, url.path])
             runLaunchctl(["bootstrap", domain, url.path])
@@ -1016,46 +1100,109 @@ enum AppLanguage: String {
 }
 
 private enum FinTrackTheme {
-    private static func adaptive(light: (CGFloat, CGFloat, CGFloat), dark: (CGFloat, CGFloat, CGFloat)) -> Color {
-        Color(nsColor: NSColor(name: nil) { appearance in
-            let rgb = appearance.bestMatch(from: [.aqua, .darkAqua]) == .aqua ? light : dark
-            return NSColor(calibratedRed: rgb.0, green: rgb.1, blue: rgb.2, alpha: 1)
-        })
+    private static func adaptive(
+        light: (CGFloat, CGFloat, CGFloat), dark: (CGFloat, CGFloat, CGFloat)
+    ) -> Color {
+        Color(
+            nsColor: NSColor(name: nil) { appearance in
+                let rgb = appearance.bestMatch(from: [.aqua, .darkAqua]) == .aqua ? light : dark
+                return NSColor(calibratedRed: rgb.0, green: rgb.1, blue: rgb.2, alpha: 1)
+            })
     }
 
-    static let appBackground = adaptive(light: (0xF3 / 255.0, 0xF2 / 255.0, 0xEE / 255.0), dark: (0x24 / 255.0, 0x27 / 255.0, 0x26 / 255.0))
-    static let sidebarBackground = adaptive(light: (0xEB / 255.0, 0xEA / 255.0, 0xE5 / 255.0), dark: (0x1E / 255.0, 0x22 / 255.0, 0x21 / 255.0))
-    static let cardBackground = adaptive(light: (0xFA / 255.0, 0xF9 / 255.0, 0xF6 / 255.0), dark: (0x30 / 255.0, 0x34 / 255.0, 0x32 / 255.0))
-    static let surfaceHover = adaptive(light: (0xEE / 255.0, 0xED / 255.0, 0xE8 / 255.0), dark: (0x38 / 255.0, 0x3D / 255.0, 0x3A / 255.0))
-    static let border = adaptive(light: (0xD1 / 255.0, 0xD2 / 255.0, 0xCD / 255.0), dark: (0x50 / 255.0, 0x56 / 255.0, 0x52 / 255.0))
-    static let divider = adaptive(light: (0xDD / 255.0, 0xDD / 255.0, 0xD8 / 255.0), dark: (0x45 / 255.0, 0x4A / 255.0, 0x47 / 255.0))
-    static let textPrimary = adaptive(light: (0x29 / 255.0, 0x2D / 255.0, 0x2B / 255.0), dark: (0xF0 / 255.0, 0xEE / 255.0, 0xE9 / 255.0))
-    static let textSecondary = adaptive(light: (0x5F / 255.0, 0x64 / 255.0, 0x61 / 255.0), dark: (0xB8 / 255.0, 0xB6 / 255.0, 0xB0 / 255.0))
-    static let textMuted = adaptive(light: (0x7C / 255.0, 0x81 / 255.0, 0x7E / 255.0), dark: (0x91 / 255.0, 0x93 / 255.0, 0x8E / 255.0))
-    static let textDisabled = adaptive(light: (0xA1 / 255.0, 0xA3 / 255.0, 0x9F / 255.0), dark: (0x6F / 255.0, 0x72 / 255.0, 0x6E / 255.0))
-    static let primary = adaptive(light: (0x58 / 255.0, 0x7D / 255.0, 0x8D / 255.0), dark: (0x83 / 255.0, 0xA6 / 255.0, 0xB5 / 255.0))
-    static let primaryHover = adaptive(light: (0x48 / 255.0, 0x6C / 255.0, 0x7C / 255.0), dark: (0x96 / 255.0, 0xB6 / 255.0, 0xC3 / 255.0))
-    static let primaryActive = adaptive(light: (0x3E / 255.0, 0x60 / 255.0, 0x6E / 255.0), dark: (0x71 / 255.0, 0x93 / 255.0, 0xA2 / 255.0))
-    static let primaryMuted = adaptive(light: (0xDD / 255.0, 0xE7 / 255.0, 0xEA / 255.0), dark: (0x34 / 255.0, 0x4A / 255.0, 0x52 / 255.0))
-    static let positive = adaptive(light: (0x52 / 255.0, 0x7A / 255.0, 0x60 / 255.0), dark: (0x88 / 255.0, 0xB4 / 255.0, 0x9A / 255.0))
-    static let positiveMuted = adaptive(light: (0x6E / 255.0, 0x90 / 255.0, 0x77 / 255.0), dark: (0x70 / 255.0, 0x9A / 255.0, 0x80 / 255.0))
-    static let negative = adaptive(light: (0x9B / 255.0, 0x5E / 255.0, 0x59 / 255.0), dark: (0xC1 / 255.0, 0x84 / 255.0, 0x7F / 255.0))
-    static let negativeMuted = adaptive(light: (0xAD / 255.0, 0x77 / 255.0, 0x72 / 255.0), dark: (0xA3 / 255.0, 0x6F / 255.0, 0x6B / 255.0))
-    static let warning = adaptive(light: (0x8B / 255.0, 0x6D / 255.0, 0x38 / 255.0), dark: (0xC9 / 255.0, 0xAA / 255.0, 0x72 / 255.0))
+    static let appBackground = adaptive(
+        light: (0xF3 / 255.0, 0xF2 / 255.0, 0xEE / 255.0),
+        dark: (0x24 / 255.0, 0x27 / 255.0, 0x26 / 255.0))
+    static let sidebarBackground = adaptive(
+        light: (0xEB / 255.0, 0xEA / 255.0, 0xE5 / 255.0),
+        dark: (0x1E / 255.0, 0x22 / 255.0, 0x21 / 255.0))
+    static let cardBackground = adaptive(
+        light: (0xFA / 255.0, 0xF9 / 255.0, 0xF6 / 255.0),
+        dark: (0x30 / 255.0, 0x34 / 255.0, 0x32 / 255.0))
+    static let surfaceHover = adaptive(
+        light: (0xEE / 255.0, 0xED / 255.0, 0xE8 / 255.0),
+        dark: (0x38 / 255.0, 0x3D / 255.0, 0x3A / 255.0))
+    static let border = adaptive(
+        light: (0xD1 / 255.0, 0xD2 / 255.0, 0xCD / 255.0),
+        dark: (0x50 / 255.0, 0x56 / 255.0, 0x52 / 255.0))
+    static let divider = adaptive(
+        light: (0xDD / 255.0, 0xDD / 255.0, 0xD8 / 255.0),
+        dark: (0x45 / 255.0, 0x4A / 255.0, 0x47 / 255.0))
+    static let textPrimary = adaptive(
+        light: (0x29 / 255.0, 0x2D / 255.0, 0x2B / 255.0),
+        dark: (0xF0 / 255.0, 0xEE / 255.0, 0xE9 / 255.0))
+    static let textSecondary = adaptive(
+        light: (0x5F / 255.0, 0x64 / 255.0, 0x61 / 255.0),
+        dark: (0xB8 / 255.0, 0xB6 / 255.0, 0xB0 / 255.0))
+    static let textMuted = adaptive(
+        light: (0x7C / 255.0, 0x81 / 255.0, 0x7E / 255.0),
+        dark: (0x91 / 255.0, 0x93 / 255.0, 0x8E / 255.0))
+    static let textDisabled = adaptive(
+        light: (0xA1 / 255.0, 0xA3 / 255.0, 0x9F / 255.0),
+        dark: (0x6F / 255.0, 0x72 / 255.0, 0x6E / 255.0))
+    static let primary = adaptive(
+        light: (0x58 / 255.0, 0x7D / 255.0, 0x8D / 255.0),
+        dark: (0x83 / 255.0, 0xA6 / 255.0, 0xB5 / 255.0))
+    static let primaryHover = adaptive(
+        light: (0x48 / 255.0, 0x6C / 255.0, 0x7C / 255.0),
+        dark: (0x96 / 255.0, 0xB6 / 255.0, 0xC3 / 255.0))
+    static let primaryActive = adaptive(
+        light: (0x3E / 255.0, 0x60 / 255.0, 0x6E / 255.0),
+        dark: (0x71 / 255.0, 0x93 / 255.0, 0xA2 / 255.0))
+    static let primaryMuted = adaptive(
+        light: (0xDD / 255.0, 0xE7 / 255.0, 0xEA / 255.0),
+        dark: (0x34 / 255.0, 0x4A / 255.0, 0x52 / 255.0))
+    static let positive = adaptive(
+        light: (0x52 / 255.0, 0x7A / 255.0, 0x60 / 255.0),
+        dark: (0x88 / 255.0, 0xB4 / 255.0, 0x9A / 255.0))
+    static let positiveMuted = adaptive(
+        light: (0x6E / 255.0, 0x90 / 255.0, 0x77 / 255.0),
+        dark: (0x70 / 255.0, 0x9A / 255.0, 0x80 / 255.0))
+    static let negative = adaptive(
+        light: (0x9B / 255.0, 0x5E / 255.0, 0x59 / 255.0),
+        dark: (0xC1 / 255.0, 0x84 / 255.0, 0x7F / 255.0))
+    static let negativeMuted = adaptive(
+        light: (0xAD / 255.0, 0x77 / 255.0, 0x72 / 255.0),
+        dark: (0xA3 / 255.0, 0x6F / 255.0, 0x6B / 255.0))
+    static let warning = adaptive(
+        light: (0x8B / 255.0, 0x6D / 255.0, 0x38 / 255.0),
+        dark: (0xC9 / 255.0, 0xAA / 255.0, 0x72 / 255.0))
     static let info = primary
-    static let logoContainerBackground = adaptive(light: (0xEE / 255.0, 0xED / 255.0, 0xE8 / 255.0), dark: (0x37 / 255.0, 0x3B / 255.0, 0x39 / 255.0))
-    static let logoContainerHover = adaptive(light: (0xE5 / 255.0, 0xE4 / 255.0, 0xDF / 255.0), dark: (0x3E / 255.0, 0x43 / 255.0, 0x40 / 255.0))
-    static let logoContainerBorder = adaptive(light: (0xD1 / 255.0, 0xD2 / 255.0, 0xCD / 255.0), dark: (0x50 / 255.0, 0x55 / 255.0, 0x52 / 255.0))
-    static let logoFallbackBackground = adaptive(light: (0xDD / 255.0, 0xE7 / 255.0, 0xEA / 255.0), dark: (0x32 / 255.0, 0x46 / 255.0, 0x4D / 255.0))
-    static let logoFallbackBorder = adaptive(light: (0xC4 / 255.0, 0xD3 / 255.0, 0xD8 / 255.0), dark: (0x49 / 255.0, 0x61 / 255.0, 0x6A / 255.0))
-    static let logoFallbackForeground = adaptive(light: (0x58 / 255.0, 0x7D / 255.0, 0x8D / 255.0), dark: (0x96 / 255.0, 0xB6 / 255.0, 0xC3 / 255.0))
+    static let logoContainerBackground = adaptive(
+        light: (0xEE / 255.0, 0xED / 255.0, 0xE8 / 255.0),
+        dark: (0x37 / 255.0, 0x3B / 255.0, 0x39 / 255.0))
+    static let logoContainerHover = adaptive(
+        light: (0xE5 / 255.0, 0xE4 / 255.0, 0xDF / 255.0),
+        dark: (0x3E / 255.0, 0x43 / 255.0, 0x40 / 255.0))
+    static let logoContainerBorder = adaptive(
+        light: (0xD1 / 255.0, 0xD2 / 255.0, 0xCD / 255.0),
+        dark: (0x50 / 255.0, 0x55 / 255.0, 0x52 / 255.0))
+    static let logoFallbackBackground = adaptive(
+        light: (0xDD / 255.0, 0xE7 / 255.0, 0xEA / 255.0),
+        dark: (0x32 / 255.0, 0x46 / 255.0, 0x4D / 255.0))
+    static let logoFallbackBorder = adaptive(
+        light: (0xC4 / 255.0, 0xD3 / 255.0, 0xD8 / 255.0),
+        dark: (0x49 / 255.0, 0x61 / 255.0, 0x6A / 255.0))
+    static let logoFallbackForeground = adaptive(
+        light: (0x58 / 255.0, 0x7D / 255.0, 0x8D / 255.0),
+        dark: (0x96 / 255.0, 0xB6 / 255.0, 0xC3 / 255.0))
 
     static let allocationPalette = [
-        adaptive(light: (0x6F / 255.0, 0x92 / 255.0, 0x9F / 255.0), dark: (0x8B / 255.0, 0xA9 / 255.0, 0xB5 / 255.0)),
-        adaptive(light: (0x55 / 255.0, 0x76 / 255.0, 0x83 / 255.0), dark: (0x6F / 255.0, 0x8D / 255.0, 0x98 / 255.0)),
-        adaptive(light: (0x66 / 255.0, 0x87 / 255.0, 0x7E / 255.0), dark: (0x78 / 255.0, 0x96 / 255.0, 0x8E / 255.0)),
-        adaptive(light: (0x50 / 255.0, 0x6F / 255.0, 0x69 / 255.0), dark: (0x65 / 255.0, 0x7D / 255.0, 0x78 / 255.0)),
-        adaptive(light: (0xB5 / 255.0, 0x8D / 255.0, 0x49 / 255.0), dark: (0xD0 / 255.0, 0xAC / 255.0, 0x6C))
+        adaptive(
+            light: (0x6F / 255.0, 0x92 / 255.0, 0x9F / 255.0),
+            dark: (0x8B / 255.0, 0xA9 / 255.0, 0xB5 / 255.0)),
+        adaptive(
+            light: (0x55 / 255.0, 0x76 / 255.0, 0x83 / 255.0),
+            dark: (0x6F / 255.0, 0x8D / 255.0, 0x98 / 255.0)),
+        adaptive(
+            light: (0x66 / 255.0, 0x87 / 255.0, 0x7E / 255.0),
+            dark: (0x78 / 255.0, 0x96 / 255.0, 0x8E / 255.0)),
+        adaptive(
+            light: (0x50 / 255.0, 0x6F / 255.0, 0x69 / 255.0),
+            dark: (0x65 / 255.0, 0x7D / 255.0, 0x78 / 255.0)),
+        adaptive(
+            light: (0xB5 / 255.0, 0x8D / 255.0, 0x49 / 255.0),
+            dark: (0xD0 / 255.0, 0xAC / 255.0, 0x6C)),
     ]
 }
 
@@ -1067,25 +1214,33 @@ private enum CompanyLogoRepository {
         let fileURL = cacheURL(for: symbol)
         let cachedData = try? Data(contentsOf: fileURL)
         if let cachedData,
-           let modified = try? fileURL.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate,
-           Date().timeIntervalSince(modified) < refreshInterval {
+            let modified = try? fileURL.resourceValues(forKeys: [.contentModificationDateKey])
+                .contentModificationDate,
+            Date().timeIntervalSince(modified) < refreshInterval
+        {
             return cachedData
         }
 
         do {
-            let encodedSymbol = symbol.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? symbol
-            guard let url = URL(string: "https://financialmodelingprep.com/image-stock/\(encodedSymbol).png") else {
+            let encodedSymbol =
+                symbol.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? symbol
+            guard
+                let url = URL(
+                    string: "https://financialmodelingprep.com/image-stock/\(encodedSymbol).png")
+            else {
                 return cachedData
             }
             var request = URLRequest(url: url)
             request.timeoutInterval = 8
             let (data, response) = try await URLSession.shared.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse,
-                  (200..<300).contains(httpResponse.statusCode),
-                  NSImage(data: data) != nil else {
+                (200..<300).contains(httpResponse.statusCode),
+                NSImage(data: data) != nil
+            else {
                 return cachedData
             }
-            try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(
+                at: cacheDirectory, withIntermediateDirectories: true)
             try data.write(to: fileURL, options: .atomic)
             trimCache()
             return data
@@ -1105,15 +1260,21 @@ private enum CompanyLogoRepository {
     }
 
     private static func trimCache() {
-        guard let files = try? FileManager.default.contentsOfDirectory(
-            at: cacheDirectory,
-            includingPropertiesForKeys: [.fileSizeKey, .contentModificationDateKey]
-        ) else { return }
+        guard
+            let files = try? FileManager.default.contentsOfDirectory(
+                at: cacheDirectory,
+                includingPropertiesForKeys: [.fileSizeKey, .contentModificationDateKey]
+            )
+        else { return }
 
         let entries = files.compactMap { url -> (url: URL, size: Int, modified: Date)? in
-            guard let values = try? url.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey]),
-                  let size = values.fileSize,
-                  let modified = values.contentModificationDate else { return nil }
+            guard
+                let values = try? url.resourceValues(forKeys: [
+                    .fileSizeKey, .contentModificationDateKey,
+                ]),
+                let size = values.fileSize,
+                let modified = values.contentModificationDate
+            else { return nil }
             return (url, size, modified)
         }
         var total = entries.reduce(0) { $0 + $1.size }
@@ -1135,7 +1296,9 @@ private final class CompanyLogoLoader: ObservableObject {
 
     func load() async {
         guard image == nil, !symbol.isEmpty else { return }
-        guard let data = await CompanyLogoRepository.data(for: symbol), !Task.isCancelled else { return }
+        guard let data = await CompanyLogoRepository.data(for: symbol), !Task.isCancelled else {
+            return
+        }
         image = NSImage(data: data)
     }
 }
@@ -1185,7 +1348,8 @@ private struct CompanyLogoView: View {
     }
 
     private var fallbackInitial: String {
-        let meaningfulName = name
+        let meaningfulName =
+            name
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .split(whereSeparator: { $0.isWhitespace || $0.isPunctuation })
             .first
@@ -1196,20 +1360,51 @@ private struct CompanyLogoView: View {
 enum L10n {
     private static let traditionalChinese: [String: String] = [
         "Overview": "總覽", "Income Statement": "損益表", "Portfolio": "投資組合", "Dividends": "股利",
-        "Recurring Investment": "定期定額", "Recurring Rules": "定期定額規則", "Click to view investments": "點擊查看投資紀錄", "Foreign Currency": "外幣", "Stock": "股票",
-        "Total NTD Equivalent": "新台幣等價總額", "Currencies Held": "持有幣別", "Rates Updated": "匯率更新", "Latest Rate": "最新匯率",
-        "live exchange rates": "即時匯率", "ExchangeRate-API": "ExchangeRate-API", "converted from foreign-currency balances": "由外幣餘額換算",
-        "BALANCE": "餘額", "RATE": "匯率", "AVERAGE RATE": "平均匯率", "NTD VALUE": "新台幣等價", "CURRENCY": "幣別", "SECURITY": "標的", "DATE": "日期", "AMOUNT": "金額", "TRANSACTIONS": "交易紀錄", "PURPOSE": "用途", "FOREIGN": "原幣", "NTD": "新台幣", "SHARES": "股數",
-        "Add foreign-currency transaction": "新增外幣交易", "Transaction type": "交易類型", "Exchange": "換匯", "Exchange direction": "換匯方向", "Buy foreign currency": "買入外幣", "Sell foreign currency back to NTD": "賣出外幣換回新台幣", "Other purpose": "其他用途", "Original currency": "原幣別", "Foreign amount": "原幣金額", "Foreign amount (+ income / - expense)": "原幣金額（收入＋／支出－）", "NTD amount": "新台幣金額", "Rate (NTD per unit)": "匯率（每單位新台幣）", "NTD amount (exchange only)": "新台幣金額（僅換匯）", "Rate (NTD per unit, exchange only)": "匯率（每單位新台幣，僅換匯）", "Purpose": "用途", "Date": "日期", "Exchange transactions require NTD amount and rate.": "換匯交易需要填寫新台幣金額與匯率。", "Other transactions only change the foreign-currency balance; NTD amount and rate are not required.": "其他交易只會變更外幣餘額，不需要填寫新台幣金額與匯率。", "Enter a currency and positive foreign amount.": "請輸入幣別與正的原幣金額。", "Enter a purpose, currency, and positive foreign amount.": "請輸入用途、幣別與正的原幣金額。", "Enter a valid NTD amount and rate for an exchange.": "請輸入有效的新台幣金額與匯率。", "Use a negative foreign amount for investments, spending, or exchanging foreign currency back to NTD. Leave NTD and rate blank for non-exchange transactions.": "投資、支出或換回新台幣時，原幣金額請填負值；非換匯交易的新台幣與匯率請留空。", "Enter a purpose, currency, and non-zero foreign amount.": "請輸入用途、幣別與非零的原幣金額。", "Enter both NTD amount and rate, or leave both blank.": "請同時輸入新台幣金額與匯率，或兩者都留空。", "NTD amount and rate must be greater than zero.": "新台幣金額與匯率必須大於零。",
+        "Recurring Investment": "定期定額", "Recurring Rules": "定期定額規則",
+        "Click to view investments": "點擊查看投資紀錄", "Foreign Currency": "外幣", "Stock": "股票",
+        "Total NTD Equivalent": "新台幣等價總額", "Currencies Held": "持有幣別", "Rates Updated": "匯率更新",
+        "Latest Rate": "最新匯率",
+        "live exchange rates": "即時匯率", "ExchangeRate-API": "ExchangeRate-API",
+        "converted from foreign-currency balances": "由外幣餘額換算",
+        "BALANCE": "餘額", "RATE": "匯率", "AVERAGE RATE": "平均匯率", "NTD VALUE": "新台幣等價",
+        "CURRENCY": "幣別", "SECURITY": "標的", "DATE": "日期", "AMOUNT": "金額", "TRANSACTIONS": "交易紀錄",
+        "PURPOSE": "用途", "FOREIGN": "原幣", "NTD": "新台幣", "SHARES": "股數",
+        "Add foreign-currency transaction": "新增外幣交易", "Transaction type": "交易類型", "Exchange": "換匯",
+        "Exchange direction": "換匯方向", "Buy foreign currency": "買入外幣",
+        "Sell foreign currency back to NTD": "賣出外幣換回新台幣", "Other purpose": "其他用途",
+        "Original currency": "原幣別", "Foreign amount": "原幣金額",
+        "Foreign amount (+ income / - expense)": "原幣金額（收入＋／支出－）", "NTD amount": "新台幣金額",
+        "Rate (NTD per unit)": "匯率（每單位新台幣）", "NTD amount (exchange only)": "新台幣金額（僅換匯）",
+        "Rate (NTD per unit, exchange only)": "匯率（每單位新台幣，僅換匯）", "Purpose": "用途", "Date": "日期",
+        "Exchange transactions require NTD amount and rate.": "換匯交易需要填寫新台幣金額與匯率。",
+        "Other transactions only change the foreign-currency balance; NTD amount and rate are not required.":
+            "其他交易只會變更外幣餘額，不需要填寫新台幣金額與匯率。",
+        "Enter a currency and positive foreign amount.": "請輸入幣別與正的原幣金額。",
+        "Enter a purpose, currency, and positive foreign amount.": "請輸入用途、幣別與正的原幣金額。",
+        "Enter a valid NTD amount and rate for an exchange.": "請輸入有效的新台幣金額與匯率。",
+        "Use a negative foreign amount for investments, spending, or exchanging foreign currency back to NTD. Leave NTD and rate blank for non-exchange transactions.":
+            "投資、支出或換回新台幣時，原幣金額請填負值；非換匯交易的新台幣與匯率請留空。",
+        "Enter a purpose, currency, and non-zero foreign amount.": "請輸入用途、幣別與非零的原幣金額。",
+        "Enter both NTD amount and rate, or leave both blank.": "請同時輸入新台幣金額與匯率，或兩者都留空。",
+        "NTD amount and rate must be greater than zero.": "新台幣金額與匯率必須大於零。",
         "ETF": "ETF", "Settings": "設定", "Help": "說明", "Add": "新增",
-        "No recurring investments": "目前沒有定期定額", "No recurring rules": "目前沒有定期定額規則", "Add a rule to plan your recurring investments.": "新增規則以規劃定期定額投資。",
-        "No market prices": "尚無市場價格", "Updating market prices": "正在更新市場價格", "NTD converted": "已換算新台幣", "holdings": "筆持股", "shares": "股", "purchases": "筆投資", "monthly": "每月", "day": "日", "currency": "幣別", "currencies": "種幣別", "No foreign-currency balances recorded.": "目前沒有外幣餘額。", "No foreign-currency transactions recorded.": "目前沒有外幣交易紀錄。", "MARKET VALUE": "目前市值",
-        "TOTAL CONTRIBUTED": "累計投入", "TOTAL SHARES": "總股數", "LAST PURCHASE": "最近投資", "SCHEDULES": "排程", "PURCHASES": "投資紀錄", "No purchases recorded. Click + to add the actual transaction.": "尚無投資紀錄，請按＋新增實際交易。",
+        "No recurring investments": "目前沒有定期定額", "No recurring rules": "目前沒有定期定額規則",
+        "Add a rule to plan your recurring investments.": "新增規則以規劃定期定額投資。",
+        "No market prices": "尚無市場價格", "Updating market prices": "正在更新市場價格",
+        "NTD converted": "已換算新台幣", "holdings": "筆持股", "shares": "股", "purchases": "筆投資",
+        "monthly": "每月", "day": "日", "currency": "幣別", "currencies": "種幣別",
+        "No foreign-currency balances recorded.": "目前沒有外幣餘額。",
+        "No foreign-currency transactions recorded.": "目前沒有外幣交易紀錄。", "MARKET VALUE": "目前市值",
+        "TOTAL CONTRIBUTED": "累計投入", "TOTAL SHARES": "總股數", "LAST PURCHASE": "最近投資",
+        "SCHEDULES": "排程", "PURCHASES": "投資紀錄",
+        "No purchases recorded. Click + to add the actual transaction.": "尚無投資紀錄，請按＋新增實際交易。",
         "No holdings yet. Click Add to create one.": "目前沒有持股，請按新增建立。",
-        "Allocation will appear after holdings and market prices are available.": "建立持股並取得市場價格後，這裡會顯示資產配置。",
+        "Allocation will appear after holdings and market prices are available.":
+            "建立持股並取得市場價格後，這裡會顯示資產配置。",
         "Total Assets": "總資產", "Total Liabilities": "總負債", "Net Worth": "淨值",
         "Total Assets Details": "總資產明細", "Total Liabilities Details": "總負債明細",
-        "Liquid Asset": "流動資產", "Liquid Investment": "流動性投資", "Long-term Investment": "長期投資", "Other Asset": "其他資產",
+        "Liquid Asset": "流動資產", "Liquid Investment": "流動性投資", "Long-term Investment": "長期投資",
+        "Other Asset": "其他資產",
         "Liquid Assets": "流動資產", "Liquid Investments": "流動性投資", "Other Assets": "其他資產",
         "Short-term Liabilities": "短期負債", "Long-term Liabilities": "長期負債",
         "Bank Accounts": "銀行帳戶", "Cash": "現金", "Margin Deposit": "期貨保證金",
@@ -1217,34 +1412,100 @@ enum L10n {
         "Retirement Fund": "勞退基金", "House Deposit": "房屋押金", "Other": "其他",
         "Financial Indicators": "財務指數", "Free Cash Flow": "自由現金流量", "Liability Ratio": "負債比率",
         "Cash Ratio": "現金比率", "Equity Multiplier": "權益乘數", "Net Worth Growth Rate": "淨值成長率",
-        "Net Worth History": "淨值歷史", "Chart area — to be connected to snapshots": "圖表區域 — 將連接資產快照", "Use the sidebar to switch between your financial sections. Market prices and exchange rates are refreshed when the relevant page is opened.": "使用左側邊欄切換財務區塊；開啟相關頁面時會更新股價與匯率。",
-        "Overview Guide": "總覽使用說明", "Understand your overall financial position.": "了解你的整體財務狀況。", "OVERVIEW": "總覽", "Your financial picture": "你的財務全貌", "Overview brings your assets, liabilities, investments, and cash together in one financial snapshot.": "總覽會把你的資產、負債、投資與現金集中在同一個財務快照中。", "KEY METRICS": "重要數字", "Everything you currently own, converted to NTD.": "你目前擁有的所有資產，並換算成新台幣。", "Money you currently owe.": "你目前需要償還的金額。", "Total Assets − Total Liabilities": "總資產 − 總負債", "YOUR DETAILS": "你的資產明細", "Cash and other readily available funds.": "現金及其他可以立即使用的資金。", "Investments that can generally be sold.": "通常可以出售變現的投資。", "Assets intended to be held longer.": "預計持有較長時間的資產。", "CHANGES OVER TIME": "查看變化", "Compares the current value with the previous month. You can hide these percentages in Settings.": "比較目前數值與上個月的差異，也可以在設定中關閉百分比。", "ADDING INFORMATION": "新增資料", "Add an asset or liability": "新增資產或負債", "Use the + button in the corresponding details section.": "使用對應明細區塊旁的＋按鈕。", "Add investments": "新增投資", "Open Portfolio from the sidebar.": "從左側邊欄開啟投資組合。", "Add foreign currency": "新增外幣", "Open Foreign Currency from the sidebar.": "從左側邊欄開啟外幣。", "Market data": "市場資料", "FinTrack refreshes market prices and exchange rates when possible. Saved local data remains available offline.": "FinTrack 會在可行時更新市場價格與匯率；沒有網路時，仍可使用已儲存的本機資料。",
+        "Net Worth History": "淨值歷史", "Chart area — to be connected to snapshots": "圖表區域 — 將連接資產快照",
+        "Use the sidebar to switch between your financial sections. Market prices and exchange rates are refreshed when the relevant page is opened.":
+            "使用左側邊欄切換財務區塊；開啟相關頁面時會更新股價與匯率。",
+        "Overview Guide": "總覽使用說明", "Understand your overall financial position.": "了解你的整體財務狀況。",
+        "OVERVIEW": "總覽", "Your financial picture": "你的財務全貌",
+        "Overview brings your assets, liabilities, investments, and cash together in one financial snapshot.":
+            "總覽會把你的資產、負債、投資與現金集中在同一個財務快照中。", "KEY METRICS": "重要數字",
+        "Everything you currently own, converted to NTD.": "你目前擁有的所有資產，並換算成新台幣。",
+        "Money you currently owe.": "你目前需要償還的金額。", "Total Assets − Total Liabilities": "總資產 − 總負債",
+        "YOUR DETAILS": "你的資產明細", "Cash and other readily available funds.": "現金及其他可以立即使用的資金。",
+        "Investments that can generally be sold.": "通常可以出售變現的投資。",
+        "Assets intended to be held longer.": "預計持有較長時間的資產。", "CHANGES OVER TIME": "查看變化",
+        "Compares the current value with the previous month. You can hide these percentages in Settings.":
+            "比較目前數值與上個月的差異，也可以在設定中關閉百分比。", "ADDING INFORMATION": "新增資料",
+        "Add an asset or liability": "新增資產或負債",
+        "Use the + button in the corresponding details section.": "使用對應明細區塊旁的＋按鈕。",
+        "Add investments": "新增投資", "Open Portfolio from the sidebar.": "從左側邊欄開啟投資組合。",
+        "Add foreign currency": "新增外幣", "Open Foreign Currency from the sidebar.": "從左側邊欄開啟外幣。",
+        "Market data": "市場資料",
+        "FinTrack refreshes market prices and exchange rates when possible. Saved local data remains available offline.":
+            "FinTrack 會在可行時更新市場價格與匯率；沒有網路時，仍可使用已儲存的本機資料。",
         "Income": "收入", "Expenses": "支出", "Savings": "儲蓄", "Salary": "薪資",
         "Bonus": "獎金", "Side Income": "副業收入", "Base Salary": "本薪", "Overtime": "加班費",
-        "Freelance": "接案收入", "Necessary": "必要開銷", "Credit Card": "信用卡", "Loan": "貸款", "Mortgage": "房屋貸款", "Auto Loan": "車貸", "Personal Loan": "個人貸款", "Tax Payable": "稅款／應付款", "Daily Expenses": "日常花費",
+        "Freelance": "接案收入", "Necessary": "必要開銷", "Credit Card": "信用卡", "Loan": "貸款",
+        "Mortgage": "房屋貸款", "Auto Loan": "車貸", "Personal Loan": "個人貸款", "Tax Payable": "稅款／應付款",
+        "Daily Expenses": "日常花費",
         "Student Loan": "學貸", "Rent": "房租", "Utilities": "水電瓦斯網路", "Living Expenses": "生活費",
         "Principal": "本金", "Interest": "利息", "Apartment": "房租", "Electricity": "電費",
         "Internet": "網路費", "Food": "餐費", "Transportation": "交通費", "Investment": "投資金",
-        "Emergency Fund": "緊急預備金", "Cash Reserve": "現金預留", "Stocks": "股票", "Monthly Reserve": "每月預留",
-        "ETFs": "ETF", "High-yield Savings": "高利活存", "TOTAL P&L": "總損益", "TODAY": "今日", "vs previous close": "相較前一日收盤",
+        "Emergency Fund": "緊急預備金", "Cash Reserve": "現金預留", "Stocks": "股票",
+        "Monthly Reserve": "每月預留",
+        "ETFs": "ETF", "High-yield Savings": "高利活存", "TOTAL P&L": "總損益", "TODAY": "今日",
+        "vs previous close": "相較前一日收盤",
         "INVESTED": "投入成本", "HOLDINGS": "持有資產", "SYMBOL": "標的", "LAST": "現價",
         "CHANGE": "變化", "VALUE": "市值", "P&L": "損益", "ALLOCATION": "資產配置",
         "ASSETS": "資產", "ETFs 57%": "ETF 57%", "Stocks 43%": "股票 43%",
-        "About": "關於", "Version": "版本", "Support & Feedback": "支援與回饋", "Report a problem": "回報問題", "Suggest a feature": "建議功能", "Open GitHub page": "開啟 GitHub 頁面",
-        "Display": "顯示", "Show detail percentage changes": "顯示明細百分比變化", "Performance colors": "漲跌顏色", "Green up / red down": "綠漲紅跌", "Red up / green down": "紅漲綠跌", "Analog mode": "類比模式", "Daily snapshot time": "每日快照時間", "Appearance": "外觀", "System": "跟隨系統", "Light": "淺色", "Dark": "深色", "Total Income": "總收入", "Total Expenses": "總支出", "Monthly Profit": "月結餘", "Account Allocation": "帳戶配置", "Account allocation will appear after leaf items are added.": "新增明細項目後，這裡會顯示帳戶配置。", "No items yet. Click + to add one.": "目前沒有項目，請按＋新增。", "Add child": "新增子項目", "Edit": "編輯", "Delete": "刪除", "Add item": "新增項目", "Edit item": "編輯項目", "Item name": "項目名稱", "Enter item name": "輸入項目名稱", "Enter amount": "輸入金額", "Destination account (optional)": "轉入帳戶（選填）", "Use existing account": "使用既有帳戶", "No linked account": "不連結帳戶", "Custom account": "自訂帳戶", "Enter account name": "輸入帳戶名稱", "Leaf items can share a destination account. Parent items with children are totaled from their children.": "最底層項目可共用轉入帳戶；有子項目的父項目會依子項目加總。",
-        "Turn this off to hide month-over-month percentages in asset and liability details.": "關閉後，資產與負債明細將隱藏月增減百分比。",
+        "About": "關於", "Version": "版本", "Support & Feedback": "支援與回饋", "Report a problem": "回報問題",
+        "Suggest a feature": "建議功能", "Open GitHub page": "開啟 GitHub 頁面",
+        "Display": "顯示", "Show detail percentage changes": "顯示明細百分比變化",
+        "Performance colors": "漲跌顏色", "Green up / red down": "綠漲紅跌", "Red up / green down": "紅漲綠跌",
+        "Analog mode": "類比模式", "Daily snapshot time": "每日快照時間", "Appearance": "外觀",
+        "System": "跟隨系統", "Light": "淺色", "Dark": "深色", "Total Income": "總收入",
+        "Total Expenses": "總支出", "Monthly Profit": "月結餘", "Account Allocation": "帳戶配置",
+        "Account allocation will appear after leaf items are added.": "新增明細項目後，這裡會顯示帳戶配置。",
+        "No items yet. Click + to add one.": "目前沒有項目，請按＋新增。", "Add child": "新增子項目", "Edit": "編輯",
+        "Delete": "刪除", "Add item": "新增項目", "Edit item": "編輯項目", "Item name": "項目名稱",
+        "Enter item name": "輸入項目名稱", "Enter amount": "輸入金額",
+        "Destination account (optional)": "轉入帳戶（選填）", "Use existing account": "使用既有帳戶",
+        "No linked account": "不連結帳戶", "Custom account": "自訂帳戶", "Enter account name": "輸入帳戶名稱",
+        "Leaf items can share a destination account. Parent items with children are totaled from their children.":
+            "最底層項目可共用轉入帳戶；有子項目的父項目會依子項目加總。",
+        "Turn this off to hide month-over-month percentages in asset and liability details.":
+            "關閉後，資產與負債明細將隱藏月增減百分比。",
         "Language": "語言", "English": "英文", "Traditional Chinese": "繁體中文", "Total": "合計",
-        "Add Asset": "新增資產", "Edit Asset": "編輯資產", "Asset name": "資產名稱", "Asset Name": "資產名稱", "Enter asset name": "輸入資產名稱", "Enter current amount": "輸入目前金額", "Balance adjustment": "餘額調整", "Adjustment": "調整方式", "Increase": "增加", "Decrease": "減少", "Enter adjustment amount": "輸入調整金額", "Amount (NTD)": "金額（新台幣）",
+        "Add Asset": "新增資產", "Edit Asset": "編輯資產", "Asset name": "資產名稱", "Asset Name": "資產名稱",
+        "Enter asset name": "輸入資產名稱", "Enter current amount": "輸入目前金額",
+        "Balance adjustment": "餘額調整", "Adjustment": "調整方式", "Increase": "增加", "Decrease": "減少",
+        "Enter adjustment amount": "輸入調整金額", "Amount (NTD)": "金額（新台幣）",
         "Category": "分類", "Asset group": "資產分類", "Subcategory": "子分類", "Currency": "幣別",
-        "Original amount": "原幣金額", "Initial NTD cost": "初始新台幣成本", "Current balance cost basis (NTD)": "目前餘額成本基礎（新台幣）", "Average exchange rate": "平均匯率",
-        "Only exchange or opening-fund cost is included. Dividends and investment gains are recorded separately.": "只有換匯或初始入金成本會計入；股息與投資收益會獨立記錄。",
-        "Cancel": "取消", "Save": "儲存", "Add Liability": "新增負債", "Edit Liability": "編輯負債", "Liability name": "負債名稱", "Enter liability name": "輸入負債名稱", "Enter current balance": "輸入目前餘額", "Enter interest rate (%)": "輸入利率（％）",
+        "Original amount": "原幣金額", "Initial NTD cost": "初始新台幣成本",
+        "Current balance cost basis (NTD)": "目前餘額成本基礎（新台幣）", "Average exchange rate": "平均匯率",
+        "Only exchange or opening-fund cost is included. Dividends and investment gains are recorded separately.":
+            "只有換匯或初始入金成本會計入；股息與投資收益會獨立記錄。",
+        "Cancel": "取消", "Save": "儲存", "Add Liability": "新增負債", "Edit Liability": "編輯負債",
+        "Liability name": "負債名稱", "Enter liability name": "輸入負債名稱",
+        "Enter current balance": "輸入目前餘額", "Enter interest rate (%)": "輸入利率（％）",
         "Group": "負債分類", "Balance": "餘額", "Interest rate (optional)": "利率（選填）",
-        "Add Holding": "新增持股", "Edit Holding": "編輯持股", "Symbol": "代號", "Enter symbol": "輸入代號", "No subcategories available": "目前沒有可用子分類", "Type": "類型", "ETF type": "ETF 類型", "Equity ETF": "股票型 ETF", "Bond ETF": "債券型 ETF", "This holding will be used for recurring investment": "此持股將用於定期定額", "Shares": "股數", "Enter shares": "輸入股數", "Total cost": "總成本", "Enter total cost": "輸入總成本", "Complete the holding fields with valid values.": "請完整填寫持股資料。", "Holding cost and P&L stay in the original currency until an exchange transaction is recorded.": "在記錄換匯交易前，持股成本與損益會維持原幣別。",
-        "Add Foreign Currency": "新增外幣", "Currency code (e.g. EUR)": "幣別代碼（例如 EUR）", "Current balance": "目前餘額", "Average cost rate of current balance (NTD per unit)": "目前餘額平均成本匯率（每單位新台幣）", "Enter the weighted-average cost rate of the remaining balance, not the total exchanged amount. For example, USD 497.30 at NTD 31.5220 creates an NTD cost basis of about NTD 15,675.89.": "請輸入剩餘餘額的加權平均成本匯率，而不是換匯總額的匯率。例如 USD 497.30、匯率 NTD 31.5220，台幣成本約為 NTD 15,675.89。", "Enter a valid currency code, balance, and average rate.": "請輸入有效的幣別代碼、餘額與平均匯率。",
-        "Add Dividend": "新增股利", "Edit Dividend": "編輯股利", "Security": "標的", "Select a holding": "選擇持股", "Payment date": "入帳日期", "Receiving account": "收款帳戶", "Dividends are recorded separately and are not included in exchange-rate cost calculations.": "股利會獨立記錄，不會納入換匯成本計算。",
-        "Edit Recurring Rule": "編輯定期定額規則", "Add Recurring Rule": "新增定期定額規則", "Holding": "持股", "Planned amount": "預計金額", "Funding account": "扣款帳戶", "Frequency": "頻率", "Monthly": "每月", "Weekly": "每週", "Execution day": "執行日", "Record Purchase": "記錄投資", "Edit Purchase": "編輯投資紀錄", "Purchase date (yyyy-MM-dd)": "投資日期（yyyy-MM-dd）", "Amount": "金額", "Amount (USD)": "金額（美元）", "Enter an amount greater than zero.": "請輸入大於零的金額。", "Enter shares and amount greater than zero.": "請輸入大於零的股數與金額。", "Enter the date as yyyy-MM-dd.": "請以 yyyy-MM-dd 格式輸入日期。", "Enter a valid date, shares, and amount.": "請輸入有效的日期、股數與金額。",
-        "Short-term Liability": "短期負債", "Long-term Liability": "長期負債", "Add holding": "新增持股"
+        "Add Holding": "新增持股", "Edit Holding": "編輯持股", "Symbol": "代號", "Enter symbol": "輸入代號",
+        "No subcategories available": "目前沒有可用子分類", "Type": "類型", "ETF type": "ETF 類型",
+        "Equity ETF": "股票型 ETF", "Bond ETF": "債券型 ETF",
+        "This holding will be used for recurring investment": "此持股將用於定期定額", "Shares": "股數",
+        "Enter shares": "輸入股數", "Total cost": "總成本", "Enter total cost": "輸入總成本",
+        "Complete the holding fields with valid values.": "請完整填寫持股資料。",
+        "Holding cost and P&L stay in the original currency until an exchange transaction is recorded.":
+            "在記錄換匯交易前，持股成本與損益會維持原幣別。",
+        "Add Foreign Currency": "新增外幣", "Currency code (e.g. EUR)": "幣別代碼（例如 EUR）",
+        "Current balance": "目前餘額",
+        "Average cost rate of current balance (NTD per unit)": "目前餘額平均成本匯率（每單位新台幣）",
+        "Enter the weighted-average cost rate of the remaining balance, not the total exchanged amount. For example, USD 497.30 at NTD 31.5220 creates an NTD cost basis of about NTD 15,675.89.":
+            "請輸入剩餘餘額的加權平均成本匯率，而不是換匯總額的匯率。例如 USD 497.30、匯率 NTD 31.5220，台幣成本約為 NTD 15,675.89。",
+        "Enter a valid currency code, balance, and average rate.": "請輸入有效的幣別代碼、餘額與平均匯率。",
+        "Add Dividend": "新增股利", "Edit Dividend": "編輯股利", "Security": "標的",
+        "Select a holding": "選擇持股", "Payment date": "入帳日期", "Receiving account": "收款帳戶",
+        "Dividends are recorded separately and are not included in exchange-rate cost calculations.":
+            "股利會獨立記錄，不會納入換匯成本計算。",
+        "Edit Recurring Rule": "編輯定期定額規則", "Add Recurring Rule": "新增定期定額規則", "Holding": "持股",
+        "Planned amount": "預計金額", "Funding account": "扣款帳戶", "Frequency": "頻率", "Monthly": "每月",
+        "Weekly": "每週", "Execution day": "執行日", "Record Purchase": "記錄投資",
+        "Edit Purchase": "編輯投資紀錄", "Purchase date (yyyy-MM-dd)": "投資日期（yyyy-MM-dd）", "Amount": "金額",
+        "Amount (USD)": "金額（美元）", "Enter an amount greater than zero.": "請輸入大於零的金額。",
+        "Enter shares and amount greater than zero.": "請輸入大於零的股數與金額。",
+        "Enter the date as yyyy-MM-dd.": "請以 yyyy-MM-dd 格式輸入日期。",
+        "Enter a valid date, shares, and amount.": "請輸入有效的日期、股數與金額。",
+        "Short-term Liability": "短期負債", "Long-term Liability": "長期負債", "Add holding": "新增持股",
     ]
 
     static func text(_ key: String, language: String) -> String {
@@ -1304,7 +1565,11 @@ struct DashboardView: View {
         .foregroundStyle(FinTrackTheme.textPrimary)
         .tint(FinTrackTheme.primary)
         .preferredColorScheme(preferredColorScheme)
-        .environment(\.colorScheme, activeAppearanceMode == "system" ? resolvedSystemScheme : (activeAppearanceMode == "light" ? .light : .dark))
+        .environment(
+            \.colorScheme,
+            activeAppearanceMode == "system"
+                ? resolvedSystemScheme : (activeAppearanceMode == "light" ? .light : .dark)
+        )
         .onAppear {
             hideWindowTitle()
             activeAppearanceMode = appearanceMode
@@ -1314,7 +1579,9 @@ struct DashboardView: View {
             appearanceMode = newMode
             applyAppearance(newMode)
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+        .onReceive(
+            NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+        ) { _ in
             Task { await appModel.refreshMarketData() }
         }
     }
@@ -1332,7 +1599,8 @@ struct DashboardView: View {
         NSApp.appearance = appearance
         NSApp.windows.forEach { $0.appearance = appearance }
         if mode == "system" {
-            let systemStyle = UserDefaults.standard.string(forKey: "AppleInterfaceStyle")?.lowercased()
+            let systemStyle = UserDefaults.standard.string(forKey: "AppleInterfaceStyle")?
+                .lowercased()
             resolvedSystemScheme = systemStyle == "dark" ? .dark : .light
         } else {
             resolvedSystemScheme = mode == "light" ? .light : .dark
@@ -1364,7 +1632,9 @@ struct SidebarView: View {
                 page("Portfolio", systemImage: "chart.pie")
                 page("Dividends", systemImage: "banknote")
 
-                expandablePage("Recurring Investment", systemImage: "calendar.badge.clock", isExpanded: $recurringExpanded)
+                expandablePage(
+                    "Recurring Investment", systemImage: "calendar.badge.clock",
+                    isExpanded: $recurringExpanded)
                 if recurringExpanded {
                     if appModel.recurringRecords.isEmpty {
                         Text(L10n.text("No recurring investments", language: appLanguage))
@@ -1372,7 +1642,9 @@ struct SidebarView: View {
                             .padding(.leading, 22)
                     } else {
                         ForEach(appModel.recurringRecords) { recurring in
-                            page(recurring.securityName, systemImage: "chart.bar.xaxis", isChild: true)
+                            page(
+                                recurring.securityName, systemImage: "chart.bar.xaxis",
+                                isChild: true)
                         }
                     }
                 }
@@ -1422,7 +1694,9 @@ struct SidebarView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .font(selectedPage == title ? .headline.weight(.semibold) : .body)
-        .foregroundStyle(selectedPage == title ? FinTrackTheme.primaryHover : FinTrackTheme.textPrimary)
+        .foregroundStyle(
+            selectedPage == title ? FinTrackTheme.primaryHover : FinTrackTheme.textPrimary
+        )
         .padding(.leading, isChild ? 22 : 0)
         .padding(.vertical, 6)
         .padding(.horizontal, 8)
@@ -1447,7 +1721,9 @@ struct SidebarView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .font(selectedPage == title ? .headline.weight(.semibold) : .body)
-        .foregroundStyle(selectedPage == title ? FinTrackTheme.primaryHover : FinTrackTheme.textPrimary)
+        .foregroundStyle(
+            selectedPage == title ? FinTrackTheme.primaryHover : FinTrackTheme.textPrimary
+        )
         .padding(.vertical, 6)
         .padding(.horizontal, 8)
         .background(
@@ -1478,7 +1754,9 @@ struct SidebarIconButton: View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .frame(width: 28, height: 28)
-                .foregroundStyle(isSelected ? FinTrackTheme.textPrimary : FinTrackTheme.textSecondary)
+                .foregroundStyle(
+                    isSelected ? FinTrackTheme.textPrimary : FinTrackTheme.textSecondary
+                )
                 .background(
                     isSelected ? FinTrackTheme.primary : Color.clear,
                     in: RoundedRectangle(cornerRadius: 8)
@@ -1516,7 +1794,9 @@ struct DashboardContentView: View {
                 RecurringInvestmentView(selectedPage: $selectedPage)
             } else if pageTitle == "Foreign Currency" {
                 ForeignCurrencyView()
-            } else if let recurring = appModel.recurringRecords.first(where: { $0.securityName == pageTitle }) {
+            } else if let recurring = appModel.recurringRecords.first(where: {
+                $0.securityName == pageTitle
+            }) {
                 ScrollView {
                     RecurringHoldingDetailView(rule: recurring)
                 }
@@ -1525,8 +1805,10 @@ struct DashboardContentView: View {
                 IncomeStatementView()
             } else if pageTitle == "Settings" {
                 ScrollView {
-                    SettingsCard(showDetailChanges: $showDetailChanges, appearanceMode: $appearanceMode)
-                        .padding(24)
+                    SettingsCard(
+                        showDetailChanges: $showDetailChanges, appearanceMode: $appearanceMode
+                    )
+                    .padding(24)
                 }
             } else if pageTitle == "Help" {
                 HelpView(page: helpPage) {
@@ -1602,24 +1884,32 @@ struct ForeignCurrencyView: View {
     @State private var sortAscending = true
 
     private var summaries: [ForeignCurrencySummary] {
-        let grouped = Dictionary(grouping: appModel.assets.filter { $0.currency != "NTD" }, by: \.currency)
+        let grouped = Dictionary(
+            grouping: appModel.assets.filter { $0.currency != "NTD" }, by: \.currency)
         return grouped.map { currency, assets in
             let amount = assets.reduce(0) { $0 + $1.value }
             let rate = appModel.foreignExchangeRates[currency]
             let ntdValue = rate.map { amount * $0 } ?? assets.reduce(0) { $0 + $1.ntdValue }
-            let transactions = appModel.foreignCurrencyTransactions.filter { $0.currency == currency }
+            let transactions = appModel.foreignCurrencyTransactions.filter {
+                $0.currency == currency
+            }
             let exchangeTransactions = transactions.filter { $0.ntdAmount != nil }
             let historicalForeignActivity = transactions.reduce(0) { $0 + $1.foreignAmount }
             let openingAmount = amount - historicalForeignActivity
-            let exchangeForeignAmount = openingAmount + exchangeTransactions.reduce(0) { $0 + $1.foreignAmount }
-            let openingNTDCost = assets.reduce(0) { $0 + $1.ntdValue } - exchangeTransactions.reduce(0) { $0 + ($1.ntdAmount ?? 0) }
-            let exchangeNTDCost = openingNTDCost + exchangeTransactions.reduce(0) { $0 + ($1.ntdAmount ?? 0) }
+            let exchangeForeignAmount =
+                openingAmount + exchangeTransactions.reduce(0) { $0 + $1.foreignAmount }
+            let openingNTDCost =
+                assets.reduce(0) { $0 + $1.ntdValue }
+                - exchangeTransactions.reduce(0) { $0 + ($1.ntdAmount ?? 0) }
+            let exchangeNTDCost =
+                openingNTDCost + exchangeTransactions.reduce(0) { $0 + ($1.ntdAmount ?? 0) }
             return ForeignCurrencySummary(
                 currency: currency,
                 amount: amount,
                 ntdValue: ntdValue,
                 rate: rate ?? (amount > 0 ? ntdValue / amount : nil),
-                averageRate: exchangeForeignAmount > 0 ? exchangeNTDCost / exchangeForeignAmount : nil,
+                averageRate: exchangeForeignAmount > 0
+                    ? exchangeNTDCost / exchangeForeignAmount : nil,
                 assetIDs: assets.map(\.id)
             )
         }
@@ -1627,7 +1917,8 @@ struct ForeignCurrencyView: View {
             switch sortKey {
             case .currency:
                 let comparison = lhs.currency.localizedCaseInsensitiveCompare(rhs.currency)
-                return sortAscending ? comparison == .orderedAscending : comparison == .orderedDescending
+                return sortAscending
+                    ? comparison == .orderedAscending : comparison == .orderedDescending
             case .ntdValue:
                 if lhs.ntdValue != rhs.ntdValue {
                     return sortAscending ? lhs.ntdValue < rhs.ntdValue : lhs.ntdValue > rhs.ntdValue
@@ -1660,89 +1951,102 @@ struct ForeignCurrencyView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                VStack(spacing: 0) {
-                    HStack {
-                        Spacer()
-                        Button(action: { showingAdd = true }) {
-                            Image(systemName: "plus")
-                        }
-                        .buttonStyle(.plain)
-                        .font(.title3.weight(.semibold))
-                    }
-                    .padding(.horizontal, 40)
-                    .padding(.top, 16)
-                    .padding(.bottom, 10)
-
-                    HStack(spacing: 16) {
-                        Button(action: { toggleSort(.currency) }) {
-                            HStack(spacing: 6) {
-                                Text(L10n.text("CURRENCY", language: appLanguage))
-                                sortIndicator(for: .currency)
+                    VStack(spacing: 0) {
+                        HStack {
+                            Spacer()
+                            Button(action: { showingAdd = true }) {
+                                Image(systemName: "plus")
                             }
+                            .buttonStyle(.plain)
+                            .font(.title3.weight(.semibold))
                         }
-                        .buttonStyle(.plain)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        Text(L10n.text("RATE", language: appLanguage)).frame(width: 130, alignment: .trailing)
-                        Text(L10n.text("AVERAGE RATE", language: appLanguage)).frame(width: 150, alignment: .trailing)
-                        Text(L10n.text("BALANCE", language: appLanguage)).frame(width: 150, alignment: .trailing)
-                        Button(action: { toggleSort(.ntdValue) }) {
-                            HStack(spacing: 6) {
-                                sortIndicator(for: .ntdValue)
-                                Text(L10n.text("NTD VALUE", language: appLanguage))
-                            }
-                            .frame(maxWidth: .infinity, alignment: .trailing)
-                        }
-                        .buttonStyle(.plain)
-                        .frame(width: 170, alignment: .trailing)
-                    }
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(FinTrackTheme.textSecondary)
-                    .padding(.horizontal, 40)
-                    .padding(.top, 8)
-                    .padding(.bottom, 10)
+                        .padding(.horizontal, 40)
+                        .padding(.top, 16)
+                        .padding(.bottom, 10)
 
-                    if summaries.isEmpty {
-                        Text(L10n.text("No foreign-currency balances recorded.", language: appLanguage))
+                        HStack(spacing: 16) {
+                            Button(action: { toggleSort(.currency) }) {
+                                HStack(spacing: 6) {
+                                    Text(L10n.text("CURRENCY", language: appLanguage))
+                                    sortIndicator(for: .currency)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            Text(L10n.text("RATE", language: appLanguage)).frame(
+                                width: 130, alignment: .trailing)
+                            Text(L10n.text("AVERAGE RATE", language: appLanguage)).frame(
+                                width: 150, alignment: .trailing)
+                            Text(L10n.text("BALANCE", language: appLanguage)).frame(
+                                width: 150, alignment: .trailing)
+                            Button(action: { toggleSort(.ntdValue) }) {
+                                HStack(spacing: 6) {
+                                    sortIndicator(for: .ntdValue)
+                                    Text(L10n.text("NTD VALUE", language: appLanguage))
+                                }
+                                .frame(maxWidth: .infinity, alignment: .trailing)
+                            }
+                            .buttonStyle(.plain)
+                            .frame(width: 170, alignment: .trailing)
+                        }
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(FinTrackTheme.textSecondary)
+                        .padding(.horizontal, 40)
+                        .padding(.top, 8)
+                        .padding(.bottom, 10)
+
+                        if summaries.isEmpty {
+                            Text(
+                                L10n.text(
+                                    "No foreign-currency balances recorded.", language: appLanguage)
+                            )
                             .foregroundStyle(FinTrackTheme.textSecondary)
                             .frame(maxWidth: .infinity, minHeight: 180)
-                    } else {
-                        ForEach(sortedSummaries) { summary in
-                            HStack(spacing: 16) {
-                                HStack(spacing: 10) {
-                                    CurrencyBadge(code: summary.currency)
-                                    Text(summary.currency)
+                        } else {
+                            ForEach(sortedSummaries) { summary in
+                                HStack(spacing: 16) {
+                                    HStack(spacing: 10) {
+                                        CurrencyBadge(code: summary.currency)
+                                        Text(summary.currency)
+                                            .font(.headline)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    Text(summary.rate.map { String(format: "NTD %.4f", $0) } ?? "—")
+                                        .frame(width: 130, alignment: .trailing)
+                                    Text(
+                                        summary.averageRate.map { String(format: "NTD %.4f", $0) }
+                                            ?? "—"
+                                    )
+                                    .frame(width: 150, alignment: .trailing)
+                                    Text(money(summary.amount, currency: summary.currency))
+                                        .frame(width: 150, alignment: .trailing)
+                                    Text(ntd(summary.ntdValue))
                                         .font(.headline)
+                                        .frame(width: 170, alignment: .trailing)
                                 }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                Text(summary.rate.map { String(format: "NTD %.4f", $0) } ?? "—")
-                                    .frame(width: 130, alignment: .trailing)
-                                Text(summary.averageRate.map { String(format: "NTD %.4f", $0) } ?? "—")
-                                    .frame(width: 150, alignment: .trailing)
-                                Text(money(summary.amount, currency: summary.currency))
-                                    .frame(width: 150, alignment: .trailing)
-                                Text(ntd(summary.ntdValue))
-                                    .font(.headline)
-                                    .frame(width: 170, alignment: .trailing)
-                            }
-                            .padding(.horizontal, 40)
-                            .padding(.vertical, 8)
-                            .contentShape(Rectangle())
-                            .contextMenu {
-                                Button("Edit") {
-                                    editingAsset = appModel.assets.first { $0.currency == summary.currency }
-                                }
-                                Divider()
-                                Button("Delete", role: .destructive) {
-                                    pendingDelete = summary
+                                .padding(.horizontal, 40)
+                                .padding(.vertical, 8)
+                                .contentShape(Rectangle())
+                                .contextMenu {
+                                    Button("Edit") {
+                                        editingAsset = appModel.assets.first {
+                                            $0.currency == summary.currency
+                                        }
+                                    }
+                                    Divider()
+                                    Button("Delete", role: .destructive) {
+                                        pendingDelete = summary
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                .background(FinTrackTheme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(FinTrackTheme.border))
+                    .background(
+                        FinTrackTheme.cardBackground, in: RoundedRectangle(cornerRadius: 12)
+                    )
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(FinTrackTheme.border))
 
-                foreignTransactionCard
+                    foreignTransactionCard
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 24)
@@ -1823,12 +2127,18 @@ struct ForeignCurrencyView: View {
             .padding(.bottom, 14)
 
             LazyVGrid(columns: transactionGridColumns, alignment: .leading, spacing: 0) {
-                Text(L10n.text("PURPOSE", language: appLanguage)).frame(maxWidth: .infinity, alignment: .leading)
-                Text(L10n.text("CURRENCY", language: appLanguage)).frame(maxWidth: .infinity, alignment: .leading)
-                Text(L10n.text("FOREIGN", language: appLanguage)).frame(maxWidth: .infinity, alignment: .trailing)
-                Text(L10n.text("NTD", language: appLanguage)).frame(maxWidth: .infinity, alignment: .trailing)
-                Text(L10n.text("RATE", language: appLanguage)).frame(maxWidth: .infinity, alignment: .trailing)
-                Text(L10n.text("DATE", language: appLanguage)).frame(maxWidth: .infinity, alignment: .trailing)
+                Text(L10n.text("PURPOSE", language: appLanguage)).frame(
+                    maxWidth: .infinity, alignment: .leading)
+                Text(L10n.text("CURRENCY", language: appLanguage)).frame(
+                    maxWidth: .infinity, alignment: .leading)
+                Text(L10n.text("FOREIGN", language: appLanguage)).frame(
+                    maxWidth: .infinity, alignment: .trailing)
+                Text(L10n.text("NTD", language: appLanguage)).frame(
+                    maxWidth: .infinity, alignment: .trailing)
+                Text(L10n.text("RATE", language: appLanguage)).frame(
+                    maxWidth: .infinity, alignment: .trailing)
+                Text(L10n.text("DATE", language: appLanguage)).frame(
+                    maxWidth: .infinity, alignment: .trailing)
             }
             .font(.caption.weight(.bold))
             .foregroundStyle(FinTrackTheme.textSecondary)
@@ -1848,7 +2158,10 @@ struct ForeignCurrencyView: View {
                         Text(transaction.currency)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         Text(money(transaction.foreignAmount, currency: transaction.currency))
-                            .foregroundStyle(transaction.foreignAmount < 0 ? FinTrackTheme.negative : FinTrackTheme.textPrimary)
+                            .foregroundStyle(
+                                transaction.foreignAmount < 0
+                                    ? FinTrackTheme.negative : FinTrackTheme.textPrimary
+                            )
                             .frame(maxWidth: .infinity, alignment: .trailing)
                         Text(transaction.ntdAmount.map(ntd) ?? "—")
                             .frame(maxWidth: .infinity, alignment: .trailing)
@@ -1879,7 +2192,7 @@ struct ForeignCurrencyView: View {
             GridItem(.fixed(110), alignment: .trailing),
             GridItem(.fixed(72), alignment: .trailing),
             GridItem(.fixed(88), alignment: .trailing),
-            GridItem(.fixed(100), alignment: .trailing)
+            GridItem(.fixed(100), alignment: .trailing),
         ]
     }
 
@@ -1895,7 +2208,8 @@ struct ForeignCurrencyView: View {
         PortfolioMetricCard(
             title: "Currencies Held",
             value: "\(currencyCount)",
-            detail: L10n.text(currencyCount == 1 ? "currency" : "currencies", language: appLanguage),
+            detail: L10n.text(
+                currencyCount == 1 ? "currency" : "currencies", language: appLanguage),
             tint: .primary,
             height: 100
         )
@@ -1924,16 +2238,22 @@ private struct ForeignCurrencyTransactionSheet: View {
         VStack(alignment: .leading, spacing: 14) {
             Text(L10n.text("Add foreign-currency transaction", language: appLanguage))
                 .font(.title2.weight(.bold))
-            Picker(L10n.text("Transaction type", language: appLanguage), selection: $transactionType) {
+            Picker(
+                L10n.text("Transaction type", language: appLanguage), selection: $transactionType
+            ) {
                 Text(L10n.text("Exchange", language: appLanguage)).tag("exchange")
                 Text(L10n.text("Other", language: appLanguage)).tag("other")
             }
             .pickerStyle(.segmented)
 
             if transactionType == "exchange" {
-                Picker(L10n.text("Exchange direction", language: appLanguage), selection: $exchangeDirection) {
+                Picker(
+                    L10n.text("Exchange direction", language: appLanguage),
+                    selection: $exchangeDirection
+                ) {
                     Text(L10n.text("Buy foreign currency", language: appLanguage)).tag("buy")
-                    Text(L10n.text("Sell foreign currency back to NTD", language: appLanguage)).tag("sell")
+                    Text(L10n.text("Sell foreign currency back to NTD", language: appLanguage)).tag(
+                        "sell")
                 }
                 .pickerStyle(.menu)
             } else {
@@ -1946,18 +2266,31 @@ private struct ForeignCurrencyTransactionSheet: View {
                     Text(code).tag(code)
                 }
             }
-            TextField(L10n.text(transactionType == "exchange" ? "Foreign amount" : "Foreign amount (+ income / - expense)", language: appLanguage), text: $foreignAmount)
-                .textFieldStyle(.roundedBorder)
+            TextField(
+                L10n.text(
+                    transactionType == "exchange"
+                        ? "Foreign amount" : "Foreign amount (+ income / - expense)",
+                    language: appLanguage), text: $foreignAmount
+            )
+            .textFieldStyle(.roundedBorder)
             if transactionType == "exchange" {
                 TextField(L10n.text("NTD amount", language: appLanguage), text: $ntdAmount)
                     .textFieldStyle(.roundedBorder)
                 TextField(L10n.text("Rate (NTD per unit)", language: appLanguage), text: $rate)
                     .textFieldStyle(.roundedBorder)
             }
-            DatePicker(L10n.text("Date", language: appLanguage), selection: $tradeDate, displayedComponents: .date)
-            Text(L10n.text(transactionType == "exchange" ? "Exchange transactions require NTD amount and rate." : "Other transactions only change the foreign-currency balance; NTD amount and rate are not required.", language: appLanguage))
-                .font(.caption)
-                .foregroundStyle(FinTrackTheme.textSecondary)
+            DatePicker(
+                L10n.text("Date", language: appLanguage), selection: $tradeDate,
+                displayedComponents: .date)
+            Text(
+                L10n.text(
+                    transactionType == "exchange"
+                        ? "Exchange transactions require NTD amount and rate."
+                        : "Other transactions only change the foreign-currency balance; NTD amount and rate are not required.",
+                    language: appLanguage)
+            )
+            .font(.caption)
+            .foregroundStyle(FinTrackTheme.textSecondary)
 
             HStack {
                 Spacer()
@@ -1979,29 +2312,39 @@ private struct ForeignCurrencyTransactionSheet: View {
     private func save() {
         let trimmedPurpose = otherPurpose.trimmingCharacters(in: .whitespacesAndNewlines)
         guard transactionType == "exchange" || !trimmedPurpose.isEmpty,
-              !currency.isEmpty,
-              let enteredForeignValue = Double(foreignAmount), enteredForeignValue > 0 else {
-            errorMessage = L10n.text(transactionType == "exchange" ? "Enter a currency and positive foreign amount." : "Enter a purpose, currency, and positive foreign amount.", language: appLanguage)
+            !currency.isEmpty,
+            let enteredForeignValue = Double(foreignAmount), enteredForeignValue > 0
+        else {
+            errorMessage = L10n.text(
+                transactionType == "exchange"
+                    ? "Enter a currency and positive foreign amount."
+                    : "Enter a purpose, currency, and positive foreign amount.",
+                language: appLanguage)
             return
         }
 
-        let foreignValue = transactionType == "exchange" && exchangeDirection == "sell"
+        let foreignValue =
+            transactionType == "exchange" && exchangeDirection == "sell"
             ? -enteredForeignValue
             : enteredForeignValue
 
         let trimmedNTD = ntdAmount.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedRate = rate.trimmingCharacters(in: .whitespacesAndNewlines)
-        var parsedNTD = transactionType == "exchange" ? (trimmedNTD.isEmpty ? nil : Double(trimmedNTD)) : nil
+        var parsedNTD =
+            transactionType == "exchange" ? (trimmedNTD.isEmpty ? nil : Double(trimmedNTD)) : nil
         var parsedRate = trimmedRate.isEmpty ? nil : Double(trimmedRate)
         if transactionType == "exchange" {
             guard let exchangeNTD = parsedNTD, exchangeNTD > 0,
-                  trimmedRate.isEmpty || parsedRate != nil else {
-                errorMessage = L10n.text("Enter a valid NTD amount and rate for an exchange.", language: appLanguage)
+                trimmedRate.isEmpty || parsedRate != nil
+            else {
+                errorMessage = L10n.text(
+                    "Enter a valid NTD amount and rate for an exchange.", language: appLanguage)
                 return
             }
             if parsedRate == nil { parsedRate = exchangeNTD / abs(foreignValue) }
             guard let exchangeRate = parsedRate, exchangeRate > 0 else {
-                errorMessage = L10n.text("Enter a valid NTD amount and rate for an exchange.", language: appLanguage)
+                errorMessage = L10n.text(
+                    "Enter a valid NTD amount and rate for an exchange.", language: appLanguage)
                 return
             }
             parsedNTD = exchangeNTD
@@ -2063,16 +2406,15 @@ private struct AddForeignCurrencySheet: View {
         CurrencyOption(code: "KRW", englishName: "South Korean Won", chineseName: "韓元"),
         CurrencyOption(code: "SGD", englishName: "Singapore Dollar", chineseName: "新加坡幣"),
         CurrencyOption(code: "CHF", englishName: "Swiss Franc", chineseName: "瑞士法郎"),
-        CurrencyOption(code: "NZD", englishName: "New Zealand Dollar", chineseName: "紐幣")
+        CurrencyOption(code: "NZD", englishName: "New Zealand Dollar", chineseName: "紐幣"),
     ]
 
     private var matchingCurrencies: [CurrencyOption] {
         let query = currency.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !query.isEmpty else { return [] }
         return currencyOptions.filter {
-            $0.code.lowercased().contains(query) ||
-            $0.englishName.lowercased().contains(query) ||
-            $0.chineseName.contains(query)
+            $0.code.lowercased().contains(query) || $0.englishName.lowercased().contains(query)
+                || $0.chineseName.contains(query)
         }
     }
 
@@ -2092,10 +2434,12 @@ private struct AddForeignCurrencySheet: View {
                                 Text(option.code)
                                     .font(.body.weight(.semibold))
                                     .frame(width: 52, alignment: .leading)
-                                Text(appLanguage == AppLanguage.traditionalChinese.rawValue
-                                     ? option.chineseName
-                                     : option.englishName)
-                                    .foregroundStyle(FinTrackTheme.textSecondary)
+                                Text(
+                                    appLanguage == AppLanguage.traditionalChinese.rawValue
+                                        ? option.chineseName
+                                        : option.englishName
+                                )
+                                .foregroundStyle(FinTrackTheme.textSecondary)
                                 Spacer()
                             }
                             .contentShape(Rectangle())
@@ -2109,11 +2453,19 @@ private struct AddForeignCurrencySheet: View {
             }
             TextField(L10n.text("Current balance", language: appLanguage), text: $balance)
                 .textFieldStyle(.roundedBorder)
-            TextField(L10n.text("Average cost rate of current balance (NTD per unit)", language: appLanguage), text: $averageRate)
-                .textFieldStyle(.roundedBorder)
-            Text(L10n.text("Enter the weighted-average cost rate of the remaining balance, not the total exchanged amount. For example, USD 497.30 at NTD 31.5220 creates an NTD cost basis of about NTD 15,675.89.", language: appLanguage))
-                .font(.caption)
-                .foregroundStyle(FinTrackTheme.textSecondary)
+            TextField(
+                L10n.text(
+                    "Average cost rate of current balance (NTD per unit)", language: appLanguage),
+                text: $averageRate
+            )
+            .textFieldStyle(.roundedBorder)
+            Text(
+                L10n.text(
+                    "Enter the weighted-average cost rate of the remaining balance, not the total exchanged amount. For example, USD 497.30 at NTD 31.5220 creates an NTD cost basis of about NTD 15,675.89.",
+                    language: appLanguage)
+            )
+            .font(.caption)
+            .foregroundStyle(FinTrackTheme.textSecondary)
 
             HStack {
                 Spacer()
@@ -2134,9 +2486,10 @@ private struct AddForeignCurrencySheet: View {
     private func save() {
         let code = currency.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         guard code.count >= 3 && code.count <= 5,
-              code != "NTD",
-              let balanceValue = Double(balance), balanceValue >= 0,
-              let rateValue = Double(averageRate), rateValue > 0 else {
+            code != "NTD",
+            let balanceValue = Double(balance), balanceValue >= 0,
+            let rateValue = Double(averageRate), rateValue > 0
+        else {
             errorMessage = "Enter a valid currency code, balance, and average rate."
             return
         }
@@ -2179,9 +2532,22 @@ struct OverviewView: View {
     var body: some View {
         VStack(spacing: 16) {
             HStack(spacing: 16) {
-                MetricCard(title: "Total Assets", value: ntd(appModel.assetTotals.total), change: percentageChange(appModel.assetTotals.total, previousValue(for: "totalAssets")) + " vs last month")
-                MetricCard(title: "Total Liabilities", value: ntd(appModel.liabilityTotals.total), change: percentageChange(appModel.liabilityTotals.total, previousValue(for: "totalLiabilities")) + " vs last month")
-                MetricCard(title: "Net Worth", value: ntd(appModel.assetTotals.total - appModel.liabilityTotals.total), change: percentageChange(appModel.assetTotals.total - appModel.liabilityTotals.total, previousValue(for: "netWorth")) + " vs last month")
+                MetricCard(
+                    title: "Total Assets", value: ntd(appModel.assetTotals.total),
+                    change: percentageChange(
+                        appModel.assetTotals.total, previousValue(for: "totalAssets"))
+                        + " vs last month")
+                MetricCard(
+                    title: "Total Liabilities", value: ntd(appModel.liabilityTotals.total),
+                    change: percentageChange(
+                        appModel.liabilityTotals.total, previousValue(for: "totalLiabilities"))
+                        + " vs last month")
+                MetricCard(
+                    title: "Net Worth",
+                    value: ntd(appModel.assetTotals.total - appModel.liabilityTotals.total),
+                    change: percentageChange(
+                        appModel.assetTotals.total - appModel.liabilityTotals.total,
+                        previousValue(for: "netWorth")) + " vs last month")
             }
             .padding(.horizontal, 24)
 
@@ -2193,14 +2559,18 @@ struct OverviewView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     HStack(alignment: .top, spacing: 16) {
-                        DetailCard(title: "Total Assets Details", showChanges: showChanges, onAdd: {
-                    showingAddAsset = true
-                        }, sections: assetSections)
+                        DetailCard(
+                            title: "Total Assets Details", showChanges: showChanges,
+                            onAdd: {
+                                showingAddAsset = true
+                            }, sections: assetSections)
 
                         VStack(spacing: 16) {
-                            DetailCard(title: "Total Liabilities Details", showChanges: showChanges, onAdd: {
-                                showingAddLiability = true
-                            }, sections: liabilitySections)
+                            DetailCard(
+                                title: "Total Liabilities Details", showChanges: showChanges,
+                                onAdd: {
+                                    showingAddLiability = true
+                                }, sections: liabilitySections)
                             FinancialIndicatorsCard(
                                 assetTotals: appModel.assetTotals,
                                 liabilityTotals: appModel.liabilityTotals
@@ -2235,18 +2605,49 @@ struct OverviewView: View {
 
     private var assetSections: [DetailSection] {
         [
-            DetailSection(title: "Liquid Assets", value: ntd(appModel.assetTotals.liquidAsset), change: percentageChange(appModel.assetTotals.liquidAsset, previousValue(for: "assetGroup|liquid_asset")), children: children(for: "liquid_asset")),
-            DetailSection(title: "Liquid Investments", value: ntd(appModel.assetTotals.liquidInvestment), change: percentageChange(appModel.assetTotals.liquidInvestment, previousValue(for: "assetGroup|liquid_investment")), children: children(for: "liquid_investment")),
-            DetailSection(title: "Long-term Investment", value: ntd(appModel.assetTotals.longTermInvestment), change: percentageChange(appModel.assetTotals.longTermInvestment, previousValue(for: "assetGroup|long_term_investment")), children: children(for: "long_term_investment")),
-            DetailSection(title: "Other Assets", value: ntd(appModel.assetTotals.otherAsset), change: percentageChange(appModel.assetTotals.otherAsset, previousValue(for: "assetGroup|other_asset")), children: children(for: "other_asset"))
+            DetailSection(
+                title: "Liquid Assets", value: ntd(appModel.assetTotals.liquidAsset),
+                change: percentageChange(
+                    appModel.assetTotals.liquidAsset, previousValue(for: "assetGroup|liquid_asset")),
+                children: children(for: "liquid_asset")),
+            DetailSection(
+                title: "Liquid Investments", value: ntd(appModel.assetTotals.liquidInvestment),
+                change: percentageChange(
+                    appModel.assetTotals.liquidInvestment,
+                    previousValue(for: "assetGroup|liquid_investment")),
+                children: children(for: "liquid_investment")),
+            DetailSection(
+                title: "Long-term Investment", value: ntd(appModel.assetTotals.longTermInvestment),
+                change: percentageChange(
+                    appModel.assetTotals.longTermInvestment,
+                    previousValue(for: "assetGroup|long_term_investment")),
+                children: children(for: "long_term_investment")),
+            DetailSection(
+                title: "Other Assets", value: ntd(appModel.assetTotals.otherAsset),
+                change: percentageChange(
+                    appModel.assetTotals.otherAsset, previousValue(for: "assetGroup|other_asset")),
+                children: children(for: "other_asset")),
         ]
     }
 
     private var liabilitySections: [DetailSection] {
         [
-            DetailSection(title: "Short-term Liabilities", value: ntd(appModel.liabilityTotals.shortTerm), change: percentageChange(appModel.liabilityTotals.shortTerm, previousValue(for: "liabilityGroup|short_term")), children: liabilityChildren(for: "short_term")),
-            DetailSection(title: "Long-term Liabilities", value: ntd(appModel.liabilityTotals.longTerm), change: percentageChange(appModel.liabilityTotals.longTerm, previousValue(for: "liabilityGroup|long_term")), children: liabilityChildren(for: "long_term")),
-            DetailSection(title: "Total Liabilities", value: ntd(appModel.liabilityTotals.total), change: percentageChange(appModel.liabilityTotals.total, previousValue(for: "totalLiabilities")))
+            DetailSection(
+                title: "Short-term Liabilities", value: ntd(appModel.liabilityTotals.shortTerm),
+                change: percentageChange(
+                    appModel.liabilityTotals.shortTerm,
+                    previousValue(for: "liabilityGroup|short_term")),
+                children: liabilityChildren(for: "short_term")),
+            DetailSection(
+                title: "Long-term Liabilities", value: ntd(appModel.liabilityTotals.longTerm),
+                change: percentageChange(
+                    appModel.liabilityTotals.longTerm,
+                    previousValue(for: "liabilityGroup|long_term")),
+                children: liabilityChildren(for: "long_term")),
+            DetailSection(
+                title: "Total Liabilities", value: ntd(appModel.liabilityTotals.total),
+                change: percentageChange(
+                    appModel.liabilityTotals.total, previousValue(for: "totalLiabilities"))),
         ]
     }
 
@@ -2261,20 +2662,22 @@ struct OverviewView: View {
         let names = Set(assetNames + holdingCategories).sorted(by: >)
 
         return names.map { name in
-                let asset = appModel.assets.first { $0.assetGroup == group && $0.name == name }
-                return DetailRow(
-                    name: name,
-                    value: ntd(appModel.assetCategoryTotals["\(group)|\(name)"] ?? asset?.ntdValue ?? 0),
-                    change: percentageChange(
-                        appModel.assetCategoryTotals["\(group)|\(name)"] ?? asset?.ntdValue ?? 0,
-                        previousValue(for: appModel.assetCategoryTotals["\(group)|\(name)"] != nil
+            let asset = appModel.assets.first { $0.assetGroup == group && $0.name == name }
+            return DetailRow(
+                name: name,
+                value: ntd(
+                    appModel.assetCategoryTotals["\(group)|\(name)"] ?? asset?.ntdValue ?? 0),
+                change: percentageChange(
+                    appModel.assetCategoryTotals["\(group)|\(name)"] ?? asset?.ntdValue ?? 0,
+                    previousValue(
+                        for: appModel.assetCategoryTotals["\(group)|\(name)"] != nil
                             ? "assetGroup|\(group)|\(name)"
                             : "asset|\(group)|\(name)")
-                    ),
-                    onDelete: asset.map { record in { appModel.deleteAsset(id: record.id) } },
-                    onEdit: asset.map { record in { editingAsset = record } }
-                )
-            }
+                ),
+                onDelete: asset.map { record in { appModel.deleteAsset(id: record.id) } },
+                onEdit: asset.map { record in { editingAsset = record } }
+            )
+        }
     }
 
     private func liabilityChildren(for group: String) -> [DetailRow] {
@@ -2286,7 +2689,9 @@ struct OverviewView: View {
                     value: liability.currency == "NTD"
                         ? ntd(liability.balance)
                         : "\(liability.currency) \(liability.balance)",
-                    change: percentageChange(liability.balance, previousValue(for: "liability|\(group)|\(liability.name)")),
+                    change: percentageChange(
+                        liability.balance,
+                        previousValue(for: "liability|\(group)|\(liability.name)")),
                     onDelete: { appModel.deleteLiability(id: liability.id) },
                     onEdit: { editingLiability = liability }
                 )
@@ -2295,8 +2700,9 @@ struct OverviewView: View {
 
     private var monthlyBaseline: DatabaseManager.Snapshot? {
         guard let latest = appModel.snapshots.last,
-              let currentDate = snapshotDate(latest.date),
-              let cutoff = Calendar.current.date(byAdding: .month, value: -1, to: currentDate) else { return nil }
+            let currentDate = snapshotDate(latest.date),
+            let cutoff = Calendar.current.date(byAdding: .month, value: -1, to: currentDate)
+        else { return nil }
         return appModel.snapshots.last { snapshot in
             guard let date = snapshotDate(snapshot.date) else { return false }
             return date <= cutoff
@@ -2367,7 +2773,8 @@ private func lastPriceMoney(_ value: Double, currency: String) -> String {
 private func shares(_ value: Double, market: String) -> String {
     let formatter = NumberFormatter()
     formatter.numberStyle = .decimal
-    let isTaiwan = market.caseInsensitiveCompare("Taiwan") == .orderedSame
+    let isTaiwan =
+        market.caseInsensitiveCompare("Taiwan") == .orderedSame
         || market.caseInsensitiveCompare("TW") == .orderedSame
     formatter.minimumFractionDigits = isTaiwan ? 0 : 2
     formatter.maximumFractionDigits = isTaiwan ? 0 : 2
@@ -2377,7 +2784,8 @@ private func shares(_ value: Double, market: String) -> String {
 private func marketCode(for symbol: String) -> String {
     let normalized = symbol.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
     guard let suffix = normalized.split(separator: ".", maxSplits: 1).last,
-          normalized.contains(".") else {
+        normalized.contains(".")
+    else {
         return "US"
     }
 
@@ -2418,7 +2826,7 @@ private let liabilityCategoryOptions = [
     "Personal Loan",
     "Student Loan",
     "Tax Payable",
-    "Other"
+    "Other",
 ]
 
 struct AddAssetSheet: View {
@@ -2436,7 +2844,7 @@ struct AddAssetSheet: View {
         ("liquid_asset", "Liquid Asset"),
         ("liquid_investment", "Liquid Investment"),
         ("long_term_investment", "Long-term Investment"),
-        ("other_asset", "Other Asset")
+        ("other_asset", "Other Asset"),
     ]
     private var currencies: [String] {
         Array(Set(["NTD", "USD", "JPY", currency])).sorted()
@@ -2444,9 +2852,10 @@ struct AddAssetSheet: View {
 
     private var exchangeRate: String? {
         guard currency != "NTD",
-              let foreignAmount = Double(amount),
-              let cost = Double(ntdCost),
-              foreignAmount > 0 else { return nil }
+            let foreignAmount = Double(amount),
+            let cost = Double(ntdCost),
+            foreignAmount > 0
+        else { return nil }
         return String(format: "%.4f", cost / foreignAmount)
     }
 
@@ -2472,12 +2881,19 @@ struct AddAssetSheet: View {
             }
             .pickerStyle(.menu)
 
-            TextField(L10n.text(currency == "NTD" ? "Amount (NTD)" : "Original amount", language: appLanguage), text: $amount)
-                .textFieldStyle(.roundedBorder)
+            TextField(
+                L10n.text(
+                    currency == "NTD" ? "Amount (NTD)" : "Original amount", language: appLanguage),
+                text: $amount
+            )
+            .textFieldStyle(.roundedBorder)
 
             if currency != "NTD" {
-                TextField(L10n.text("Current balance cost basis (NTD)", language: appLanguage), text: $ntdCost)
-                    .textFieldStyle(.roundedBorder)
+                TextField(
+                    L10n.text("Current balance cost basis (NTD)", language: appLanguage),
+                    text: $ntdCost
+                )
+                .textFieldStyle(.roundedBorder)
                 HStack {
                     Text(L10n.text("Average exchange rate", language: appLanguage))
                     Spacer()
@@ -2485,9 +2901,13 @@ struct AddAssetSheet: View {
                         .foregroundStyle(FinTrackTheme.textSecondary)
                 }
                 .font(.callout)
-                Text(L10n.text("Only exchange or opening-fund cost is included. Dividends and investment gains are recorded separately.", language: appLanguage))
-                    .font(.caption)
-                    .foregroundStyle(FinTrackTheme.textSecondary)
+                Text(
+                    L10n.text(
+                        "Only exchange or opening-fund cost is included. Dividends and investment gains are recorded separately.",
+                        language: appLanguage)
+                )
+                .font(.caption)
+                .foregroundStyle(FinTrackTheme.textSecondary)
             }
 
             HStack {
@@ -2510,8 +2930,9 @@ struct AddAssetSheet: View {
 
     private func saveAsset() {
         guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              let originalValue = Double(amount),
-              originalValue >= 0 else {
+            let originalValue = Double(amount),
+            originalValue >= 0
+        else {
             errorMessage = "Enter an asset name and a valid amount."
             return
         }
@@ -2519,7 +2940,9 @@ struct AddAssetSheet: View {
         let ntdValue: Double
         if currency == "NTD" {
             ntdValue = originalValue
-        } else if originalValue == 0 && ntdCost.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        } else if originalValue == 0
+            && ntdCost.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        {
             // Empty category assets can be created with zero value.
             ntdValue = 0
         } else {
@@ -2593,8 +3016,10 @@ struct AddLiabilitySheet: View {
             TextField(L10n.text("Balance", language: appLanguage), text: $balance)
                 .textFieldStyle(.roundedBorder)
 
-            TextField(L10n.text("Interest rate (optional)", language: appLanguage), text: $interestRate)
-                .textFieldStyle(.roundedBorder)
+            TextField(
+                L10n.text("Interest rate (optional)", language: appLanguage), text: $interestRate
+            )
+            .textFieldStyle(.roundedBorder)
 
             HStack {
                 Spacer()
@@ -2616,8 +3041,9 @@ struct AddLiabilitySheet: View {
 
     private func saveLiability() {
         guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              let balanceValue = Double(balance),
-              balanceValue >= 0 else {
+            let balanceValue = Double(balance),
+            balanceValue >= 0
+        else {
             errorMessage = "Enter a liability name and a valid balance."
             return
         }
@@ -2671,14 +3097,16 @@ struct EditAssetSheet: View {
         VStack(alignment: .leading, spacing: 18) {
             Text(L10n.text("Edit Asset", language: appLanguage)).font(.title2.weight(.bold))
             LabeledContent(L10n.text("Asset name", language: appLanguage)) {
-                TextField(L10n.text("Enter asset name", language: appLanguage), text: $name).textFieldStyle(.roundedBorder)
+                TextField(L10n.text("Enter asset name", language: appLanguage), text: $name)
+                    .textFieldStyle(.roundedBorder)
             }
             Picker(L10n.text("Currency", language: appLanguage), selection: $currency) {
                 ForEach(currencies, id: \.self) { Text($0).tag($0) }
             }
             .pickerStyle(.menu)
             LabeledContent(L10n.text("Amount", language: appLanguage)) {
-                TextField(L10n.text("Enter current amount", language: appLanguage), text: $amount).textFieldStyle(.roundedBorder)
+                TextField(L10n.text("Enter current amount", language: appLanguage), text: $amount)
+                    .textFieldStyle(.roundedBorder)
             }
             if asset.assetGroup != "liquid_investment" {
                 Text(L10n.text("Balance adjustment", language: appLanguage))
@@ -2689,14 +3117,18 @@ struct EditAssetSheet: View {
                 }
                 .pickerStyle(.segmented)
                 LabeledContent(L10n.text("Amount", language: appLanguage)) {
-                    TextField(L10n.text("Enter adjustment amount", language: appLanguage), text: $adjustmentAmount)
-                        .textFieldStyle(.roundedBorder)
+                    TextField(
+                        L10n.text("Enter adjustment amount", language: appLanguage),
+                        text: $adjustmentAmount
+                    )
+                    .textFieldStyle(.roundedBorder)
                 }
             }
             HStack {
                 Spacer()
                 Button(L10n.text("Cancel", language: appLanguage)) { dismiss() }
-                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(.borderedProminent)
+                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(
+                    .borderedProminent)
             }
             if let errorMessage {
                 Text(errorMessage).font(.caption).foregroundStyle(.red)
@@ -2708,11 +3140,13 @@ struct EditAssetSheet: View {
 
     private func save() {
         guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              let value = Double(amount), value >= 0 else {
+            let value = Double(amount), value >= 0
+        else {
             errorMessage = "Enter a valid name and amount."
             return
         }
-        let adjustment = adjustmentAmount.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let adjustment =
+            adjustmentAmount.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             ? 0
             : (Double(adjustmentAmount) ?? -1)
         guard adjustment >= 0 else {
@@ -2763,8 +3197,12 @@ struct EditLiabilitySheet: View {
     init(liability: DatabaseManager.LiabilityRecord) {
         self.liability = liability
         _name = State(initialValue: liability.name)
-        _group = State(initialValue: liability.liabilityGroup == "short_term" ? "Short-term Liability" : "Long-term Liability")
-        _category = State(initialValue: liabilityCategoryOptions.contains(liability.category) ? liability.category : "Other")
+        _group = State(
+            initialValue: liability.liabilityGroup == "short_term"
+                ? "Short-term Liability" : "Long-term Liability")
+        _category = State(
+            initialValue: liabilityCategoryOptions.contains(liability.category)
+                ? liability.category : "Other")
         _currency = State(initialValue: liability.currency)
         _balance = State(initialValue: String(liability.balance))
         _interestRate = State(initialValue: liability.interestRate.map { String($0) } ?? "")
@@ -2774,7 +3212,8 @@ struct EditLiabilitySheet: View {
         VStack(alignment: .leading, spacing: 18) {
             Text(L10n.text("Edit Liability", language: appLanguage)).font(.title2.weight(.bold))
             LabeledContent(L10n.text("Liability name", language: appLanguage)) {
-                TextField(L10n.text("Enter liability name", language: appLanguage), text: $name).textFieldStyle(.roundedBorder)
+                TextField(L10n.text("Enter liability name", language: appLanguage), text: $name)
+                    .textFieldStyle(.roundedBorder)
             }
             Picker(L10n.text("Group", language: appLanguage), selection: $group) {
                 ForEach(groups, id: \.self) { Text($0).tag($0) }
@@ -2791,10 +3230,13 @@ struct EditLiabilitySheet: View {
             }
             .pickerStyle(.menu)
             LabeledContent(L10n.text("Balance", language: appLanguage)) {
-                TextField(L10n.text("Enter current balance", language: appLanguage), text: $balance).textFieldStyle(.roundedBorder)
+                TextField(L10n.text("Enter current balance", language: appLanguage), text: $balance)
+                    .textFieldStyle(.roundedBorder)
             }
             LabeledContent(L10n.text("Interest rate (optional)", language: appLanguage)) {
-                TextField(L10n.text("Enter interest rate (%)", language: appLanguage), text: $interestRate).textFieldStyle(.roundedBorder)
+                TextField(
+                    L10n.text("Enter interest rate (%)", language: appLanguage), text: $interestRate
+                ).textFieldStyle(.roundedBorder)
             }
             Text(L10n.text("Balance adjustment", language: appLanguage))
                 .font(.headline)
@@ -2804,13 +3246,17 @@ struct EditLiabilitySheet: View {
             }
             .pickerStyle(.segmented)
             LabeledContent(L10n.text("Amount", language: appLanguage)) {
-                TextField(L10n.text("Enter adjustment amount", language: appLanguage), text: $adjustmentAmount)
-                    .textFieldStyle(.roundedBorder)
+                TextField(
+                    L10n.text("Enter adjustment amount", language: appLanguage),
+                    text: $adjustmentAmount
+                )
+                .textFieldStyle(.roundedBorder)
             }
             HStack {
                 Spacer()
                 Button(L10n.text("Cancel", language: appLanguage)) { dismiss() }
-                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(.borderedProminent)
+                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(
+                    .borderedProminent)
             }
             if let errorMessage {
                 Text(errorMessage).font(.caption).foregroundStyle(.red)
@@ -2822,18 +3268,21 @@ struct EditLiabilitySheet: View {
 
     private func save() {
         guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              let balanceValue = Double(balance), balanceValue >= 0 else {
+            let balanceValue = Double(balance), balanceValue >= 0
+        else {
             errorMessage = "Enter a valid name and balance."
             return
         }
-        let adjustment = adjustmentAmount.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let adjustment =
+            adjustmentAmount.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             ? 0
             : (Double(adjustmentAmount) ?? -1)
         guard adjustment >= 0 else {
             errorMessage = "Enter a valid adjustment amount."
             return
         }
-        let adjustedBalance = adjustmentType == "increase" ? balanceValue + adjustment : balanceValue - adjustment
+        let adjustedBalance =
+            adjustmentType == "increase" ? balanceValue + adjustment : balanceValue - adjustment
         guard adjustedBalance >= 0 else {
             errorMessage = "The balance cannot be less than zero."
             return
@@ -2879,14 +3328,17 @@ struct AddHoldingSheet: View {
 
     private let groups = [
         ("liquid_investment", "Liquid Investment"),
-        ("long_term_investment", "Long-term Investment")
+        ("long_term_investment", "Long-term Investment"),
     ]
 
     private var availableSubcategories: [String] {
-        Array(Set(appModel.holdingRecords
-            .filter { $0.assetGroup == assetGroup }
-            .map(\.category)))
-            .sorted(by: >)
+        Array(
+            Set(
+                appModel.holdingRecords
+                    .filter { $0.assetGroup == assetGroup }
+                    .map(\.category))
+        )
+        .sorted(by: >)
     }
 
     var body: some View {
@@ -2956,7 +3408,10 @@ struct AddHoldingSheet: View {
                 Text("USD").tag("USD")
             }
             .pickerStyle(.menu)
-            Toggle(L10n.text("This holding will be used for recurring investment", language: appLanguage), isOn: $isRecurringHolding)
+            Toggle(
+                L10n.text(
+                    "This holding will be used for recurring investment", language: appLanguage),
+                isOn: $isRecurringHolding)
             LabeledContent(L10n.text("Shares", language: appLanguage)) {
                 TextField(L10n.text("Enter shares", language: appLanguage), text: $shares)
                     .textFieldStyle(.roundedBorder)
@@ -2965,14 +3420,19 @@ struct AddHoldingSheet: View {
                 TextField(L10n.text("Enter total cost", language: appLanguage), text: $totalCost)
                     .textFieldStyle(.roundedBorder)
             }
-            Text(L10n.text("Holding cost and P&L stay in the original currency until an exchange transaction is recorded.", language: appLanguage))
-                .font(.caption)
-                .foregroundStyle(FinTrackTheme.textSecondary)
+            Text(
+                L10n.text(
+                    "Holding cost and P&L stay in the original currency until an exchange transaction is recorded.",
+                    language: appLanguage)
+            )
+            .font(.caption)
+            .foregroundStyle(FinTrackTheme.textSecondary)
 
             HStack {
                 Spacer()
                 Button(L10n.text("Cancel", language: appLanguage)) { dismiss() }
-                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(.borderedProminent)
+                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(
+                    .borderedProminent)
             }
             if let errorMessage {
                 Text(errorMessage).font(.caption).foregroundStyle(.red)
@@ -3004,9 +3464,10 @@ struct AddHoldingSheet: View {
         let sharesText = shares.isEmpty && isRecurringHolding ? "0" : shares
         let costText = totalCost.isEmpty && isRecurringHolding ? "0" : totalCost
         guard !symbol.isEmpty, !securityName.isEmpty,
-              !subcategory.isEmpty, let shareValue = Double(sharesText),
-              let cost = Double(costText), shareValue >= 0, cost >= 0,
-              isRecurringHolding || (shareValue > 0 && cost > 0) else {
+            !subcategory.isEmpty, let shareValue = Double(sharesText),
+            let cost = Double(costText), shareValue >= 0, cost >= 0,
+            isRecurringHolding || (shareValue > 0 && cost > 0)
+        else {
             errorMessage = "Complete the holding fields with valid values."
             return
         }
@@ -3076,7 +3537,8 @@ struct EditHoldingSheet: View {
                         } label: {
                             VStack(alignment: .leading) {
                                 Text(suggestion.symbol)
-                                Text(suggestion.displayName).font(.caption).foregroundStyle(.secondary)
+                                Text(suggestion.displayName).font(.caption).foregroundStyle(
+                                    .secondary)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .contentShape(Rectangle())
@@ -3115,7 +3577,8 @@ struct EditHoldingSheet: View {
             HStack {
                 Spacer()
                 Button(L10n.text("Cancel", language: appLanguage)) { dismiss() }
-                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(.borderedProminent)
+                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(
+                    .borderedProminent)
             }
             if let errorMessage {
                 Text(errorMessage).font(.caption).foregroundStyle(.red)
@@ -3137,8 +3600,9 @@ struct EditHoldingSheet: View {
 
     private func save() {
         guard !symbol.isEmpty, !securityName.isEmpty,
-              let shareValue = Double(shares), shareValue >= 0,
-              let cost = Double(totalCost), cost >= 0 else {
+            let shareValue = Double(shares), shareValue >= 0,
+            let cost = Double(totalCost), cost >= 0
+        else {
             errorMessage = "Enter valid holding values."
             return
         }
@@ -3174,11 +3638,16 @@ struct PortfolioView: View {
     var body: some View {
         let displayedHoldings = appModel.holdingRecords
             .sorted {
-                let lhsKey = String($0.securityName.trimmingCharacters(in: .whitespacesAndNewlines).prefix(1)).uppercased()
-                let rhsKey = String($1.securityName.trimmingCharacters(in: .whitespacesAndNewlines).prefix(1)).uppercased()
+                let lhsKey = String(
+                    $0.securityName.trimmingCharacters(in: .whitespacesAndNewlines).prefix(1)
+                ).uppercased()
+                let rhsKey = String(
+                    $1.securityName.trimmingCharacters(in: .whitespacesAndNewlines).prefix(1)
+                ).uppercased()
                 if lhsKey != rhsKey { return sortAscending ? lhsKey < rhsKey : lhsKey > rhsKey }
                 let comparison = $0.securityName.localizedCaseInsensitiveCompare($1.securityName)
-                return sortAscending ? comparison == .orderedAscending : comparison == .orderedDescending
+                return sortAscending
+                    ? comparison == .orderedAscending : comparison == .orderedDescending
             }
             .map(makePortfolioHolding)
         let portfolioTotals = appModel.portfolioTotals
@@ -3187,29 +3656,36 @@ struct PortfolioView: View {
             HStack(spacing: 16) {
                 PortfolioMetricCard(
                     title: "TOTAL P&L",
-                    value: portfolioTotals.pricedHoldings > 0 ? signedNTD(portfolioTotals.totalPLNTD) : "—",
+                    value: portfolioTotals.pricedHoldings > 0
+                        ? signedNTD(portfolioTotals.totalPLNTD) : "—",
                     detail: L10n.text(
                         portfolioTotals.pricedHoldings > 0 ? "NTD converted" : "No market prices",
                         language: appLanguage
                     ),
-                    tint: performanceColor(isNegative: portfolioTotals.totalPLNTD < 0, mode: performanceColorMode),
+                    tint: performanceColor(
+                        isNegative: portfolioTotals.totalPLNTD < 0, mode: performanceColorMode),
                     height: 100
                 )
                 PortfolioMetricCard(
                     title: "TODAY",
-                    value: appModel.todayPLNTD.map(signedNTD) ?? (appModel.isRefreshingMarketData ? "…" : "—"),
+                    value: appModel.todayPLNTD.map(signedNTD)
+                        ?? (appModel.isRefreshingMarketData ? "…" : "—"),
                     detail: appModel.isRefreshingMarketData
                         ? L10n.text("Updating market prices", language: appLanguage)
                         : (appModel.todayPLNTD == nil
                             ? L10n.text("No market prices", language: appLanguage)
                             : L10n.text("vs previous close", language: appLanguage)),
-                    tint: appModel.todayPLNTD.map { performanceColor(isNegative: $0 < 0, mode: performanceColorMode) } ?? .primary,
+                    tint: appModel.todayPLNTD.map {
+                        performanceColor(isNegative: $0 < 0, mode: performanceColorMode)
+                    } ?? .primary,
                     height: 100
                 )
                 PortfolioMetricCard(
                     title: "MARKET VALUE",
-                    value: portfolioTotals.pricedHoldings > 0 ? ntd(portfolioTotals.marketValueNTD) : "—",
-                    detail: "\(displayedHoldings.count) \(L10n.text("holdings", language: appLanguage))",
+                    value: portfolioTotals.pricedHoldings > 0
+                        ? ntd(portfolioTotals.marketValueNTD) : "—",
+                    detail:
+                        "\(displayedHoldings.count) \(L10n.text("holdings", language: appLanguage))",
                     tint: .primary,
                     height: 100
                 )
@@ -3227,9 +3703,15 @@ struct PortfolioView: View {
                     PositionsCard(
                         holdings: displayedHoldings,
                         onAdd: { showingAddHolding = true },
-                        onEdit: { id in editingHolding = appModel.holdingRecords.first { $0.id == id } },
-                        onDelete: { id in pendingDeleteHolding = displayedHoldings.first { $0.id == id } },
-                        onAddDividend: { id in dividendHolding = appModel.holdingRecords.first { $0.id == id } },
+                        onEdit: { id in
+                            editingHolding = appModel.holdingRecords.first { $0.id == id }
+                        },
+                        onDelete: { id in
+                            pendingDeleteHolding = displayedHoldings.first { $0.id == id }
+                        },
+                        onAddDividend: { id in
+                            dividendHolding = appModel.holdingRecords.first { $0.id == id }
+                        },
                         sortAscending: sortAscending,
                         onToggleSort: { sortAscending.toggle() }
                     )
@@ -3263,13 +3745,20 @@ struct PortfolioView: View {
         }
     }
 
-    private func makePortfolioHolding(_ holding: DatabaseManager.HoldingRecord) -> PortfolioHolding {
-        let average = holding.shares > 0
+    private func makePortfolioHolding(_ holding: DatabaseManager.HoldingRecord) -> PortfolioHolding
+    {
+        let average =
+            holding.shares > 0
             ? money(holding.totalCost / holding.shares, currency: holding.currency)
             : "—"
-        let price = holding.marketPrice.map { lastPriceMoney($0, currency: holding.currency) } ?? "—"
-        let value = holding.marketValue.map { holdingValueMoney($0, currency: holding.currency, market: holding.market) } ?? "—"
-        let profitLoss = holding.capitalGainLoss.map { money($0, currency: holding.currency) } ?? "—"
+        let price =
+            holding.marketPrice.map { lastPriceMoney($0, currency: holding.currency) } ?? "—"
+        let value =
+            holding.marketValue.map {
+                holdingValueMoney($0, currency: holding.currency, market: holding.market)
+            } ?? "—"
+        let profitLoss =
+            holding.capitalGainLoss.map { money($0, currency: holding.currency) } ?? "—"
         let returnRate: String
         if let gain = holding.capitalGainLoss, holding.totalCost > 0 {
             returnRate = String(format: "%.2f%%", gain / holding.totalCost * 100)
@@ -3297,7 +3786,8 @@ struct PortfolioView: View {
 }
 
 private func holdingValueMoney(_ value: Double, currency: String, market: String) -> String {
-    let isTaiwan = market.caseInsensitiveCompare("Taiwan") == .orderedSame
+    let isTaiwan =
+        market.caseInsensitiveCompare("Taiwan") == .orderedSame
         || market.caseInsensitiveCompare("TW") == .orderedSame
     guard isTaiwan else { return money(value, currency: currency) }
     let formatter = NumberFormatter()
@@ -3326,9 +3816,11 @@ struct PortfolioMetricCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(L10n.text(title, language: appLanguage)).font(.caption.weight(.bold)).foregroundStyle(FinTrackTheme.textSecondary)
+            Text(L10n.text(title, language: appLanguage)).font(.caption.weight(.bold))
+                .foregroundStyle(FinTrackTheme.textSecondary)
             Text(value).font(.title2.weight(.bold)).foregroundStyle(tint)
-            Text(L10n.text(detail, language: appLanguage)).font(.caption).foregroundStyle(tint == .primary ? .secondary : tint)
+            Text(L10n.text(detail, language: appLanguage)).font(.caption).foregroundStyle(
+                tint == .primary ? .secondary : tint)
         }
         .padding(14)
         .frame(height: height, alignment: .topLeading)
@@ -3352,13 +3844,14 @@ struct PositionsCard: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(L10n.text("HOLDINGS", language: appLanguage)).font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                Text(L10n.text("HOLDINGS", language: appLanguage)).font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
                 Spacer()
                 Button(action: onAdd) {
                     Image(systemName: "plus")
                 }
-                    .buttonStyle(.plain)
-                    .font(.callout.weight(.semibold))
+                .buttonStyle(.plain)
+                .font(.callout.weight(.semibold))
             }
             .padding(.horizontal, 16)
             .padding(.top, 14)
@@ -3389,9 +3882,12 @@ struct PositionsCard: View {
             ScrollView(.vertical) {
                 LazyVStack(spacing: 0) {
                     if holdings.isEmpty {
-                        Text(L10n.text("No holdings yet. Click Add to create one.", language: appLanguage))
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, minHeight: 160)
+                        Text(
+                            L10n.text(
+                                "No holdings yet. Click Add to create one.", language: appLanguage)
+                        )
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, minHeight: 160)
                     } else {
                         ForEach(holdings) { holding in
                             positionRow(holding)
@@ -3433,13 +3929,17 @@ struct PositionsCard: View {
             Text(holding.value).font(.headline)
                 .frame(width: 112, alignment: .trailing)
             VStack(alignment: .trailing, spacing: 3) {
-                Text(holding.totalPL).font(.headline).foregroundStyle(performanceColor(isNegative: holding.isNegative, mode: performanceColorMode))
-                Text(holding.totalRate).font(.caption).foregroundStyle(performanceColor(isNegative: holding.isNegative, mode: performanceColorMode))
+                Text(holding.totalPL).font(.headline).foregroundStyle(
+                    performanceColor(isNegative: holding.isNegative, mode: performanceColorMode))
+                Text(holding.totalRate).font(.caption).foregroundStyle(
+                    performanceColor(isNegative: holding.isNegative, mode: performanceColorMode))
             }
             .frame(width: 132, alignment: .trailing)
         }
         .padding(.horizontal, 20).padding(.vertical, 8)
-        .overlay(alignment: .bottom) { Rectangle().fill(Color.secondary.opacity(0.15)).frame(height: 1) }
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(Color.secondary.opacity(0.15)).frame(height: 1)
+        }
         .contentShape(Rectangle())
         .contextMenu {
             Button("Edit") { onEdit(holding.id) }
@@ -3461,60 +3961,66 @@ struct DividendManagementView: View {
         ScrollView {
             VStack(spacing: 16) {
                 VStack(spacing: 0) {
-                HStack {
-                    Spacer()
-                    Button(action: { showingAdd = true }) { Image(systemName: "plus") }
-                        .buttonStyle(.plain)
-                        .font(.callout.weight(.semibold))
-                }
-                .padding(.horizontal, 48)
-                .padding(.top, 16)
-                .padding(.bottom, 10)
+                    HStack {
+                        Spacer()
+                        Button(action: { showingAdd = true }) { Image(systemName: "plus") }
+                            .buttonStyle(.plain)
+                            .font(.callout.weight(.semibold))
+                    }
+                    .padding(.horizontal, 48)
+                    .padding(.top, 16)
+                    .padding(.bottom, 10)
 
-                HStack {
-                    Text(L10n.text("SECURITY", language: appLanguage)).frame(maxWidth: .infinity, alignment: .leading)
-                    Text(L10n.text("DATE", language: appLanguage)).frame(width: 130, alignment: .trailing)
-                    Text(L10n.text("AMOUNT", language: appLanguage)).frame(width: 140, alignment: .trailing)
-                }
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 48)
-                .padding(.top, 8)
-                .padding(.bottom, 10)
+                    HStack {
+                        Text(L10n.text("SECURITY", language: appLanguage)).frame(
+                            maxWidth: .infinity, alignment: .leading)
+                        Text(L10n.text("DATE", language: appLanguage)).frame(
+                            width: 130, alignment: .trailing)
+                        Text(L10n.text("AMOUNT", language: appLanguage)).frame(
+                            width: 140, alignment: .trailing)
+                    }
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 48)
+                    .padding(.top, 8)
+                    .padding(.bottom, 10)
 
-                LazyVStack(spacing: 0) {
-                    if appModel.dividendRecords.isEmpty {
-                        Text("No dividends recorded. Click + to add one.")
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, minHeight: 180)
-                    } else {
-                        ForEach(appModel.dividendRecords) { dividend in
-                            HStack(alignment: .top) {
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(dividend.securityName)
-                                        .font(.headline)
-                                        .lineLimit(1)
-                                    Text(dividend.symbol).font(.caption).foregroundStyle(.secondary)
+                    LazyVStack(spacing: 0) {
+                        if appModel.dividendRecords.isEmpty {
+                            Text("No dividends recorded. Click + to add one.")
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, minHeight: 180)
+                        } else {
+                            ForEach(appModel.dividendRecords) { dividend in
+                                HStack(alignment: .top) {
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(dividend.securityName)
+                                            .font(.headline)
+                                            .lineLimit(1)
+                                        Text(dividend.symbol).font(.caption).foregroundStyle(
+                                            .secondary)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    Text(dividend.payDate)
+                                        .frame(width: 130, alignment: .trailing)
+                                        .padding(.top, 2)
+                                    Text(money(dividend.amount, currency: dividend.currency))
+                                        .frame(width: 140, alignment: .trailing)
+                                        .padding(.top, 2)
                                 }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                Text(dividend.payDate)
-                                    .frame(width: 130, alignment: .trailing)
-                                    .padding(.top, 2)
-                                Text(money(dividend.amount, currency: dividend.currency))
-                                    .frame(width: 140, alignment: .trailing)
-                                    .padding(.top, 2)
-                            }
-                            .padding(.horizontal, 48)
-                            .padding(.vertical, 11)
-                            .contentShape(Rectangle())
-                            .contextMenu {
-                                Button("Edit") { editing = dividend }
-                                Divider()
-                                Button("Delete", role: .destructive) { pendingDelete = dividend }
+                                .padding(.horizontal, 48)
+                                .padding(.vertical, 11)
+                                .contentShape(Rectangle())
+                                .contextMenu {
+                                    Button("Edit") { editing = dividend }
+                                    Divider()
+                                    Button("Delete", role: .destructive) {
+                                        pendingDelete = dividend
+                                    }
+                                }
                             }
                         }
                     }
-                }
                 }
                 .background(FinTrackTheme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(FinTrackTheme.border))
@@ -3528,7 +4034,9 @@ struct DividendManagementView: View {
             Alert(
                 title: Text("Delete Dividend?"),
                 message: Text("This dividend record will be removed."),
-                primaryButton: .destructive(Text("Delete")) { appModel.deleteDividend(id: dividend.id) },
+                primaryButton: .destructive(Text("Delete")) {
+                    appModel.deleteDividend(id: dividend.id)
+                },
                 secondaryButton: .cancel()
             )
         }
@@ -3552,7 +4060,8 @@ struct AddDividendManagementSheet: View {
     private var receivingAssets: [DatabaseManager.AssetRecord] {
         appModel.assets.filter { asset in
             if currency == "NTD" {
-                return asset.assetGroup == "liquid_asset" && asset.currency == "NTD" && asset.category != "Foreign Currency"
+                return asset.assetGroup == "liquid_asset" && asset.currency == "NTD"
+                    && asset.category != "Foreign Currency"
             }
             return asset.category == "Foreign Currency" && asset.currency == currency
         }
@@ -3568,17 +4077,26 @@ struct AddDividendManagementSheet: View {
                 }
             }
             .pickerStyle(.menu)
-            DatePicker(L10n.text("Payment date", language: appLanguage), selection: $payDate, displayedComponents: .date)
-            TextField(L10n.text("Amount", language: appLanguage), text: $amount).textFieldStyle(.roundedBorder)
+            DatePicker(
+                L10n.text("Payment date", language: appLanguage), selection: $payDate,
+                displayedComponents: .date)
+            TextField(L10n.text("Amount", language: appLanguage), text: $amount).textFieldStyle(
+                .roundedBorder)
             LabeledContent(L10n.text("Currency", language: appLanguage)) { Text(currency) }
-            Picker(L10n.text("Receiving account", language: appLanguage), selection: $receivingAssetID) {
+            Picker(
+                L10n.text("Receiving account", language: appLanguage), selection: $receivingAssetID
+            ) {
                 Text(L10n.text("No linked account", language: appLanguage)).tag(Int64(0))
                 ForEach(receivingAssets) { asset in
                     Text("\(asset.name) (\(asset.currency))").tag(asset.id)
                 }
             }
             .pickerStyle(.menu)
-            HStack { Spacer(); Button("Cancel") { dismiss() }; Button("Save") { save() }.buttonStyle(.borderedProminent) }
+            HStack {
+                Spacer()
+                Button("Cancel") { dismiss() }
+                Button("Save") { save() }.buttonStyle(.borderedProminent)
+            }
             if let errorMessage { Text(errorMessage).font(.caption).foregroundStyle(.red) }
         }
         .padding(24)
@@ -3590,9 +4108,13 @@ struct AddDividendManagementSheet: View {
             errorMessage = "Select a security and enter an amount greater than zero."
             return
         }
-        let formatter = ISO8601DateFormatter(); formatter.formatOptions = [.withFullDate]
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withFullDate]
         do {
-            try appModel.addDividend(holdingID: holdingID, payDate: formatter.string(from: payDate), amount: value, currency: currency, receivingAssetID: receivingAssetID == 0 ? nil : receivingAssetID)
+            try appModel.addDividend(
+                holdingID: holdingID, payDate: formatter.string(from: payDate), amount: value,
+                currency: currency, receivingAssetID: receivingAssetID == 0 ? nil : receivingAssetID
+            )
             dismiss()
         } catch { errorMessage = error.localizedDescription }
     }
@@ -3613,7 +4135,8 @@ struct EditDividendSheet: View {
     private var receivingAssets: [DatabaseManager.AssetRecord] {
         appModel.assets.filter { asset in
             if currency == "NTD" {
-                return asset.assetGroup == "liquid_asset" && asset.currency == "NTD" && asset.category != "Foreign Currency"
+                return asset.assetGroup == "liquid_asset" && asset.currency == "NTD"
+                    && asset.category != "Foreign Currency"
             }
             return asset.category == "Foreign Currency" && asset.currency == currency
         }
@@ -3621,7 +4144,8 @@ struct EditDividendSheet: View {
 
     init(dividend: DatabaseManager.DividendRecord) {
         self.dividend = dividend
-        let formatter = ISO8601DateFormatter(); formatter.formatOptions = [.withFullDate]
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withFullDate]
         _payDate = State(initialValue: formatter.date(from: dividend.payDate) ?? Date())
         _amount = State(initialValue: String(dividend.amount))
         _receivingAssetID = State(initialValue: dividend.receivingAssetID ?? 0)
@@ -3631,16 +4155,25 @@ struct EditDividendSheet: View {
         VStack(alignment: .leading, spacing: 16) {
             Text(L10n.text("Edit Dividend", language: appLanguage)).font(.title2.weight(.bold))
             Text(dividend.securityName).foregroundStyle(.secondary)
-            DatePicker(L10n.text("Payment date", language: appLanguage), selection: $payDate, displayedComponents: .date)
-            TextField(L10n.text("Amount", language: appLanguage), text: $amount).textFieldStyle(.roundedBorder)
+            DatePicker(
+                L10n.text("Payment date", language: appLanguage), selection: $payDate,
+                displayedComponents: .date)
+            TextField(L10n.text("Amount", language: appLanguage), text: $amount).textFieldStyle(
+                .roundedBorder)
             LabeledContent(L10n.text("Currency", language: appLanguage)) { Text(currency) }
-            Picker(L10n.text("Receiving account", language: appLanguage), selection: $receivingAssetID) {
+            Picker(
+                L10n.text("Receiving account", language: appLanguage), selection: $receivingAssetID
+            ) {
                 Text(L10n.text("No linked account", language: appLanguage)).tag(Int64(0))
                 ForEach(receivingAssets) { asset in
                     Text("\(asset.name) (\(asset.currency))").tag(asset.id)
                 }
             }.pickerStyle(.menu)
-            HStack { Spacer(); Button("Cancel") { dismiss() }; Button("Save") { save() }.buttonStyle(.borderedProminent) }
+            HStack {
+                Spacer()
+                Button("Cancel") { dismiss() }
+                Button("Save") { save() }.buttonStyle(.borderedProminent)
+            }
             if let errorMessage { Text(errorMessage).font(.caption).foregroundStyle(.red) }
         }
         .padding(24)
@@ -3648,10 +4181,17 @@ struct EditDividendSheet: View {
     }
 
     private func save() {
-        guard let value = Double(amount), value > 0 else { errorMessage = "Enter an amount greater than zero."; return }
-        let formatter = ISO8601DateFormatter(); formatter.formatOptions = [.withFullDate]
+        guard let value = Double(amount), value > 0 else {
+            errorMessage = "Enter an amount greater than zero."
+            return
+        }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withFullDate]
         do {
-            try appModel.updateDividend(id: dividend.id, payDate: formatter.string(from: payDate), amount: value, currency: currency, receivingAssetID: receivingAssetID == 0 ? nil : receivingAssetID)
+            try appModel.updateDividend(
+                id: dividend.id, payDate: formatter.string(from: payDate), amount: value,
+                currency: currency, receivingAssetID: receivingAssetID == 0 ? nil : receivingAssetID
+            )
             dismiss()
         } catch { errorMessage = error.localizedDescription }
     }
@@ -3672,7 +4212,8 @@ struct AddDividendSheet: View {
     private var receivingAssets: [DatabaseManager.AssetRecord] {
         appModel.assets.filter { asset in
             if currency == "NTD" {
-                return asset.assetGroup == "liquid_asset" && asset.currency == "NTD" && asset.category != "Foreign Currency"
+                return asset.assetGroup == "liquid_asset" && asset.currency == "NTD"
+                    && asset.category != "Foreign Currency"
             }
             return asset.category == "Foreign Currency" && asset.currency == currency
         }
@@ -3686,19 +4227,28 @@ struct AddDividendSheet: View {
         VStack(alignment: .leading, spacing: 16) {
             Text(L10n.text("Add Dividend", language: appLanguage)).font(.title2.weight(.bold))
             Text(holding.securityName).foregroundStyle(.secondary)
-            DatePicker(L10n.text("Payment date", language: appLanguage), selection: $payDate, displayedComponents: .date)
-            TextField(L10n.text("Amount", language: appLanguage), text: $amount).textFieldStyle(.roundedBorder)
+            DatePicker(
+                L10n.text("Payment date", language: appLanguage), selection: $payDate,
+                displayedComponents: .date)
+            TextField(L10n.text("Amount", language: appLanguage), text: $amount).textFieldStyle(
+                .roundedBorder)
             LabeledContent(L10n.text("Currency", language: appLanguage)) { Text(currency) }
-            Picker(L10n.text("Receiving account", language: appLanguage), selection: $receivingAssetID) {
+            Picker(
+                L10n.text("Receiving account", language: appLanguage), selection: $receivingAssetID
+            ) {
                 Text(L10n.text("No linked account", language: appLanguage)).tag(Int64(0))
                 ForEach(receivingAssets) { asset in
                     Text("\(asset.name) (\(asset.currency))").tag(asset.id)
                 }
             }
             .pickerStyle(.menu)
-            Text(L10n.text("Dividends are recorded separately and are not included in exchange-rate cost calculations.", language: appLanguage))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Text(
+                L10n.text(
+                    "Dividends are recorded separately and are not included in exchange-rate cost calculations.",
+                    language: appLanguage)
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
             HStack {
                 Spacer()
                 Button("Cancel") { dismiss() }
@@ -3746,23 +4296,30 @@ struct AllocationCard: View {
                 .font(.caption.weight(.bold))
                 .foregroundStyle(.secondary)
             if records.isEmpty {
-                Text(L10n.text("Allocation will appear after holdings and market prices are available.", language: appLanguage))
-                    .foregroundStyle(.secondary)
+                Text(
+                    L10n.text(
+                        "Allocation will appear after holdings and market prices are available.",
+                        language: appLanguage)
+                )
+                .foregroundStyle(.secondary)
             } else {
                 let total = rankedRecords.reduce(0) { $0 + $1.valueNTD }
                 HStack(alignment: .center, spacing: 0) {
                     ZStack {
                         Circle()
                             .stroke(Color.white.opacity(0.08), lineWidth: 38)
-                        ForEach(Array(rankedRecords.enumerated()), id: \.element.id) { index, record in
+                        ForEach(Array(rankedRecords.enumerated()), id: \.element.id) {
+                            index, record in
                             Circle()
                                 .trim(
                                     from: allocationStart(for: index, total: total),
-                                    to: allocationStart(for: index, total: total) + allocationFraction(record, total: total)
+                                    to: allocationStart(for: index, total: total)
+                                        + allocationFraction(record, total: total)
                                 )
                                 .stroke(
                                     allocationColor(index),
-                                    style: StrokeStyle(lineWidth: hoveredIndex == index ? 44 : 38, lineCap: .butt)
+                                    style: StrokeStyle(
+                                        lineWidth: hoveredIndex == index ? 44 : 38, lineCap: .butt)
                                 )
                                 .rotationEffect(.degrees(-90))
                                 .scaleEffect(hoveredIndex == index ? 1.04 : 1)
@@ -3790,7 +4347,8 @@ struct AllocationCard: View {
                     .frame(maxWidth: .infinity)
 
                     VStack(alignment: .leading, spacing: 10) {
-                        ForEach(Array(rankedRecords.enumerated()), id: \.element.id) { index, record in
+                        ForEach(Array(rankedRecords.enumerated()), id: \.element.id) {
+                            index, record in
                             HStack(spacing: 8) {
                                 Circle().fill(allocationColor(index)).frame(width: 10, height: 10)
                                 Text(record.name)
@@ -3805,13 +4363,18 @@ struct AllocationCard: View {
                     .frame(maxWidth: .infinity)
 
                     VStack(alignment: .trailing, spacing: 10) {
-                        ForEach(Array(rankedRecords.enumerated()), id: \.element.id) { index, record in
-                            Text(total > 0 ? String(format: "%.1f%%", record.valueNTD / total * 100) : "0.0%")
-                                .font(hoveredIndex == index ? .body.weight(.semibold) : .body)
-                                .foregroundStyle(hoveredIndex == index ? .primary : .secondary)
-                                .frame(maxWidth: .infinity, alignment: .trailing)
-                                .padding(.vertical, 2)
-                                .padding(.horizontal, 6)
+                        ForEach(Array(rankedRecords.enumerated()), id: \.element.id) {
+                            index, record in
+                            Text(
+                                total > 0
+                                    ? String(format: "%.1f%%", record.valueNTD / total * 100)
+                                    : "0.0%"
+                            )
+                            .font(hoveredIndex == index ? .body.weight(.semibold) : .body)
+                            .foregroundStyle(hoveredIndex == index ? .primary : .secondary)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                            .padding(.vertical, 2)
+                            .padding(.horizontal, 6)
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -3824,7 +4387,9 @@ struct AllocationCard: View {
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(FinTrackTheme.border))
     }
 
-    private func allocationFraction(_ record: DatabaseManager.AllocationRecord, total: Double) -> CGFloat {
+    private func allocationFraction(_ record: DatabaseManager.AllocationRecord, total: Double)
+        -> CGFloat
+    {
         total > 0 ? CGFloat(record.valueNTD / total) : 0
     }
 
@@ -3872,7 +4437,7 @@ struct AllocationCard: View {
                 Color(red: 0x55 / 255.0, green: 0x76 / 255.0, blue: 0x83 / 255.0),
                 Color(red: 0x66 / 255.0, green: 0x87 / 255.0, blue: 0x7E / 255.0),
                 Color(red: 0x50 / 255.0, green: 0x6F / 255.0, blue: 0x69 / 255.0),
-                Color(red: 0xB5 / 255.0, green: 0x8D / 255.0, blue: 0x49 / 255.0)
+                Color(red: 0xB5 / 255.0, green: 0x8D / 255.0, blue: 0x49 / 255.0),
             ]
         } else {
             palette = [
@@ -3880,7 +4445,7 @@ struct AllocationCard: View {
                 Color(red: 0x6F / 255.0, green: 0x8D / 255.0, blue: 0x98 / 255.0),
                 Color(red: 0x78 / 255.0, green: 0x96 / 255.0, blue: 0x8E / 255.0),
                 Color(red: 0x65 / 255.0, green: 0x7D / 255.0, blue: 0x78 / 255.0),
-                Color(red: 0xD0 / 255.0, green: 0xAC / 255.0, blue: 0x6C / 255.0)
+                Color(red: 0xD0 / 255.0, green: 0xAC / 255.0, blue: 0x6C / 255.0),
             ]
         }
         return palette[index % palette.count]
@@ -3890,34 +4455,47 @@ struct AllocationCard: View {
 struct LegacyAllocationCard: View {
     @AppStorage("appLanguage") private var appLanguage = AppLanguage.english.rawValue
     private let segments = [
-        AllocationSegment(name: "富邦公司治理", weight: "34.6%", value: 0.346, color: FinTrackTheme.allocationPalette[0]),
-        AllocationSegment(name: "兆聯實業", weight: "19.4%", value: 0.194, color: FinTrackTheme.allocationPalette[1]),
-        AllocationSegment(name: "VT", weight: "17.0%", value: 0.170, color: FinTrackTheme.allocationPalette[2]),
-        AllocationSegment(name: "NVIDIA", weight: "13.6%", value: 0.136, color: FinTrackTheme.allocationPalette[3]),
-        AllocationSegment(name: "BND", weight: "4.9%", value: 0.049, color: FinTrackTheme.allocationPalette[4]),
+        AllocationSegment(
+            name: "富邦公司治理", weight: "34.6%", value: 0.346, color: FinTrackTheme.allocationPalette[0]
+        ),
+        AllocationSegment(
+            name: "兆聯實業", weight: "19.4%", value: 0.194, color: FinTrackTheme.allocationPalette[1]),
+        AllocationSegment(
+            name: "VT", weight: "17.0%", value: 0.170, color: FinTrackTheme.allocationPalette[2]),
+        AllocationSegment(
+            name: "NVIDIA", weight: "13.6%", value: 0.136, color: FinTrackTheme.allocationPalette[3]
+        ),
+        AllocationSegment(
+            name: "BND", weight: "4.9%", value: 0.049, color: FinTrackTheme.allocationPalette[4]),
     ]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text(L10n.text("ALLOCATION", language: appLanguage)).font(.caption.weight(.bold)).foregroundStyle(.secondary)
+            Text(L10n.text("ALLOCATION", language: appLanguage)).font(.caption.weight(.bold))
+                .foregroundStyle(.secondary)
             HStack(spacing: 28) {
                 ZStack {
                     Circle().stroke(Color.secondary.opacity(0.12), lineWidth: 22)
                     ForEach(Array(segments.enumerated()), id: \.element.name) { index, segment in
-                        Circle().trim(from: start(for: index), to: start(for: index) + segment.value)
-                            .stroke(segment.color, style: StrokeStyle(lineWidth: 22, lineCap: .butt))
-                            .rotationEffect(.degrees(-90))
+                        Circle().trim(
+                            from: start(for: index), to: start(for: index) + segment.value
+                        )
+                        .stroke(segment.color, style: StrokeStyle(lineWidth: 22, lineCap: .butt))
+                        .rotationEffect(.degrees(-90))
                     }
                     VStack(spacing: 2) {
                         Text("10").font(.title.weight(.bold))
-                        Text(L10n.text("ASSETS", language: appLanguage)).font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                        Text(L10n.text("ASSETS", language: appLanguage)).font(
+                            .caption.weight(.bold)
+                        ).foregroundStyle(.secondary)
                     }
                 }
                 .frame(width: 125, height: 125)
                 VStack(alignment: .leading, spacing: 12) {
                     ForEach(segments) { segment in
                         HStack {
-                            RoundedRectangle(cornerRadius: 3).fill(segment.color).frame(width: 16, height: 16)
+                            RoundedRectangle(cornerRadius: 3).fill(segment.color).frame(
+                                width: 16, height: 16)
                             Text(segment.name).font(.headline)
                             Spacer(minLength: 20)
                             Text(segment.weight).font(.headline).foregroundStyle(.secondary)
@@ -3960,7 +4538,7 @@ struct PortfolioTable: View {
     private let columns: [(String, CGFloat)] = [
         ("Ticker", 110), ("Qty", 82), ("Avg", 92), ("Price", 92),
         ("Cap P/L", 100), ("P/L", 100), ("Cap %", 84), ("Total %", 84),
-        ("Value", 112), ("Cost", 112), ("Wt %", 78), ("Total P/L", 120), ("FX", 82)
+        ("Value", 112), ("Cost", 112), ("Wt %", 78), ("Total P/L", 120), ("FX", 82),
     ]
 
     var body: some View {
@@ -3969,7 +4547,11 @@ struct PortfolioTable: View {
             ForEach(holdings) { holding in
                 tableRow(values: holding.values, isHeader: false)
             }
-            tableRow(values: ["Total", "", "", "", "", "", "", "", "NT$1,596,724", "NT$667,537", "100.00%", "", ""], isHeader: true)
+            tableRow(
+                values: [
+                    "Total", "", "", "", "", "", "", "", "NT$1,596,724", "NT$667,537", "100.00%",
+                    "", "",
+                ], isHeader: true)
         }
         .background(FinTrackTheme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(FinTrackTheme.border))
@@ -4005,7 +4587,9 @@ struct AllocationChart: View {
         chartPanel(title: "Allocation") {
             ZStack {
                 Circle()
-                    .stroke(FinTrackTheme.primary.opacity(0.8), style: StrokeStyle(lineWidth: 42, lineCap: .butt))
+                    .stroke(
+                        FinTrackTheme.primary.opacity(0.8),
+                        style: StrokeStyle(lineWidth: 42, lineCap: .butt))
                 Circle()
                     .trim(from: 0, to: 0.34)
                     .stroke(FinTrackTheme.info, style: StrokeStyle(lineWidth: 42, lineCap: .butt))
@@ -4019,7 +4603,9 @@ struct AllocationChart: View {
 }
 
 struct ReturnChart: View {
-    private let bars: [(String, CGFloat)] = [("VT", 0.25), ("BND", 0.08), ("PLTR", 0.58), ("NVDA", 0.82), ("VFS", 0.04)]
+    private let bars: [(String, CGFloat)] = [
+        ("VT", 0.25), ("BND", 0.08), ("PLTR", 0.58), ("NVDA", 0.82), ("VFS", 0.04),
+    ]
 
     var body: some View {
         chartPanel(title: "Return %") {
@@ -4038,7 +4624,9 @@ struct ReturnChart: View {
     }
 }
 
-private func chartPanel<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+private func chartPanel<Content: View>(title: String, @ViewBuilder content: () -> Content)
+    -> some View
+{
     VStack(alignment: .leading, spacing: 12) {
         Text(title)
             .font(.title3.weight(.semibold))
@@ -4096,13 +4684,17 @@ struct PortfolioHolding: Identifiable {
 
     private func convertToNTD(_ amount: String) -> String {
         guard amount.contains("$") && !amount.contains("NT$") else { return amount }
-        let numericText = amount.replacingOccurrences(of: "$", with: "").replacingOccurrences(of: ",", with: "")
+        let numericText = amount.replacingOccurrences(of: "$", with: "").replacingOccurrences(
+            of: ",", with: "")
         guard let numericValue = Double(numericText) else { return amount }
         return String(format: "NT$%,.2f", numericValue * 31.6858)
     }
 
     var values: [String] {
-        [symbol, quantity, average, price, capitalPL, totalPL, capitalRate, totalRate, value, cost, weight, totalReturn, fx]
+        [
+            symbol, quantity, average, price, capitalPL, totalPL, capitalRate, totalRate, value,
+            cost, weight, totalReturn, fx,
+        ]
     }
 }
 
@@ -4124,7 +4716,7 @@ struct FinancialIndicatorsCard: View {
             ("Liability Ratio", String(format: "%.2f%%", liabilityRatio)),
             ("Cash Ratio", String(format: "%.2f%%", cashRatio)),
             ("Equity Multiplier", String(format: "%.2f", equityMultiplier)),
-            ("Net Worth Growth Rate", "0.00%")
+            ("Net Worth Growth Rate", "0.00%"),
         ]
     }
 
@@ -4203,7 +4795,8 @@ struct NetWorthHistoryCard: View {
         case .oneYear: months = 12
         case .all: months = 0
         }
-        let cutoff = Calendar.current.date(byAdding: .month, value: -months, to: latestDate) ?? latestDate
+        let cutoff =
+            Calendar.current.date(byAdding: .month, value: -months, to: latestDate) ?? latestDate
         let filtered = allChartSnapshots.filter { $0.date >= cutoff }
         // Keep the latest point visible even when the selected range has no data.
         return filtered.isEmpty ? Array(allChartSnapshots.suffix(1)) : filtered
@@ -4222,7 +4815,8 @@ struct NetWorthHistoryCard: View {
     private var selectedSnapshot: (snapshot: DatabaseManager.Snapshot, date: Date)? {
         guard let selectedDate, !chartSnapshots.isEmpty else { return nil }
         return chartSnapshots.min {
-            abs($0.date.timeIntervalSince(selectedDate)) < abs($1.date.timeIntervalSince(selectedDate))
+            abs($0.date.timeIntervalSince(selectedDate))
+                < abs($1.date.timeIntervalSince(selectedDate))
         }
     }
 
@@ -4249,7 +4843,8 @@ struct NetWorthHistoryCard: View {
                 .help(isChinese ? "選擇圖表時間範圍" : "Choose chart time range")
                 Button(action: createSnapshot) {
                     Label(
-                        didSaveSnapshot ? (isChinese ? "已儲存" : "Saved") : (isChinese ? "建立快照" : "Snapshot"),
+                        didSaveSnapshot
+                            ? (isChinese ? "已儲存" : "Saved") : (isChinese ? "建立快照" : "Snapshot"),
                         systemImage: didSaveSnapshot ? "checkmark.circle" : "plus.circle"
                     )
                 }
@@ -4265,11 +4860,17 @@ struct NetWorthHistoryCard: View {
                         .foregroundStyle(FinTrackTheme.primary)
                     Text(isChinese ? "尚無淨值歷史" : "No net worth history yet")
                         .font(.headline)
-                    Text(isChinese ? "建立快照，開始追蹤淨值的變化。" : "Create a snapshot to start tracking your net worth over time.")
-                        .font(.callout)
-                        .foregroundStyle(FinTrackTheme.textSecondary)
+                    Text(
+                        isChinese
+                            ? "建立快照，開始追蹤淨值的變化。"
+                            : "Create a snapshot to start tracking your net worth over time."
+                    )
+                    .font(.callout)
+                    .foregroundStyle(FinTrackTheme.textSecondary)
                     Button(action: createSnapshot) {
-                        Label(isChinese ? "建立第一筆快照" : "Create your first snapshot", systemImage: "plus.circle")
+                        Label(
+                            isChinese ? "建立第一筆快照" : "Create your first snapshot",
+                            systemImage: "plus.circle")
                     }
                     .buttonStyle(.borderless)
                     .foregroundStyle(FinTrackTheme.primary)
@@ -4278,12 +4879,12 @@ struct NetWorthHistoryCard: View {
             } else {
                 Chart(chartSnapshots, id: \.snapshot.id) { item in
                     if chartSnapshots.count >= 2 {
-                    LineMark(
-                        x: .value("Date", item.date),
-                        y: .value("Net Worth", item.snapshot.netWorth)
-                    )
-                    .foregroundStyle(FinTrackTheme.primary)
-                    .interpolationMethod(.catmullRom)
+                        LineMark(
+                            x: .value("Date", item.date),
+                            y: .value("Net Worth", item.snapshot.netWorth)
+                        )
+                        .foregroundStyle(FinTrackTheme.primary)
+                        .interpolationMethod(.catmullRom)
                     }
 
                     PointMark(
@@ -4328,41 +4929,50 @@ struct NetWorthHistoryCard: View {
                         if let plotFrameAnchor = proxy.plotFrame {
                             let plotFrame = geometry[plotFrameAnchor]
                             ZStack {
-                            Color.clear
-                                .contentShape(Rectangle())
-                                .onContinuousHover { phase in
-                                    switch phase {
-                                    case .active(let location):
-                                        let point = CGPoint(
-                                            x: location.x - plotFrame.origin.x,
-                                            y: location.y - plotFrame.origin.y
-                                        )
-                                        let nearest = chartSnapshots.compactMap { item -> (date: Date, distance: CGFloat)? in
-                                            guard let x = proxy.position(forX: item.date),
-                                                  let y = proxy.position(forY: item.snapshot.netWorth) else { return nil }
-                                            let distance = hypot(point.x - x, point.y - y)
-                                            return (item.date, distance)
-                                        }.min { $0.distance < $1.distance }
-                                        // Keep the hit target close to the visible point so
-                                        // moving through the chart does not select a point.
-                                        selectedDate = nearest.flatMap { $0.distance <= 10 ? $0.date : nil }
-                                    case .ended:
-                                        selectedDate = nil
+                                Color.clear
+                                    .contentShape(Rectangle())
+                                    .onContinuousHover { phase in
+                                        switch phase {
+                                        case .active(let location):
+                                            let point = CGPoint(
+                                                x: location.x - plotFrame.origin.x,
+                                                y: location.y - plotFrame.origin.y
+                                            )
+                                            let nearest = chartSnapshots.compactMap {
+                                                item -> (date: Date, distance: CGFloat)? in
+                                                guard let x = proxy.position(forX: item.date),
+                                                    let y = proxy.position(
+                                                        forY: item.snapshot.netWorth)
+                                                else { return nil }
+                                                let distance = hypot(point.x - x, point.y - y)
+                                                return (item.date, distance)
+                                            }.min { $0.distance < $1.distance }
+                                            // Keep the hit target close to the visible point so
+                                            // moving through the chart does not select a point.
+                                            selectedDate = nearest.flatMap {
+                                                $0.distance <= 10 ? $0.date : nil
+                                            }
+                                        case .ended:
+                                            selectedDate = nil
+                                        }
                                     }
-                                }
 
-                            if let selectedSnapshot,
-                               let pointX = proxy.position(forX: selectedSnapshot.date),
-                               let pointY = proxy.position(forY: selectedSnapshot.snapshot.netWorth) {
-                                NetWorthHoverCallout(
-                                    value: ntd(selectedSnapshot.snapshot.netWorth),
-                                    title: isChinese ? "淨值" : "Net Worth"
-                                )
-                                .position(
-                                    x: min(max(plotFrame.minX + pointX, plotFrame.minX + 90), plotFrame.maxX - 90),
-                                    y: min(pointY + plotFrame.minY + 52, plotFrame.maxY - 42)
-                                )
-                            }
+                                if let selectedSnapshot,
+                                    let pointX = proxy.position(forX: selectedSnapshot.date),
+                                    let pointY = proxy.position(
+                                        forY: selectedSnapshot.snapshot.netWorth)
+                                {
+                                    NetWorthHoverCallout(
+                                        value: ntd(selectedSnapshot.snapshot.netWorth),
+                                        title: isChinese ? "淨值" : "Net Worth"
+                                    )
+                                    .position(
+                                        x: min(
+                                            max(plotFrame.minX + pointX, plotFrame.minX + 90),
+                                            plotFrame.maxX - 90),
+                                        y: min(pointY + plotFrame.minY + 52, plotFrame.maxY - 42)
+                                    )
+                                }
                             }
                         }
                     }
@@ -4379,13 +4989,18 @@ struct NetWorthHistoryCard: View {
         .onAppear {
             appModel.refreshSnapshots()
         }
-        .alert(isChinese ? "建立快照失敗" : "Snapshot Failed", isPresented: Binding(
-            get: { appModel.snapshotError != nil },
-            set: { if !$0 { appModel.snapshotError = nil } }
-        )) {
+        .alert(
+            isChinese ? "建立快照失敗" : "Snapshot Failed",
+            isPresented: Binding(
+                get: { appModel.snapshotError != nil },
+                set: { if !$0 { appModel.snapshotError = nil } }
+            )
+        ) {
             Button(isChinese ? "好" : "OK") { appModel.snapshotError = nil }
         } message: {
-            Text(appModel.snapshotError ?? (isChinese ? "無法儲存快照。" : "The snapshot could not be saved."))
+            Text(
+                appModel.snapshotError
+                    ?? (isChinese ? "無法儲存快照。" : "The snapshot could not be saved."))
         }
     }
 
@@ -4404,17 +5019,23 @@ struct NetWorthHistoryCard: View {
 
     private var chartXDomain: ClosedRange<Date> {
         guard let first = chartSnapshots.first?.date,
-              let last = chartSnapshots.last?.date else {
+            let last = chartSnapshots.last?.date
+        else {
             let now = Date()
-            return now.addingTimeInterval(-5 * 24 * 60 * 60)...now.addingTimeInterval(5 * 24 * 60 * 60)
+            return now.addingTimeInterval(
+                -5 * 24 * 60 * 60)...now.addingTimeInterval(5 * 24 * 60 * 60)
         }
-        let padding = max(2 * 24 * 60 * 60, min(5 * 24 * 60 * 60, last.timeIntervalSince(first) * 0.12))
+        let padding = max(
+            2 * 24 * 60 * 60, min(5 * 24 * 60 * 60, last.timeIntervalSince(first) * 0.12))
         return first.addingTimeInterval(-padding)...last.addingTimeInterval(padding)
     }
 
     private var chartSpansMultipleYears: Bool {
-        guard let first = chartSnapshots.first?.date, let last = chartSnapshots.last?.date else { return false }
-        return Calendar.current.component(.year, from: first) != Calendar.current.component(.year, from: last)
+        guard let first = chartSnapshots.first?.date, let last = chartSnapshots.last?.date else {
+            return false
+        }
+        return Calendar.current.component(.year, from: first)
+            != Calendar.current.component(.year, from: last)
     }
 
     private var chartXAxisDates: [Date] {
@@ -4461,7 +5082,7 @@ private struct NetWorthHoverCallout: View {
                 .overlay {
                     Triangle()
                         .stroke(FinTrackTheme.border, lineWidth: 1)
-            }
+                }
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.caption)
@@ -4489,9 +5110,9 @@ private struct Triangle: Shape {
     }
 }
 
-private extension View {
+extension View {
     @ViewBuilder
-    func historyChartScrolling(isEnabled: Bool, initialDate: Date?) -> some View {
+    fileprivate func historyChartScrolling(isEnabled: Bool, initialDate: Date?) -> some View {
         if isEnabled, let initialDate {
             self
                 .chartScrollableAxes(.horizontal)
@@ -4555,7 +5176,9 @@ struct IncomeStatementView: View {
 
     private let sections = [("income", "Income"), ("expense", "Expenses"), ("savings", "Savings")]
 
-    private func children(of item: DatabaseManager.IncomeStatementItem) -> [DatabaseManager.IncomeStatementItem] {
+    private func children(of item: DatabaseManager.IncomeStatementItem) -> [DatabaseManager
+        .IncomeStatementItem]
+    {
         appModel.incomeStatementItems.filter { $0.parentID == item.id }
     }
 
@@ -4572,9 +5195,8 @@ struct IncomeStatementView: View {
 
     private var accountTotals: [(String, Double)] {
         let allocationItems = appModel.incomeStatementItems.filter {
-            ($0.section == "expense" || $0.section == "savings") &&
-            children(of: $0).isEmpty &&
-            !($0.accountName?.isEmpty ?? true)
+            ($0.section == "expense" || $0.section == "savings") && children(of: $0).isEmpty
+                && !($0.accountName?.isEmpty ?? true)
         }
         return Dictionary(grouping: allocationItems, by: { $0.accountName! })
             .map { account, items in (account, items.reduce(0) { $0 + $1.amount }) }
@@ -4606,9 +5228,15 @@ struct IncomeStatementView: View {
         VStack(alignment: .leading, spacing: 16) {
             let monthlyProfit = total(for: "income") - total(for: "expense")
             HStack(spacing: 16) {
-                MetricCard(title: "Total Income", value: ntd(total(for: "income")), change: "0.0% vs last month")
-                MetricCard(title: "Total Expenses", value: ntd(total(for: "expense")), change: "0.0% vs last month")
-                MetricCard(title: "Monthly Profit", value: ntd(monthlyProfit), change: "0.0% vs last month", warning: monthlyProfit < 0)
+                MetricCard(
+                    title: "Total Income", value: ntd(total(for: "income")),
+                    change: "0.0% vs last month")
+                MetricCard(
+                    title: "Total Expenses", value: ntd(total(for: "expense")),
+                    change: "0.0% vs last month")
+                MetricCard(
+                    title: "Monthly Profit", value: ntd(monthlyProfit),
+                    change: "0.0% vs last month", warning: monthlyProfit < 0)
             }
             .padding(.horizontal, 24)
 
@@ -4680,32 +5308,35 @@ private struct IncomeStatementSectionCard: View {
 
     private func row(_ item: DatabaseManager.IncomeStatementItem, level: Int) -> AnyView {
         let hasChildren = items.contains { $0.parentID == item.id }
-        return AnyView(VStack(alignment: .leading, spacing: 8) {
-        HStack {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(item.name).font(level == 0 ? .headline : .callout)
-                if !hasChildren, let accountName = item.accountName, !accountName.isEmpty {
-                    Text(accountName).font(.caption).foregroundStyle(.secondary)
+        return AnyView(
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(item.name).font(level == 0 ? .headline : .callout)
+                        if !hasChildren, let accountName = item.accountName, !accountName.isEmpty {
+                            Text(accountName).font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer()
+                    Text(ntd(value(item)))
+                        .fontWeight(level == 0 ? .semibold : .regular)
                 }
-            }
-            Spacer()
-            Text(ntd(value(item)))
-                .fontWeight(level == 0 ? .semibold : .regular)
-        }
-        .padding(.leading, CGFloat(level) * 18)
-        .contentShape(Rectangle())
-        .contextMenu {
-            if level == 0 {
-                Button(L10n.text("Add child", language: appLanguage)) { onAddChild(item) }
-            }
-            Button(L10n.text("Edit", language: appLanguage)) { onEdit(item) }
-            Divider()
-            Button(L10n.text("Delete", language: appLanguage), role: .destructive) { onDelete(item) }
-        }
-        ForEach(items.filter { $0.parentID == item.id }) { child in
-            row(child, level: level + 1)
-        }
-        })
+                .padding(.leading, CGFloat(level) * 18)
+                .contentShape(Rectangle())
+                .contextMenu {
+                    if level == 0 {
+                        Button(L10n.text("Add child", language: appLanguage)) { onAddChild(item) }
+                    }
+                    Button(L10n.text("Edit", language: appLanguage)) { onEdit(item) }
+                    Divider()
+                    Button(L10n.text("Delete", language: appLanguage), role: .destructive) {
+                        onDelete(item)
+                    }
+                }
+                ForEach(items.filter { $0.parentID == item.id }) { child in
+                    row(child, level: level + 1)
+                }
+            })
     }
 }
 
@@ -4716,10 +5347,15 @@ private struct AccountAllocationCard: View {
     var body: some View {
         let maximum = max(totals.map { abs($0.1) }.max() ?? 0, 1)
         VStack(alignment: .leading, spacing: 12) {
-            Text(L10n.text("Account Allocation", language: appLanguage)).font(.title3.weight(.semibold))
+            Text(L10n.text("Account Allocation", language: appLanguage)).font(
+                .title3.weight(.semibold))
             if totals.isEmpty {
-                Text(L10n.text("Account allocation will appear after leaf items are added.", language: appLanguage))
-                    .foregroundStyle(.secondary)
+                Text(
+                    L10n.text(
+                        "Account allocation will appear after leaf items are added.",
+                        language: appLanguage)
+                )
+                .foregroundStyle(.secondary)
             } else {
                 ForEach(totals, id: \.0) { account, amount in
                     VStack(alignment: .leading, spacing: 6) {
@@ -4730,8 +5366,13 @@ private struct AccountAllocationCard: View {
                         }
                         GeometryReader { geometry in
                             Capsule()
-                                .fill((amount < 0 ? FinTrackTheme.negative : FinTrackTheme.primary).opacity(0.72))
-                                .frame(width: max(6, geometry.size.width * abs(amount) / maximum), height: 8)
+                                .fill(
+                                    (amount < 0 ? FinTrackTheme.negative : FinTrackTheme.primary)
+                                        .opacity(0.72)
+                                )
+                                .frame(
+                                    width: max(6, geometry.size.width * abs(amount) / maximum),
+                                    height: 8)
                         }
                         .frame(height: 8)
                     }
@@ -4792,7 +5433,8 @@ private struct StatementItemSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(L10n.text(item == nil ? "Add item" : "Edit item", language: appLanguage)).font(.title2.weight(.bold))
+            Text(L10n.text(item == nil ? "Add item" : "Edit item", language: appLanguage)).font(
+                .title2.weight(.bold))
             LabeledContent(L10n.text("Item name", language: appLanguage)) {
                 TextField(L10n.text("Enter item name", language: appLanguage), text: $name)
                     .textFieldStyle(.roundedBorder)
@@ -4801,27 +5443,39 @@ private struct StatementItemSheet: View {
                 TextField(L10n.text("Enter amount", language: appLanguage), text: $amount)
                     .textFieldStyle(.roundedBorder)
             }
-            Picker(L10n.text("Destination account (optional)", language: appLanguage), selection: $accountSelection) {
+            Picker(
+                L10n.text("Destination account (optional)", language: appLanguage),
+                selection: $accountSelection
+            ) {
                 Text(L10n.text("No linked account", language: appLanguage)).tag("")
                 ForEach(availableAccounts, id: \.self) { existingAccount in
                     Text(existingAccount).tag(existingAccount)
                 }
-                Text(L10n.text("Custom account", language: appLanguage)).tag(Self.customAccountSelection)
+                Text(L10n.text("Custom account", language: appLanguage)).tag(
+                    Self.customAccountSelection)
             }
             .pickerStyle(.menu)
             if accountSelection == Self.customAccountSelection {
                 LabeledContent(L10n.text("Custom account", language: appLanguage)) {
-                    TextField(L10n.text("Enter account name", language: appLanguage), text: $customAccountName)
-                        .textFieldStyle(.roundedBorder)
+                    TextField(
+                        L10n.text("Enter account name", language: appLanguage),
+                        text: $customAccountName
+                    )
+                    .textFieldStyle(.roundedBorder)
                 }
             }
-            Text(L10n.text("Leaf items can share a destination account. Parent items with children are totaled from their children.", language: appLanguage))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Text(
+                L10n.text(
+                    "Leaf items can share a destination account. Parent items with children are totaled from their children.",
+                    language: appLanguage)
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
             HStack {
                 Spacer()
                 Button(L10n.text("Cancel", language: appLanguage)) { dismiss() }
-                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(.borderedProminent)
+                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(
+                    .borderedProminent)
             }
             if let errorMessage { Text(errorMessage).font(.caption).foregroundStyle(.red) }
         }
@@ -4831,16 +5485,22 @@ private struct StatementItemSheet: View {
 
     private func save() {
         guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              let value = Double(amount) else {
+            let value = Double(amount)
+        else {
             errorMessage = "Enter a name and valid amount."
             return
         }
         do {
-            let selectedAccount = accountSelection == Self.customAccountSelection ? customAccountName : accountSelection
+            let selectedAccount =
+                accountSelection == Self.customAccountSelection
+                ? customAccountName : accountSelection
             if let item {
-                try appModel.updateIncomeStatementItem(id: item.id, name: name, amount: value, accountName: selectedAccount)
+                try appModel.updateIncomeStatementItem(
+                    id: item.id, name: name, amount: value, accountName: selectedAccount)
             } else {
-                try appModel.createIncomeStatementItem(section: section, parentID: parentID, name: name, amount: value, accountName: selectedAccount)
+                try appModel.createIncomeStatementItem(
+                    section: section, parentID: parentID, name: name, amount: value,
+                    accountName: selectedAccount)
             }
             dismiss()
         } catch { errorMessage = error.localizedDescription }
@@ -4917,10 +5577,16 @@ struct SettingsCard: View {
         VStack(alignment: .leading, spacing: 18) {
             Text(L10n.text("Display", language: appLanguage))
                 .font(.title3.weight(.semibold))
-            Toggle(L10n.text("Show detail percentage changes", language: appLanguage), isOn: $showDetailChanges)
-            Text(L10n.text("Turn this off to hide month-over-month percentages in asset and liability details.", language: appLanguage))
-                .font(.callout)
-                .foregroundStyle(.secondary)
+            Toggle(
+                L10n.text("Show detail percentage changes", language: appLanguage),
+                isOn: $showDetailChanges)
+            Text(
+                L10n.text(
+                    "Turn this off to hide month-over-month percentages in asset and liability details.",
+                    language: appLanguage)
+            )
+            .font(.callout)
+            .foregroundStyle(.secondary)
             Picker(L10n.text("Language", language: appLanguage), selection: $appLanguage) {
                 Text("English").tag(AppLanguage.english.rawValue)
                 Text("繁體中文").tag(AppLanguage.traditionalChinese.rawValue)
@@ -4929,7 +5595,10 @@ struct SettingsCard: View {
             .foregroundStyle(FinTrackTheme.textPrimary)
             .tint(FinTrackTheme.textPrimary)
 
-            Picker(L10n.text("Performance colors", language: appLanguage), selection: $performanceColorMode) {
+            Picker(
+                L10n.text("Performance colors", language: appLanguage),
+                selection: $performanceColorMode
+            ) {
                 Text(L10n.text("Green up / red down", language: appLanguage)).tag("greenUp")
                 Text(L10n.text("Red up / green down", language: appLanguage)).tag("redUp")
                 Text(L10n.text("Analog mode", language: appLanguage)).tag("analog")
@@ -4938,7 +5607,9 @@ struct SettingsCard: View {
             .foregroundStyle(FinTrackTheme.textPrimary)
             .tint(FinTrackTheme.textPrimary)
 
-            Picker(L10n.text("Daily snapshot time", language: appLanguage), selection: $snapshotTime) {
+            Picker(
+                L10n.text("Daily snapshot time", language: appLanguage), selection: $snapshotTime
+            ) {
                 ForEach(snapshotOptions, id: \.self) { time in
                     Text(time).tag(time)
                 }
@@ -5029,8 +5700,11 @@ private struct HelpIntroCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
-        .background(FinTrackTheme.cardBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(FinTrackTheme.border))
+        .background(
+            FinTrackTheme.cardBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(FinTrackTheme.border))
     }
 }
 
@@ -5106,8 +5780,13 @@ private struct HelpInfoCallout: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .background(FinTrackTheme.primary.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(FinTrackTheme.primary.opacity(0.25)))
+        .background(
+            FinTrackTheme.primary.opacity(0.10),
+            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(
+                FinTrackTheme.primary.opacity(0.25)))
     }
 }
 
@@ -5133,16 +5812,16 @@ struct HelpView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                switch page {
-                case "Overview": overviewHelp
-                case "Portfolio": portfolioHelp
-                case "Dividends": dividendsHelp
-                case "Recurring Investment": recurringHelp
-                case "Foreign Currency": foreignCurrencyHelp
-                case "Income Statement": incomeStatementHelp
-                case "Settings": settingsHelp
-                default: recurringHoldingHelp
-                }
+                    switch page {
+                    case "Overview": overviewHelp
+                    case "Portfolio": portfolioHelp
+                    case "Dividends": dividendsHelp
+                    case "Recurring Investment": recurringHelp
+                    case "Foreign Currency": foreignCurrencyHelp
+                    case "Income Statement": incomeStatementHelp
+                    case "Settings": settingsHelp
+                    default: recurringHoldingHelp
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .topLeading)
                 .padding(.horizontal, 24)
@@ -5157,10 +5836,41 @@ struct HelpView: View {
 
     private func helpHeader(_ title: String, _ subtitle: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(helpText(title, title == "Portfolio" ? "投資組合" : title == "Dividends" ? "股利" : title == "Recurring Investment" ? "定期定額" : title == "Foreign Currency" ? "外幣" : title == "Income Statement" ? "損益表" : title == "Settings" ? "設定" : "投資紀錄"))
-                .font(.title2.weight(.bold))
-            Text(helpText(subtitle, subtitle == "See how your investments are distributed and performing." ? "查看投資配置與整體表現。" : subtitle == "Review dividend income from your holdings." ? "查看持有資產帶來的股利收入。" : subtitle == "Plan recurring purchases and keep each purchase record in one place." ? "規劃定期定額，並集中管理每次投資紀錄。" : subtitle == "Track foreign-currency balances, rates, and transactions." ? "追蹤外幣餘額、匯率與交易紀錄。" : subtitle == "Organize income, expenses, and savings in one view." ? "在同一個頁面整理收入、支出與儲蓄。" : subtitle == "Adjust how FinTrack looks and behaves." ? "調整 FinTrack 的外觀與使用方式。" : "查看這項定期定額標的的投資紀錄。"))
-                .foregroundStyle(FinTrackTheme.textSecondary)
+            Text(
+                helpText(
+                    title,
+                    title == "Portfolio"
+                        ? "投資組合"
+                        : title == "Dividends"
+                            ? "股利"
+                            : title == "Recurring Investment"
+                                ? "定期定額"
+                                : title == "Foreign Currency"
+                                    ? "外幣"
+                                    : title == "Income Statement"
+                                        ? "損益表" : title == "Settings" ? "設定" : "投資紀錄")
+            )
+            .font(.title2.weight(.bold))
+            Text(
+                helpText(
+                    subtitle,
+                    subtitle == "See how your investments are distributed and performing."
+                        ? "查看投資配置與整體表現。"
+                        : subtitle == "Review dividend income from your holdings."
+                            ? "查看持有資產帶來的股利收入。"
+                            : subtitle
+                                == "Plan recurring purchases and keep each purchase record in one place."
+                                ? "規劃定期定額，並集中管理每次投資紀錄。"
+                                : subtitle
+                                    == "Track foreign-currency balances, rates, and transactions."
+                                    ? "追蹤外幣餘額、匯率與交易紀錄。"
+                                    : subtitle
+                                        == "Organize income, expenses, and savings in one view."
+                                        ? "在同一個頁面整理收入、支出與儲蓄。"
+                                        : subtitle == "Adjust how FinTrack looks and behaves."
+                                            ? "調整 FinTrack 的外觀與使用方式。" : "查看這項定期定額標的的投資紀錄。")
+            )
+            .foregroundStyle(FinTrackTheme.textSecondary)
         }
     }
 
@@ -5169,21 +5879,57 @@ struct HelpView: View {
             helpHeader("Portfolio", "See how your investments are distributed and performing.")
             HelpSectionLabel(text: helpText("AT A GLANCE", "快速了解"))
             HelpDefinitionSection(rows: [
-                (helpText("Total P&L", "總損益"), helpText("Your overall gain or loss based on recorded cost and current value.", "依照已記錄成本與目前市值計算整體獲利或損失。")),
-                (helpText("Today", "今日"), helpText("The change from the latest regular-session price to the previous regular trading session's close. During regular hours it can update; after close it keeps the completed session result.", "以最新正常交易時段價格，減去前一個正常交易日的收盤價。交易時段內會更新，收盤後會保留該交易日的完成結果。")),
-                (helpText("Market Value", "目前市值"), helpText("The current estimated value of all holdings.", "所有持股目前的估計價值。"))
+                (
+                    helpText("Total P&L", "總損益"),
+                    helpText(
+                        "Your overall gain or loss based on recorded cost and current value.",
+                        "依照已記錄成本與目前市值計算整體獲利或損失。")
+                ),
+                (
+                    helpText("Today", "今日"),
+                    helpText(
+                        "The change from the latest regular-session price to the previous regular trading session's close. During regular hours it can update; after close it keeps the completed session result.",
+                        "以最新正常交易時段價格，減去前一個正常交易日的收盤價。交易時段內會更新，收盤後會保留該交易日的完成結果。")
+                ),
+                (
+                    helpText("Market Value", "目前市值"),
+                    helpText("The current estimated value of all holdings.", "所有持股目前的估計價值。")
+                ),
             ])
             HelpSectionLabel(text: helpText("ALLOCATION", "資產配置"))
-            HelpIntroCard(title: helpText("Your investment mix", "你的投資配置"), description: helpText("The chart ranks holdings by portfolio weight. Colors represent ranking order, not profit or loss.", "圖表會依持股比重排序；顏色代表比重排名，不代表損益。"))
+            HelpIntroCard(
+                title: helpText("Your investment mix", "你的投資配置"),
+                description: helpText(
+                    "The chart ranks holdings by portfolio weight. Colors represent ranking order, not profit or loss.",
+                    "圖表會依持股比重排序；顏色代表比重排名，不代表損益。"))
             HelpSectionLabel(text: helpText("HOLDINGS", "持股明細"))
             HelpDefinitionSection(rows: [
-                (helpText("Last", "現價"), helpText("The latest recorded market price.", "最近記錄的市場價格。")),
-                (helpText("Value", "市值"), helpText("Shares multiplied by the latest price.", "股數乘以最近價格。")),
-                (helpText("P&L", "損益"), helpText("The difference between current value and recorded cost.", "目前市值與已記錄成本之間的差額。"))
+                (
+                    helpText("Last", "現價"),
+                    helpText("The latest recorded market price.", "最近記錄的市場價格。")
+                ),
+                (
+                    helpText("Value", "市值"),
+                    helpText("Shares multiplied by the latest price.", "股數乘以最近價格。")
+                ),
+                (
+                    helpText("P&L", "損益"),
+                    helpText(
+                        "The difference between current value and recorded cost.",
+                        "目前市值與已記錄成本之間的差額。")
+                ),
             ])
             HelpSectionLabel(text: helpText("MARKET DATA", "市場資料"))
-            HelpIntroCard(title: helpText("Regular-session prices", "正常交易時段價格"), description: helpText("FinTrack uses regular-session prices only. Prices update automatically while the app is active; if the stream or network is unavailable, the latest valid local data is used.", "FinTrack 只使用正常交易時段價格。App 開啟時會自動更新；若串流或網路無法使用，則沿用本機最近的有效資料。"))
-            HelpActionRow(symbol: "plus", title: helpText("Add a holding", "新增持股"), description: helpText("Use + in Holdings, then search for a symbol and enter its shares and cost.", "在持股區按下＋，搜尋標的後填入股數與成本。"))
+            HelpIntroCard(
+                title: helpText("Regular-session prices", "正常交易時段價格"),
+                description: helpText(
+                    "FinTrack uses regular-session prices only. Prices update automatically while the app is active; if the stream or network is unavailable, the latest valid local data is used.",
+                    "FinTrack 只使用正常交易時段價格。App 開啟時會自動更新；若串流或網路無法使用，則沿用本機最近的有效資料。"))
+            HelpActionRow(
+                symbol: "plus", title: helpText("Add a holding", "新增持股"),
+                description: helpText(
+                    "Use + in Holdings, then search for a symbol and enter its shares and cost.",
+                    "在持股區按下＋，搜尋標的後填入股數與成本。"))
         }
     }
 
@@ -5191,29 +5937,75 @@ struct HelpView: View {
         VStack(alignment: .leading, spacing: 16) {
             helpHeader("Dividends", "Review dividend income from your holdings.")
             HelpSectionLabel(text: helpText("WHAT YOU SEE", "這裡會顯示什麼"))
-            HelpIntroCard(title: helpText("Dividend records", "股利紀錄"), description: helpText("Each row shows the security, the date you received the dividend, and the amount received. Values are kept in their original currency.", "每一列會顯示標的、你收到股利的日期與收到的金額，並保留原始幣別。"))
+            HelpIntroCard(
+                title: helpText("Dividend records", "股利紀錄"),
+                description: helpText(
+                    "Each row shows the security, the date you received the dividend, and the amount received. Values are kept in their original currency.",
+                    "每一列會顯示標的、你收到股利的日期與收到的金額，並保留原始幣別。"))
             HelpSectionLabel(text: helpText("HOW TO USE IT", "使用方式"))
             HelpDefinitionSection(rows: [
-                (helpText("Add", "新增"), helpText("Click + to choose a holding and record a dividend payment.", "按下＋選擇持股並記錄股利入帳。")),
-                (helpText("Edit or delete", "編輯或刪除"), helpText("Right-click a record to change it or remove it.", "在紀錄上按右鍵即可編輯或刪除。")),
-                (helpText("Currency", "幣別"), helpText("The currency follows the holding, so the amount is not silently converted.", "幣別會跟隨持股，不會在沒有提示的情況下轉換金額。"))
+                (
+                    helpText("Add", "新增"),
+                    helpText(
+                        "Click + to choose a holding and record a dividend payment.",
+                        "按下＋選擇持股並記錄股利入帳。")
+                ),
+                (
+                    helpText("Edit or delete", "編輯或刪除"),
+                    helpText("Right-click a record to change it or remove it.", "在紀錄上按右鍵即可編輯或刪除。")
+                ),
+                (
+                    helpText("Currency", "幣別"),
+                    helpText(
+                        "The currency follows the holding, so the amount is not silently converted.",
+                        "幣別會跟隨持股，不會在沒有提示的情況下轉換金額。")
+                ),
             ])
         }
     }
 
     private var recurringHelp: some View {
         VStack(alignment: .leading, spacing: 16) {
-            helpHeader("Recurring Investment", "Plan recurring purchases and keep each purchase record in one place.")
+            helpHeader(
+                "Recurring Investment",
+                "Plan recurring purchases and keep each purchase record in one place.")
             HelpSectionLabel(text: helpText("START HERE", "從這裡開始"))
-            HelpIntroCard(title: helpText("A plan and its actual purchases", "計畫與實際投資"), description: helpText("A recurring rule describes when and how much you plan to invest. The purchase records below it are the transactions that actually happened.", "定期定額規則描述預計何時、投入多少；下方投資紀錄則是實際發生的每一筆交易。"))
+            HelpIntroCard(
+                title: helpText("A plan and its actual purchases", "計畫與實際投資"),
+                description: helpText(
+                    "A recurring rule describes when and how much you plan to invest. The purchase records below it are the transactions that actually happened.",
+                    "定期定額規則描述預計何時、投入多少；下方投資紀錄則是實際發生的每一筆交易。"))
             HelpSectionLabel(text: helpText("RECORDS", "紀錄"))
             HelpDefinitionSection(rows: [
-                (helpText("Schedules", "排程"), helpText("Shows the planned amount, frequency, and day of the month.", "顯示預計金額、頻率與每月執行日。")),
-                (helpText("Purchases", "投資紀錄"), helpText("Add the actual date, shares, and amount after a purchase is completed.", "投資完成後，新增實際日期、股數與金額。")),
-                (helpText("Funding account", "扣款帳戶"), helpText("For foreign-currency investments, choose a matching foreign-currency account to update its balance and create a transaction record.", "外幣投資可選擇相同幣別的外幣帳戶，系統會同步更新餘額並建立交易紀錄。"))
+                (
+                    helpText("Schedules", "排程"),
+                    helpText(
+                        "Shows the planned amount, frequency, and day of the month.",
+                        "顯示預計金額、頻率與每月執行日。")
+                ),
+                (
+                    helpText("Purchases", "投資紀錄"),
+                    helpText(
+                        "Add the actual date, shares, and amount after a purchase is completed.",
+                        "投資完成後，新增實際日期、股數與金額。")
+                ),
+                (
+                    helpText("Funding account", "扣款帳戶"),
+                    helpText(
+                        "For foreign-currency investments, choose a matching foreign-currency account to update its balance and create a transaction record.",
+                        "外幣投資可選擇相同幣別的外幣帳戶，系統會同步更新餘額並建立交易紀錄。")
+                ),
             ])
-            HelpActionRow(symbol: "plus", title: helpText("Add an actual purchase", "新增實際投資"), description: helpText("Open a recurring investment item, then click + in Purchases. The schedule does not place orders automatically.", "開啟定期定額標的，再於投資紀錄旁按下＋；排程本身不會自動下單。"))
-            HelpInfoCallout(title: helpText("Important", "重要提醒"), description: helpText("A schedule is a plan only. Record the actual shares, amount, and date after the purchase is completed.", "排程只是投資計畫；完成實際交易後，仍需手動記錄股數、金額與日期。"))
+            HelpActionRow(
+                symbol: "plus", title: helpText("Add an actual purchase", "新增實際投資"),
+                description: helpText(
+                    "Open a recurring investment item, then click + in Purchases. The schedule does not place orders automatically.",
+                    "開啟定期定額標的，再於投資紀錄旁按下＋；排程本身不會自動下單。"))
+            HelpInfoCallout(
+                title: helpText("Important", "重要提醒"),
+                description: helpText(
+                    "A schedule is a plan only. Record the actual shares, amount, and date after the purchase is completed.",
+                    "排程只是投資計畫；完成實際交易後，仍需手動記錄股數、金額與日期。"))
         }
     }
 
@@ -5221,28 +6013,65 @@ struct HelpView: View {
         VStack(alignment: .leading, spacing: 16) {
             helpHeader("Recurring Investment", "View this recurring investment's purchase history.")
             HelpSectionLabel(text: helpText("THIS INVESTMENT", "這項投資"))
-            HelpIntroCard(title: helpText("Schedules and purchases", "排程與投資紀錄"), description: helpText("Schedules show your plan. Purchases show what you actually invested, including the date, shares, and amount.", "排程顯示你的計畫；投資紀錄顯示實際投入的日期、股數與金額。"))
+            HelpIntroCard(
+                title: helpText("Schedules and purchases", "排程與投資紀錄"),
+                description: helpText(
+                    "Schedules show your plan. Purchases show what you actually invested, including the date, shares, and amount.",
+                    "排程顯示你的計畫；投資紀錄顯示實際投入的日期、股數與金額。"))
             HelpSectionLabel(text: helpText("MANAGE RECORDS", "管理紀錄"))
             HelpDefinitionSection(rows: [
-                (helpText("Add", "新增"), helpText("Click + to record a completed purchase.", "按下＋記錄已完成的投資。")),
-                (helpText("Edit or delete", "編輯或刪除"), helpText("Right-click a purchase to edit or delete it. Related balances are adjusted together.", "在投資紀錄上按右鍵即可編輯或刪除，相關餘額也會同步調整。")),
-                (helpText("Schedule vs purchase", "排程與實際投資"), helpText("Editing a schedule changes the plan; it does not change existing purchase records.", "編輯排程只會改變投資計畫，不會改變既有的實際投資紀錄。"))
+                (
+                    helpText("Add", "新增"),
+                    helpText("Click + to record a completed purchase.", "按下＋記錄已完成的投資。")
+                ),
+                (
+                    helpText("Edit or delete", "編輯或刪除"),
+                    helpText(
+                        "Right-click a purchase to edit or delete it. Related balances are adjusted together.",
+                        "在投資紀錄上按右鍵即可編輯或刪除，相關餘額也會同步調整。")
+                ),
+                (
+                    helpText("Schedule vs purchase", "排程與實際投資"),
+                    helpText(
+                        "Editing a schedule changes the plan; it does not change existing purchase records.",
+                        "編輯排程只會改變投資計畫，不會改變既有的實際投資紀錄。")
+                ),
             ])
         }
     }
 
     private var foreignCurrencyHelp: some View {
         VStack(alignment: .leading, spacing: 16) {
-            helpHeader("Foreign Currency", "Track foreign-currency balances, rates, and transactions.")
+            helpHeader(
+                "Foreign Currency", "Track foreign-currency balances, rates, and transactions.")
             HelpSectionLabel(text: helpText("BALANCES", "餘額"))
             HelpDefinitionSection(rows: [
-                (helpText("Balance", "餘額"), helpText("The amount currently held in each foreign currency.", "目前持有的各種外幣金額。")),
-                (helpText("Rate", "匯率"), helpText("The latest NTD rate used for the displayed equivalent value.", "用來計算新台幣等價金額的最新匯率。")),
-                (helpText("NTD value", "新台幣等價"), helpText("The foreign-currency balance converted to NTD.", "將外幣餘額換算成新台幣後的金額。"))
+                (
+                    helpText("Balance", "餘額"),
+                    helpText("The amount currently held in each foreign currency.", "目前持有的各種外幣金額。")
+                ),
+                (
+                    helpText("Rate", "匯率"),
+                    helpText(
+                        "The latest NTD rate used for the displayed equivalent value.",
+                        "用來計算新台幣等價金額的最新匯率。")
+                ),
+                (
+                    helpText("NTD value", "新台幣等價"),
+                    helpText("The foreign-currency balance converted to NTD.", "將外幣餘額換算成新台幣後的金額。")
+                ),
             ])
             HelpSectionLabel(text: helpText("TRANSACTIONS", "交易紀錄"))
-            HelpIntroCard(title: helpText("Keep the money trail clear", "保留完整資金軌跡"), description: helpText("Use Exchange for a conversion that has an NTD amount and rate. Use Other for spending, investing, or income that only changes the foreign balance.", "換匯請選擇換匯並填寫新台幣金額與匯率；支出、投資或收入等只改變外幣餘額的情況，請選擇其他。"))
-            HelpActionRow(symbol: "plus", title: helpText("Add a transaction", "新增交易"), description: helpText("Click + beside Transactions. A negative foreign amount represents money leaving the account. Balances and rates refresh when market data is updated.", "按下交易紀錄旁的＋；原幣金額為負數代表資金離開帳戶。市場資料更新時，餘額與匯率也會刷新。"))
+            HelpIntroCard(
+                title: helpText("Keep the money trail clear", "保留完整資金軌跡"),
+                description: helpText(
+                    "Use Exchange for a conversion that has an NTD amount and rate. Use Other for spending, investing, or income that only changes the foreign balance.",
+                    "換匯請選擇換匯並填寫新台幣金額與匯率；支出、投資或收入等只改變外幣餘額的情況，請選擇其他。"))
+            HelpActionRow(
+                symbol: "plus", title: helpText("Add a transaction", "新增交易"),
+                description: helpText(
+                    "Click + beside Transactions. A negative foreign amount represents money leaving the account. Balances and rates refresh when market data is updated.",
+                    "按下交易紀錄旁的＋；原幣金額為負數代表資金離開帳戶。市場資料更新時，餘額與匯率也會刷新。"))
         }
     }
 
@@ -5251,18 +6080,50 @@ struct HelpView: View {
             helpHeader("Income Statement", "Organize income, expenses, and savings in one view.")
             HelpSectionLabel(text: helpText("THE BIG PICTURE", "整體概況"))
             HelpDefinitionSection(rows: [
-                (helpText("Total Income", "總收入"), helpText("All income items recorded for the selected period.", "所選期間內記錄的所有收入。")),
-                (helpText("Total Expenses", "總支出"), helpText("All expense items recorded for the selected period.", "所選期間內記錄的所有支出。")),
-                (helpText("Monthly Profit", "月結餘"), helpText("Income minus expenses for the period.", "該期間的收入減去支出。"))
+                (
+                    helpText("Total Income", "總收入"),
+                    helpText("All income items recorded for the selected period.", "所選期間內記錄的所有收入。")
+                ),
+                (
+                    helpText("Total Expenses", "總支出"),
+                    helpText("All expense items recorded for the selected period.", "所選期間內記錄的所有支出。")
+                ),
+                (
+                    helpText("Monthly Profit", "月結餘"),
+                    helpText("Income minus expenses for the period.", "該期間的收入減去支出。")
+                ),
             ])
             HelpSectionLabel(text: helpText("ORGANIZE YOUR MONEY", "整理你的金錢流向"))
-            HelpIntroCard(title: helpText("Groups and details", "分類與明細"), description: helpText("Use a group for a broad category, then add details underneath it. The totals of a group come from its details.", "先用大分類整理方向，再在下面建立明細；有明細的大分類會依明細自動加總。"))
+            HelpIntroCard(
+                title: helpText("Groups and details", "分類與明細"),
+                description: helpText(
+                    "Use a group for a broad category, then add details underneath it. The totals of a group come from its details.",
+                    "先用大分類整理方向，再在下面建立明細；有明細的大分類會依明細自動加總。"))
             HelpDefinitionSection(rows: [
-                (helpText("Two levels of details", "兩層明細"), helpText("Each section supports a group and one level of details: Income → Salary → Salary or Bonus. Detail items cannot contain another child item.", "每個區段支援大項目與一層明細：收入 → 薪資 → 薪資或獎金。最底層明細不能再新增子項目。")),
-                (helpText("Destination account", "轉入帳戶"), helpText("A detail can optionally be linked to an existing account, or you can create a custom account name. Saved custom accounts will appear in the menu next time.", "明細可以選擇不連結帳戶、連結既有帳戶，或建立自訂帳戶名稱；儲存後的自訂帳戶會在下次出現在選單中。")),
-                (helpText("Account allocation", "帳戶配置"), helpText("Expenses and savings linked to destination accounts are grouped in Account Allocation. Income items do not appear there.", "有設定轉入帳戶的支出與儲蓄會集中顯示在帳戶配置；收入項目不會列入其中。"))
+                (
+                    helpText("Two levels of details", "兩層明細"),
+                    helpText(
+                        "Each section supports a group and one level of details: Income → Salary → Salary or Bonus. Detail items cannot contain another child item.",
+                        "每個區段支援大項目與一層明細：收入 → 薪資 → 薪資或獎金。最底層明細不能再新增子項目。")
+                ),
+                (
+                    helpText("Destination account", "轉入帳戶"),
+                    helpText(
+                        "A detail can optionally be linked to an existing account, or you can create a custom account name. Saved custom accounts will appear in the menu next time.",
+                        "明細可以選擇不連結帳戶、連結既有帳戶，或建立自訂帳戶名稱；儲存後的自訂帳戶會在下次出現在選單中。")
+                ),
+                (
+                    helpText("Account allocation", "帳戶配置"),
+                    helpText(
+                        "Expenses and savings linked to destination accounts are grouped in Account Allocation. Income items do not appear there.",
+                        "有設定轉入帳戶的支出與儲蓄會集中顯示在帳戶配置；收入項目不會列入其中。")
+                ),
             ])
-            HelpActionRow(symbol: "plus", title: helpText("Add a detail", "新增明細"), description: helpText("Use + in the relevant section to add a group, then use the group's context menu to add one level of details. Right-click an item to edit or delete it.", "在對應區塊按下＋新增大項目，再於大項目的右鍵選單新增一層明細；在項目上按右鍵即可編輯或刪除。"))
+            HelpActionRow(
+                symbol: "plus", title: helpText("Add a detail", "新增明細"),
+                description: helpText(
+                    "Use + in the relevant section to add a group, then use the group's context menu to add one level of details. Right-click an item to edit or delete it.",
+                    "在對應區塊按下＋新增大項目，再於大項目的右鍵選單新增一層明細；在項目上按右鍵即可編輯或刪除。"))
         }
     }
 
@@ -5271,18 +6132,61 @@ struct HelpView: View {
             helpHeader("Settings", "Adjust how FinTrack looks and behaves.")
             HelpSectionLabel(text: helpText("DISPLAY", "顯示"))
             HelpDefinitionSection(rows: [
-                (helpText("Detail percentages", "明細百分比"), helpText("Show or hide month-over-month changes in asset and liability details.", "顯示或隱藏資產與負債明細的月增減百分比。")),
-                (helpText("Language", "語言"), helpText("Switch between English and Traditional Chinese.", "切換英文與繁體中文。")),
-                (helpText("Performance colors", "漲跌顏色"), helpText("Choose how positive and negative performance colors are presented.", "選擇正負績效的顏色呈現方式。")),
-                (helpText("Daily snapshot time", "每日快照時間"), helpText("Choose when FinTrack automatically records the net-worth snapshot. This setting does not define the Portfolio TODAY calculation time.", "選擇 FinTrack 自動記錄淨值快照的時間；這項設定不會決定投資組合 TODAY 的計算時間。")),
-                (helpText("Background schedule", "背景排程"), helpText("The Mac must be powered on and FinTrack must be allowed to run in the user's active session. If the scheduled run is missed, it can be recovered when FinTrack runs again.", "Mac 必須開機，且 FinTrack 能在使用者目前的工作階段執行。若錯過排程，之後再次執行 FinTrack 時可以補回。")),
-                (helpText("Appearance", "外觀"), helpText("Choose Light, Dark, or System. System follows the Mac's current appearance setting.", "選擇淺色、深色或跟隨系統；跟隨系統會使用 Mac 目前的外觀設定。"))
+                (
+                    helpText("Detail percentages", "明細百分比"),
+                    helpText(
+                        "Show or hide month-over-month changes in asset and liability details.",
+                        "顯示或隱藏資產與負債明細的月增減百分比。")
+                ),
+                (
+                    helpText("Language", "語言"),
+                    helpText("Switch between English and Traditional Chinese.", "切換英文與繁體中文。")
+                ),
+                (
+                    helpText("Performance colors", "漲跌顏色"),
+                    helpText(
+                        "Choose how positive and negative performance colors are presented.",
+                        "選擇正負績效的顏色呈現方式。")
+                ),
+                (
+                    helpText("Daily snapshot time", "每日快照時間"),
+                    helpText(
+                        "Choose when FinTrack automatically records the net-worth snapshot. This setting does not define the Portfolio TODAY calculation time.",
+                        "選擇 FinTrack 自動記錄淨值快照的時間；這項設定不會決定投資組合 TODAY 的計算時間。")
+                ),
+                (
+                    helpText("Background schedule", "背景排程"),
+                    helpText(
+                        "The Mac must be powered on and FinTrack must be allowed to run in the user's active session. If the scheduled run is missed, it can be recovered when FinTrack runs again.",
+                        "Mac 必須開機，且 FinTrack 能在使用者目前的工作階段執行。若錯過排程，之後再次執行 FinTrack 時可以補回。")
+                ),
+                (
+                    helpText("Appearance", "外觀"),
+                    helpText(
+                        "Choose Light, Dark, or System. System follows the Mac's current appearance setting.",
+                        "選擇淺色、深色或跟隨系統；跟隨系統會使用 Mac 目前的外觀設定。")
+                ),
             ])
             HelpSectionLabel(text: helpText("SUPPORT & FEEDBACK", "支援與回饋"))
             HelpDefinitionSection(rows: [
-                (helpText("Report a problem", "回報問題"), helpText("Opens GitHub to report a bug or unexpected behavior. A GitHub account is required to submit an issue.", "開啟 GitHub 回報錯誤或非預期行為；此動作需要 GitHub 帳號。")),
-                (helpText("Suggest a feature", "建議功能"), helpText("Opens GitHub to suggest an idea or improvement for FinTrack. A GitHub account is required", "開啟 GitHub 提出 FinTrack 的新功能或改進建議；此動作需要 GitHub 帳號。")),
-                (helpText("Open GitHub page", "開啟 GitHub 頁面"), helpText("Opens the FinTrack project page in your default browser.", "使用預設瀏覽器開啟 FinTrack 專案頁面。"))
+                (
+                    helpText("Report a problem", "回報問題"),
+                    helpText(
+                        "Opens GitHub to report a bug or unexpected behavior. A GitHub account is required to submit an issue.",
+                        "開啟 GitHub 回報錯誤或非預期行為；此動作需要 GitHub 帳號。")
+                ),
+                (
+                    helpText("Suggest a feature", "建議功能"),
+                    helpText(
+                        "Opens GitHub to suggest an idea or improvement for FinTrack. A GitHub account is required",
+                        "開啟 GitHub 提出 FinTrack 的新功能或改進建議；此動作需要 GitHub 帳號。")
+                ),
+                (
+                    helpText("Open GitHub page", "開啟 GitHub 頁面"),
+                    helpText(
+                        "Opens the FinTrack project page in your default browser.",
+                        "使用預設瀏覽器開啟 FinTrack 專案頁面。")
+                ),
             ])
         }
     }
@@ -5297,47 +6201,112 @@ struct HelpView: View {
             HelpSectionLabel(text: L10n.text("OVERVIEW", language: appLanguage))
             HelpIntroCard(
                 title: L10n.text("Your financial picture", language: appLanguage),
-                description: L10n.text("Overview brings your assets, liabilities, investments, and cash together in one financial snapshot.", language: appLanguage)
+                description: L10n.text(
+                    "Overview brings your assets, liabilities, investments, and cash together in one financial snapshot.",
+                    language: appLanguage)
             )
 
             HelpSectionLabel(text: L10n.text("KEY METRICS", language: appLanguage))
             HelpDefinitionSection(rows: [
-                (L10n.text("Total Assets", language: appLanguage), L10n.text("Everything you currently own, converted to NTD.", language: appLanguage)),
-                (L10n.text("Total Liabilities", language: appLanguage), L10n.text("Money you currently owe.", language: appLanguage)),
-                (L10n.text("Net Worth", language: appLanguage), L10n.text("Total Assets − Total Liabilities", language: appLanguage))
+                (
+                    L10n.text("Total Assets", language: appLanguage),
+                    L10n.text(
+                        "Everything you currently own, converted to NTD.", language: appLanguage)
+                ),
+                (
+                    L10n.text("Total Liabilities", language: appLanguage),
+                    L10n.text("Money you currently owe.", language: appLanguage)
+                ),
+                (
+                    L10n.text("Net Worth", language: appLanguage),
+                    L10n.text("Total Assets − Total Liabilities", language: appLanguage)
+                ),
             ])
 
             HelpSectionLabel(text: L10n.text("YOUR DETAILS", language: appLanguage))
             HelpDefinitionSection(rows: [
-                (L10n.text("Liquid Assets", language: appLanguage), L10n.text("Cash and other readily available funds.", language: appLanguage)),
-                (L10n.text("Liquid Investments", language: appLanguage), L10n.text("Investments that can generally be sold.", language: appLanguage)),
-                (L10n.text("Long-term Investment", language: appLanguage), L10n.text("Assets intended to be held longer.", language: appLanguage))
+                (
+                    L10n.text("Liquid Assets", language: appLanguage),
+                    L10n.text("Cash and other readily available funds.", language: appLanguage)
+                ),
+                (
+                    L10n.text("Liquid Investments", language: appLanguage),
+                    L10n.text("Investments that can generally be sold.", language: appLanguage)
+                ),
+                (
+                    L10n.text("Long-term Investment", language: appLanguage),
+                    L10n.text("Assets intended to be held longer.", language: appLanguage)
+                ),
             ])
 
             HelpSectionLabel(text: L10n.text("CHANGES OVER TIME", language: appLanguage))
             HelpDefinitionSection(rows: [
-                (L10n.text("Monthly Change", language: appLanguage), L10n.text("Compares the current value with the previous month. You can hide these percentages in Settings.", language: appLanguage))
+                (
+                    L10n.text("Monthly Change", language: appLanguage),
+                    L10n.text(
+                        "Compares the current value with the previous month. You can hide these percentages in Settings.",
+                        language: appLanguage)
+                )
             ])
 
             HelpSectionLabel(text: helpText("NET WORTH HISTORY", "淨值歷史"))
             HelpDefinitionSection(rows: [
-                (helpText("Snapshot", "快照"), helpText("Records your current net worth as a historical data point.", "將目前淨值記錄成一筆歷史資料。")),
-                (helpText("Same-day snapshots", "同日快照"), helpText("Creating more than one snapshot on the same day does not create multiple records. The latest snapshot replaces that day's data.", "同一天建立多次快照不會產生多筆資料，最新的快照會覆蓋當天資料。")),
-                (helpText("Chart ranges", "圖表區間"), helpText("Choose a time range. Longer ranges can be scrolled horizontally to view older points.", "選擇要查看的時間區間；較長的區間可以左右滑動查看較早的資料。")),
-                (helpText("Chart details", "圖表資訊"), helpText("Move the pointer onto a data point to see its net worth and date.", "將游標移到資料點上，即可查看該日的淨值與日期。")),
-                (helpText("Automatic snapshots", "自動快照"), helpText("The scheduled snapshot records net worth automatically. The Snapshot button creates one immediately.", "定時快照會自動記錄淨值；按下快照按鈕則會立即建立一筆資料。"))
+                (
+                    helpText("Snapshot", "快照"),
+                    helpText(
+                        "Records your current net worth as a historical data point.",
+                        "將目前淨值記錄成一筆歷史資料。")
+                ),
+                (
+                    helpText("Same-day snapshots", "同日快照"),
+                    helpText(
+                        "Creating more than one snapshot on the same day does not create multiple records. The latest snapshot replaces that day's data.",
+                        "同一天建立多次快照不會產生多筆資料，最新的快照會覆蓋當天資料。")
+                ),
+                (
+                    helpText("Chart ranges", "圖表區間"),
+                    helpText(
+                        "Choose a time range. Longer ranges can be scrolled horizontally to view older points.",
+                        "選擇要查看的時間區間；較長的區間可以左右滑動查看較早的資料。")
+                ),
+                (
+                    helpText("Chart details", "圖表資訊"),
+                    helpText(
+                        "Move the pointer onto a data point to see its net worth and date.",
+                        "將游標移到資料點上，即可查看該日的淨值與日期。")
+                ),
+                (
+                    helpText("Automatic snapshots", "自動快照"),
+                    helpText(
+                        "The scheduled snapshot records net worth automatically. The Snapshot button creates one immediately.",
+                        "定時快照會自動記錄淨值；按下快照按鈕則會立即建立一筆資料。")
+                ),
             ])
 
             HelpSectionLabel(text: L10n.text("ADDING INFORMATION", language: appLanguage))
             VStack(alignment: .leading, spacing: 4) {
-                HelpActionRow(symbol: "plus", title: L10n.text("Add an asset or liability", language: appLanguage), description: L10n.text("Use the + button in the corresponding details section.", language: appLanguage))
-                HelpActionRow(symbol: "chart.pie", title: L10n.text("Add investments", language: appLanguage), description: L10n.text("Open Portfolio from the sidebar.", language: appLanguage))
-                HelpActionRow(symbol: "globe.americas.fill", title: L10n.text("Add foreign currency", language: appLanguage), description: L10n.text("Open Foreign Currency from the sidebar.", language: appLanguage))
+                HelpActionRow(
+                    symbol: "plus",
+                    title: L10n.text("Add an asset or liability", language: appLanguage),
+                    description: L10n.text(
+                        "Use the + button in the corresponding details section.",
+                        language: appLanguage))
+                HelpActionRow(
+                    symbol: "chart.pie", title: L10n.text("Add investments", language: appLanguage),
+                    description: L10n.text(
+                        "Open Portfolio from the sidebar.", language: appLanguage))
+                HelpActionRow(
+                    symbol: "globe.americas.fill",
+                    title: L10n.text("Add foreign currency", language: appLanguage),
+                    description: L10n.text(
+                        "Open Foreign Currency from the sidebar.", language: appLanguage))
             }
 
             HelpInfoCallout(
                 title: L10n.text("Market data", language: appLanguage),
-                description: L10n.text("FinTrack refreshes market prices and exchange rates when possible. Saved local data remains available offline.", language: appLanguage)
+                description: L10n.text(
+                    "FinTrack refreshes market prices and exchange rates when possible. Saved local data remains available offline.",
+                    language: appLanguage)
             )
         }
     }
@@ -5366,7 +6335,10 @@ struct RecurringInvestmentView: View {
                 ContentUnavailableView(
                     L10n.text("No recurring rules", language: appLanguage),
                     systemImage: "calendar.badge.clock",
-                    description: Text(L10n.text("Add a rule to plan your recurring investments.", language: appLanguage))
+                    description: Text(
+                        L10n.text(
+                            "Add a rule to plan your recurring investments.", language: appLanguage)
+                    )
                 )
             } else {
                 ScrollView {
@@ -5383,7 +6355,9 @@ struct RecurringInvestmentView: View {
                             .contentShape(Rectangle())
                         }
                     }
-                    .background(FinTrackTheme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+                    .background(
+                        FinTrackTheme.cardBackground, in: RoundedRectangle(cornerRadius: 12)
+                    )
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(FinTrackTheme.border))
                 }
             }
@@ -5399,14 +6373,20 @@ struct RecurringInvestmentView: View {
         HStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(rule.securityName).font(.headline)
-                Text("\(rule.symbol) · " + rule.schedules.map { "\(L10n.text($0.frequency, language: appLanguage)) \($0.executionDay)\(L10n.text("day", language: appLanguage))" }.joined(separator: " · "))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text(
+                    "\(rule.symbol) · "
+                        + rule.schedules.map {
+                            "\(L10n.text($0.frequency, language: appLanguage)) \($0.executionDay)\(L10n.text("day", language: appLanguage))"
+                        }.joined(separator: " · ")
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 4) {
                 Text(money(rule.plannedAmount, currency: rule.currency)).font(.headline)
-                Text(L10n.text("Click to view investments", language: appLanguage)).font(.caption).foregroundStyle(.secondary)
+                Text(L10n.text("Click to view investments", language: appLanguage)).font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -5459,10 +6439,13 @@ struct RecurringHoldingDetailView: View {
                 .padding(.vertical, 4)
 
             VStack(alignment: .leading, spacing: 8) {
-                Text(L10n.text("SCHEDULES", language: appLanguage)).font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                Text(L10n.text("SCHEDULES", language: appLanguage)).font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
                 ForEach(rule.schedules) { schedule in
                     HStack {
-                        Text("\(money(schedule.plannedAmount, currency: schedule.currency)) · \(L10n.text(schedule.frequency, language: appLanguage)) · \(schedule.executionDay)\(L10n.text("day", language: appLanguage))")
+                        Text(
+                            "\(money(schedule.plannedAmount, currency: schedule.currency)) · \(L10n.text(schedule.frequency, language: appLanguage)) · \(schedule.executionDay)\(L10n.text("day", language: appLanguage))"
+                        )
                         Spacer()
                         Button {
                             editingSchedule = schedule
@@ -5479,7 +6462,8 @@ struct RecurringHoldingDetailView: View {
 
             VStack(spacing: 0) {
                 HStack {
-                    Text(L10n.text("PURCHASES", language: appLanguage)).font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                    Text(L10n.text("PURCHASES", language: appLanguage)).font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
                     Spacer()
                     Button(action: { showingAddPurchase = true }) {
                         Image(systemName: "plus")
@@ -5492,9 +6476,12 @@ struct RecurringHoldingDetailView: View {
                 .padding(.bottom, 10)
 
                 HStack {
-                    Text(L10n.text("DATE", language: appLanguage)).frame(maxWidth: .infinity, alignment: .leading)
-                    Text(L10n.text("SHARES", language: appLanguage)).frame(width: 120, alignment: .trailing)
-                    Text(L10n.text("AMOUNT", language: appLanguage)).frame(width: 140, alignment: .trailing)
+                    Text(L10n.text("DATE", language: appLanguage)).frame(
+                        maxWidth: .infinity, alignment: .leading)
+                    Text(L10n.text("SHARES", language: appLanguage)).frame(
+                        width: 120, alignment: .trailing)
+                    Text(L10n.text("AMOUNT", language: appLanguage)).frame(
+                        width: 140, alignment: .trailing)
                     Color.clear.frame(width: 58)
                 }
                 .font(.caption.weight(.bold))
@@ -5503,29 +6490,37 @@ struct RecurringHoldingDetailView: View {
                 .padding(.bottom, 10)
 
                 VStack(spacing: 0) {
-                        if purchases.isEmpty {
-                            Text(L10n.text("No purchases recorded. Click + to add the actual transaction.", language: appLanguage))
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, minHeight: 160)
-                        } else {
-                            ForEach(purchases) { purchase in
-                                HStack {
-                                    Text(purchase.tradeDate).frame(maxWidth: .infinity, alignment: .leading)
-                                    Text(String(format: "%.2f", purchase.shares)).frame(width: 120, alignment: .trailing)
-                                    Text(money(purchase.amount, currency: purchase.currency))
-                                        .frame(width: 140, alignment: .trailing)
-                                    Color.clear.frame(width: 58)
-                                }
-                                .padding(.horizontal, 20)
-                                .padding(.vertical, 11)
-                                .contentShape(Rectangle())
-                                .contextMenu {
-                                    Button("Edit") { editingPurchase = purchase }
-                                    Divider()
-                                    Button("Delete", role: .destructive) { pendingDeletePurchase = purchase }
+                    if purchases.isEmpty {
+                        Text(
+                            L10n.text(
+                                "No purchases recorded. Click + to add the actual transaction.",
+                                language: appLanguage)
+                        )
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, minHeight: 160)
+                    } else {
+                        ForEach(purchases) { purchase in
+                            HStack {
+                                Text(purchase.tradeDate).frame(
+                                    maxWidth: .infinity, alignment: .leading)
+                                Text(String(format: "%.2f", purchase.shares)).frame(
+                                    width: 120, alignment: .trailing)
+                                Text(money(purchase.amount, currency: purchase.currency))
+                                    .frame(width: 140, alignment: .trailing)
+                                Color.clear.frame(width: 58)
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 11)
+                            .contentShape(Rectangle())
+                            .contextMenu {
+                                Button("Edit") { editingPurchase = purchase }
+                                Divider()
+                                Button("Delete", role: .destructive) {
+                                    pendingDeletePurchase = purchase
                                 }
                             }
                         }
+                    }
                 }
             }
             .background(FinTrackTheme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
@@ -5560,7 +6555,7 @@ struct RecurringHoldingDetailView: View {
                     do {
                         try appModel.deleteRecurringPurchase(id: purchase.id)
                         purchases = appModel.recurringPurchases(holdingID: rule.holdingID)
-                    } catch { }
+                    } catch {}
                 },
                 secondaryButton: .cancel()
             )
@@ -5583,7 +6578,8 @@ struct EditRecurringRuleSheet: View {
     private var fundingAssets: [DatabaseManager.AssetRecord] {
         appModel.assets.filter { asset in
             if currency == "NTD" {
-                return asset.assetGroup == "liquid_asset" && asset.currency == "NTD" && asset.category != "Foreign Currency"
+                return asset.assetGroup == "liquid_asset" && asset.currency == "NTD"
+                    && asset.category != "Foreign Currency"
             }
             return asset.category == "Foreign Currency" && asset.currency == currency
         }
@@ -5600,15 +6596,18 @@ struct EditRecurringRuleSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(L10n.text("Edit Recurring Rule", language: appLanguage)).font(.title2.weight(.bold))
-            TextField(L10n.text("Planned amount", language: appLanguage), text: $plannedAmount).textFieldStyle(.roundedBorder)
+            Text(L10n.text("Edit Recurring Rule", language: appLanguage)).font(
+                .title2.weight(.bold))
+            TextField(L10n.text("Planned amount", language: appLanguage), text: $plannedAmount)
+                .textFieldStyle(.roundedBorder)
             Picker(L10n.text("Currency", language: appLanguage), selection: $currency) {
                 Text("NTD").tag("NTD")
                 Text("USD").tag("USD")
                 Text("JPY").tag("JPY")
             }
             .pickerStyle(.menu)
-            Picker(L10n.text("Funding account", language: appLanguage), selection: $fundingAssetID) {
+            Picker(L10n.text("Funding account", language: appLanguage), selection: $fundingAssetID)
+            {
                 Text(L10n.text("No linked account", language: appLanguage)).tag(Int64(0))
                 ForEach(fundingAssets) { asset in
                     Text("\(asset.name) (\(asset.currency))").tag(asset.id)
@@ -5620,11 +6619,14 @@ struct EditRecurringRuleSheet: View {
                 Text(L10n.text("Weekly", language: appLanguage)).tag("weekly")
             }
             .pickerStyle(.menu)
-            Stepper("\(L10n.text("Execution day", language: appLanguage)): \(executionDay)", value: $executionDay, in: 1...31)
+            Stepper(
+                "\(L10n.text("Execution day", language: appLanguage)): \(executionDay)",
+                value: $executionDay, in: 1...31)
             HStack {
                 Spacer()
                 Button(L10n.text("Cancel", language: appLanguage)) { dismiss() }
-                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(.borderedProminent)
+                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(
+                    .borderedProminent)
             }
             if let errorMessage {
                 Text(errorMessage).font(.caption).foregroundStyle(.red)
@@ -5670,7 +6672,8 @@ struct AddRecurringPurchaseSheet: View {
     private var fundingAssets: [DatabaseManager.AssetRecord] {
         appModel.assets.filter { asset in
             if rule.currency == "NTD" {
-                return asset.assetGroup == "liquid_asset" && asset.currency == "NTD" && asset.category != "Foreign Currency"
+                return asset.assetGroup == "liquid_asset" && asset.currency == "NTD"
+                    && asset.category != "Foreign Currency"
             }
             return asset.category == "Foreign Currency" && asset.currency == rule.currency
         }
@@ -5680,11 +6683,17 @@ struct AddRecurringPurchaseSheet: View {
         VStack(alignment: .leading, spacing: 16) {
             Text(L10n.text("Record Purchase", language: appLanguage)).font(.title2.weight(.bold))
             Text(rule.securityName).foregroundStyle(.secondary)
-            TextField(L10n.text("Purchase date (yyyy-MM-dd)", language: appLanguage), text: $tradeDate)
-                .textFieldStyle(.roundedBorder)
-            TextField(L10n.text("Shares", language: appLanguage), text: $shares).textFieldStyle(.roundedBorder)
-            TextField("\(L10n.text("Amount", language: appLanguage)) (\(rule.currency))", text: $amount).textFieldStyle(.roundedBorder)
-            Picker(L10n.text("Funding account", language: appLanguage), selection: $fundingAssetID) {
+            TextField(
+                L10n.text("Purchase date (yyyy-MM-dd)", language: appLanguage), text: $tradeDate
+            )
+            .textFieldStyle(.roundedBorder)
+            TextField(L10n.text("Shares", language: appLanguage), text: $shares).textFieldStyle(
+                .roundedBorder)
+            TextField(
+                "\(L10n.text("Amount", language: appLanguage)) (\(rule.currency))", text: $amount
+            ).textFieldStyle(.roundedBorder)
+            Picker(L10n.text("Funding account", language: appLanguage), selection: $fundingAssetID)
+            {
                 Text(L10n.text("No linked account", language: appLanguage)).tag(Int64(0))
                 ForEach(fundingAssets) { asset in
                     Text("\(asset.name) (\(asset.currency))").tag(asset.id)
@@ -5694,7 +6703,8 @@ struct AddRecurringPurchaseSheet: View {
             HStack {
                 Spacer()
                 Button(L10n.text("Cancel", language: appLanguage)) { dismiss() }
-                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(.borderedProminent)
+                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(
+                    .borderedProminent)
             }
             if let errorMessage {
                 Text(errorMessage).font(.caption).foregroundStyle(.red)
@@ -5711,7 +6721,8 @@ struct AddRecurringPurchaseSheet: View {
 
     private func save() {
         guard let shareValue = Double(shares), shareValue > 0,
-              let amountValue = Double(amount), amountValue > 0 else {
+            let amountValue = Double(amount), amountValue > 0
+        else {
             errorMessage = "Enter shares and amount greater than zero."
             return
         }
@@ -5759,7 +6770,8 @@ struct EditRecurringPurchaseSheet: View {
     private var fundingAssets: [DatabaseManager.AssetRecord] {
         appModel.assets.filter { asset in
             if purchase.currency == "NTD" {
-                return asset.assetGroup == "liquid_asset" && asset.currency == "NTD" && asset.category != "Foreign Currency"
+                return asset.assetGroup == "liquid_asset" && asset.currency == "NTD"
+                    && asset.category != "Foreign Currency"
             }
             return asset.category == "Foreign Currency" && asset.currency == purchase.currency
         }
@@ -5777,13 +6789,19 @@ struct EditRecurringPurchaseSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(L10n.text("Edit Purchase", language: appLanguage)).font(.title2.weight(.bold))
-            TextField(L10n.text("Purchase date (yyyy-MM-dd)", language: appLanguage), text: $tradeDate)
-                .textFieldStyle(.roundedBorder)
+            TextField(
+                L10n.text("Purchase date (yyyy-MM-dd)", language: appLanguage), text: $tradeDate
+            )
+            .textFieldStyle(.roundedBorder)
             TextField(L10n.text("Shares", language: appLanguage), text: $shares)
                 .textFieldStyle(.roundedBorder)
-            TextField("\(L10n.text("Amount", language: appLanguage)) (\(purchase.currency))", text: $amount)
-                .textFieldStyle(.roundedBorder)
-            Picker(L10n.text("Funding account", language: appLanguage), selection: $fundingAssetID) {
+            TextField(
+                "\(L10n.text("Amount", language: appLanguage)) (\(purchase.currency))",
+                text: $amount
+            )
+            .textFieldStyle(.roundedBorder)
+            Picker(L10n.text("Funding account", language: appLanguage), selection: $fundingAssetID)
+            {
                 Text(L10n.text("No linked account", language: appLanguage)).tag(Int64(0))
                 ForEach(fundingAssets) { asset in
                     Text("\(asset.name) (\(asset.currency))").tag(asset.id)
@@ -5793,7 +6811,8 @@ struct EditRecurringPurchaseSheet: View {
             HStack {
                 Spacer()
                 Button(L10n.text("Cancel", language: appLanguage)) { dismiss() }
-                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(.borderedProminent)
+                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(
+                    .borderedProminent)
             }
             if let errorMessage {
                 Text(errorMessage).font(.caption).foregroundStyle(.red)
@@ -5805,8 +6824,9 @@ struct EditRecurringPurchaseSheet: View {
 
     private func save() {
         guard Self.isoDateFormatter.date(from: tradeDate) != nil,
-              let shareValue = Double(shares), shareValue > 0,
-              let amountValue = Double(amount), amountValue > 0 else {
+            let shareValue = Double(shares), shareValue > 0,
+            let amountValue = Double(amount), amountValue > 0
+        else {
             errorMessage = "Enter a valid date, shares, and amount."
             return
         }
@@ -5849,7 +6869,8 @@ struct AddRecurringRuleSheet: View {
     private var fundingAssets: [DatabaseManager.AssetRecord] {
         appModel.assets.filter { asset in
             if currency == "NTD" {
-                return asset.assetGroup == "liquid_asset" && asset.currency == "NTD" && asset.category != "Foreign Currency"
+                return asset.assetGroup == "liquid_asset" && asset.currency == "NTD"
+                    && asset.category != "Foreign Currency"
             }
             return asset.category == "Foreign Currency" && asset.currency == currency
         }
@@ -5875,7 +6896,8 @@ struct AddRecurringRuleSheet: View {
                 Text("JPY").tag("JPY")
             }
             .pickerStyle(.menu)
-            Picker(L10n.text("Funding account", language: appLanguage), selection: $fundingAssetID) {
+            Picker(L10n.text("Funding account", language: appLanguage), selection: $fundingAssetID)
+            {
                 Text(L10n.text("No linked account", language: appLanguage)).tag(Int64(0))
                 ForEach(fundingAssets) { asset in
                     Text("\(asset.name) (\(asset.currency))").tag(asset.id)
@@ -5887,11 +6909,14 @@ struct AddRecurringRuleSheet: View {
                 Text(L10n.text("Weekly", language: appLanguage)).tag("weekly")
             }
             .pickerStyle(.menu)
-            Stepper("\(L10n.text("Execution day", language: appLanguage)): \(executionDay)", value: $executionDay, in: 1...31)
+            Stepper(
+                "\(L10n.text("Execution day", language: appLanguage)): \(executionDay)",
+                value: $executionDay, in: 1...31)
             HStack {
                 Spacer()
                 Button(L10n.text("Cancel", language: appLanguage)) { dismiss() }
-                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(.borderedProminent)
+                Button(L10n.text("Save", language: appLanguage)) { save() }.buttonStyle(
+                    .borderedProminent)
             }
             if let errorMessage {
                 Text(errorMessage).font(.caption).foregroundStyle(.red)
@@ -5903,7 +6928,8 @@ struct AddRecurringRuleSheet: View {
 
     private func save() {
         guard let selectedHoldingID,
-              let amount = Double(plannedAmount), amount > 0 else {
+            let amount = Double(plannedAmount), amount > 0
+        else {
             errorMessage = "Select a holding and enter an amount greater than zero."
             return
         }
@@ -5934,16 +6960,24 @@ struct MetricCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-            Text(L10n.text(title, language: appLanguage)).foregroundStyle(FinTrackTheme.textSecondary)
+                Text(L10n.text(title, language: appLanguage)).foregroundStyle(
+                    FinTrackTheme.textSecondary)
                 if warning {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(FinTrackTheme.warning)
                         .accessibilityLabel("Warning")
                 }
             }
-            Text(value).font(.title2.weight(.bold)).foregroundStyle(warning ? FinTrackTheme.negative : FinTrackTheme.textPrimary)
-            Text(change.replacingOccurrences(of: " vs last month", with: appLanguage == AppLanguage.traditionalChinese.rawValue ? " 較上月" : " vs last month"))
-                .font(.caption).foregroundStyle(warning || change.hasPrefix("-") ? FinTrackTheme.negative : FinTrackTheme.positive)
+            Text(value).font(.title2.weight(.bold)).foregroundStyle(
+                warning ? FinTrackTheme.negative : FinTrackTheme.textPrimary)
+            Text(
+                change.replacingOccurrences(
+                    of: " vs last month",
+                    with: appLanguage == AppLanguage.traditionalChinese.rawValue
+                        ? " 較上月" : " vs last month")
+            )
+            .font(.caption).foregroundStyle(
+                warning || change.hasPrefix("-") ? FinTrackTheme.negative : FinTrackTheme.positive)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(18)
@@ -5976,23 +7010,29 @@ struct DetailCard: View {
                     Divider()
                         .opacity(0.3)
                 }
-                detailRow(name: section.title, value: section.value, change: section.change, showChange: showChanges)
-                    .fontWeight(.semibold)
+                detailRow(
+                    name: section.title, value: section.value, change: section.change,
+                    showChange: showChanges
+                )
+                .fontWeight(.semibold)
 
-                    ForEach(section.children, id: \.name) { child in
-                        detailRow(name: child.name, value: child.value, change: child.change, showChange: showChanges)
-                        .padding(.leading, 18)
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .contentShape(Rectangle())
-                        .contextMenu {
-                            if let onEdit = child.onEdit {
-                                Button("Edit", action: onEdit)
-                            }
-                            if let onDelete = child.onDelete {
-                                Button("Delete", role: .destructive, action: onDelete)
-                            }
+                ForEach(section.children, id: \.name) { child in
+                    detailRow(
+                        name: child.name, value: child.value, change: child.change,
+                        showChange: showChanges
+                    )
+                    .padding(.leading, 18)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .contentShape(Rectangle())
+                    .contextMenu {
+                        if let onEdit = child.onEdit {
+                            Button("Edit", action: onEdit)
                         }
+                        if let onDelete = child.onDelete {
+                            Button("Delete", role: .destructive, action: onDelete)
+                        }
+                    }
                 }
             }
         }
@@ -6002,7 +7042,9 @@ struct DetailCard: View {
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(FinTrackTheme.border))
     }
 
-    private func detailRow(name: String, value: String, change: String, showChange: Bool) -> some View {
+    private func detailRow(name: String, value: String, change: String, showChange: Bool)
+        -> some View
+    {
         HStack(alignment: .top) {
             Text(L10n.text(name, language: appLanguage))
             Spacer()

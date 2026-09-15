@@ -60,7 +60,8 @@ struct MarketDataClient {
 
         let (data, response) = try await URLSession.shared.data(from: url)
         guard let httpResponse = response as? HTTPURLResponse,
-              200..<300 ~= httpResponse.statusCode else {
+            200..<300 ~= httpResponse.statusCode
+        else {
             throw ClientError.invalidResponse
         }
 
@@ -72,17 +73,25 @@ struct MarketDataClient {
 
     /// Fetches one current quote for a selected symbol.
     func fetchQuote(symbol: String) async throws -> Quote? {
-        let escapedSymbol = symbol.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? symbol
-        guard let url = URL(string: "https://query1.finance.yahoo.com/v8/finance/chart/\(escapedSymbol)?range=5d&interval=1d") else {
+        let escapedSymbol =
+            symbol.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? symbol
+        guard
+            let url = URL(
+                string:
+                    "https://query1.finance.yahoo.com/v8/finance/chart/\(escapedSymbol)?range=5d&interval=1d"
+            )
+        else {
             throw ClientError.invalidResponse
         }
         let (data, response) = try await URLSession.shared.data(from: url)
-        guard let httpResponse = response as? HTTPURLResponse, 200..<300 ~= httpResponse.statusCode else {
+        guard let httpResponse = response as? HTTPURLResponse, 200..<300 ~= httpResponse.statusCode
+        else {
             throw ClientError.invalidResponse
         }
         let decoded = try JSONDecoder().decode(ChartResponse.self, from: data)
         guard let result = decoded.chart.result?.first,
-              let price = result.meta.regularMarketPrice else { return nil }
+            let price = result.meta.regularMarketPrice
+        else { return nil }
         let meta = result.meta
         return Quote(
             price: price,
@@ -101,7 +110,8 @@ struct MarketDataClient {
             throw ClientError.invalidResponse
         }
         let (data, response) = try await URLSession.shared.data(from: url)
-        guard let httpResponse = response as? HTTPURLResponse, 200..<300 ~= httpResponse.statusCode else {
+        guard let httpResponse = response as? HTTPURLResponse, 200..<300 ~= httpResponse.statusCode
+        else {
             throw ClientError.invalidResponse
         }
         return try JSONDecoder().decode(ExchangeResponse.self, from: data).rates["TWD"]
