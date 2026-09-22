@@ -4763,7 +4763,8 @@ struct NetWorthHistoryCard: View {
     @State private var didSaveSnapshot = false
     @State private var selectedDate: Date?
     @State private var historyRange: HistoryRange = .threeMonths
-    @State private var chartScrollDate = Date()
+    @State private var chartWindowEndDate = Date()
+    private let chartWindowLength: TimeInterval = 10 * 24 * 60 * 60
 
     private enum HistoryRange: String, CaseIterable {
         case oneMonth
@@ -4833,7 +4834,7 @@ struct NetWorthHistoryCard: View {
                             historyRange = range
                             selectedDate = nil
                             if let latestDate = allChartSnapshots.last?.date {
-                                chartScrollDate = latestDate
+                                chartWindowEndDate = latestDate.addingTimeInterval(2 * 24 * 60 * 60)
                             }
                         } label: {
                             Text(historyRangeTitle(range))
@@ -4997,9 +4998,6 @@ struct NetWorthHistoryCard: View {
                         }
                     }
                 }
-                .chartScrollableAxes(.horizontal)
-                .chartXVisibleDomain(length: 10 * 24 * 60 * 60)
-                .chartScrollPosition(x: $chartScrollDate)
                 .frame(height: 240)
                 .id(appModel.snapshots.last?.id ?? "empty")
             }
@@ -5011,7 +5009,7 @@ struct NetWorthHistoryCard: View {
         .onAppear {
             appModel.refreshSnapshots()
             if let latestDate = allChartSnapshots.last?.date {
-                chartScrollDate = latestDate
+                chartWindowEndDate = latestDate.addingTimeInterval(2 * 24 * 60 * 60)
             }
         }
         .alert(
@@ -5043,16 +5041,8 @@ struct NetWorthHistoryCard: View {
     }
 
     private var chartXDomain: ClosedRange<Date> {
-        guard let first = chartSnapshots.first?.date,
-            let last = chartSnapshots.last?.date
-        else {
-            let now = Date()
-            return now.addingTimeInterval(
-                -5 * 24 * 60 * 60)...now.addingTimeInterval(5 * 24 * 60 * 60)
-        }
-        let padding = max(
-            2 * 24 * 60 * 60, min(5 * 24 * 60 * 60, last.timeIntervalSince(first) * 0.12))
-        return first.addingTimeInterval(-padding)...last.addingTimeInterval(padding)
+        let end = chartWindowEndDate
+        return end.addingTimeInterval(-chartWindowLength)...end
     }
 
     private var chartSpansMultipleYears: Bool {
@@ -5064,7 +5054,8 @@ struct NetWorthHistoryCard: View {
     }
 
     private var chartXAxisDates: [Date] {
-        let dates = chartSnapshots.map(\.date)
+        let dates = chartSnapshots.map(\.date).filter { chartXDomain.contains($0) }
+        guard !dates.isEmpty else { return [] }
         guard dates.count > 10 else { return dates }
         // Keep labels tied to actual observations instead of automatic calendar
         // ticks, which can fall between points. For long ranges show a readable
@@ -5088,9 +5079,9 @@ struct NetWorthHistoryCard: View {
         guard let shiftedDate = Calendar.current.date(
             byAdding: .day,
             value: days,
-            to: chartScrollDate
+            to: chartWindowEndDate
         ) else { return }
-        chartScrollDate = shiftedDate
+        chartWindowEndDate = shiftedDate
     }
 
     private func historyRangeTitle(_ range: HistoryRange) -> String {
