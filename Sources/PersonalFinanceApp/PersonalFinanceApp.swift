@@ -5001,6 +5001,23 @@ private struct NetWorthHistoryChart: View {
     let spansMultipleYears: Bool
     @Binding var selectedDate: Date?
     let isChinese: Bool
+    @State private var scrollProgress = 1.0
+
+    private let visibleDuration: TimeInterval = 10 * 24 * 60 * 60
+
+    private var visibleDomain: ClosedRange<Date> {
+        let totalDuration = xDomain.upperBound.timeIntervalSince(xDomain.lowerBound)
+        let windowDuration = min(visibleDuration, totalDuration)
+        let maximumStart = xDomain.upperBound.addingTimeInterval(-windowDuration)
+        let start = xDomain.lowerBound.addingTimeInterval(
+            max(0, maximumStart.timeIntervalSince(xDomain.lowerBound)) * scrollProgress
+        )
+        return start...start.addingTimeInterval(windowDuration)
+    }
+
+    private var visibleAxisDates: [Date] {
+        xAxisDates.filter { visibleDomain.contains($0) }
+    }
 
     private var selectedSnapshot: (snapshot: DatabaseManager.Snapshot, date: Date)? {
         guard let selectedDate else { return nil }
@@ -5011,26 +5028,16 @@ private struct NetWorthHistoryChart: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-            ScrollViewReader { scrollProxy in
-                ScrollView(.horizontal, showsIndicators: true) {
-                    HStack(spacing: 0) {
-                        chart
-                            .frame(width: contentWidth(viewportWidth: geometry.size.width))
-                            .id("net-worth-chart-content")
-                        Color.clear
-                            .frame(width: 1, height: 1)
-                            .id("net-worth-chart-end")
-                    }
-                    .frame(height: geometry.size.height, alignment: .top)
-                }
-                .scrollIndicators(.visible)
-                .onAppear {
-                    DispatchQueue.main.async {
-                        scrollProxy.scrollTo("net-worth-chart-end", anchor: .trailing)
-                    }
-                }
-            }
+        VStack(spacing: 0) {
+            chart
+                .frame(height: 218)
+            HorizontalHistoryScrollbar(
+                progress: $scrollProgress,
+                visibleFraction: min(1, visibleDuration / max(visibleDuration, xDomain.upperBound.timeIntervalSince(xDomain.lowerBound))),
+                isChinese: isChinese
+            )
+            .frame(height: 16)
+            .padding(.horizontal, 48)
         }
     }
 
@@ -5050,7 +5057,7 @@ private struct NetWorthHistoryChart: View {
             )
             .foregroundStyle(FinTrackTheme.primary)
         }
-        .chartXScale(domain: xDomain)
+        .chartXScale(domain: visibleDomain)
         .chartYScale(domain: yDomain)
         .chartYAxis {
             AxisMarks(position: .leading) { value in
@@ -5064,7 +5071,7 @@ private struct NetWorthHistoryChart: View {
             }
         }
         .chartXAxis {
-            AxisMarks(values: xAxisDates) { value in
+            AxisMarks(values: visibleAxisDates) { value in
                 AxisValueLabel {
                     if let date = value.as(Date.self) {
                         Text(snapshotDateText(date, includeYear: spansMultipleYears))
@@ -5075,11 +5082,6 @@ private struct NetWorthHistoryChart: View {
             }
         }
         .chartOverlay { proxy in overlay(proxy) }
-    }
-
-    private func contentWidth(viewportWidth: CGFloat) -> CGFloat {
-        let domainDays = max(1, xDomain.upperBound.timeIntervalSince(xDomain.lowerBound) / 86_400)
-        return max(viewportWidth, CGFloat(domainDays) * 32)
     }
 
     private func overlay(_ proxy: ChartProxy) -> some View {
@@ -5126,6 +5128,54 @@ private struct NetWorthHistoryChart: View {
                 }
             }
         }
+    }
+}
+
+private struct HorizontalHistoryScrollbar: View {
+    @Binding var progress: Double
+    let visibleFraction: Double
+    let isChinese: Bool
+    @State private var dragStartProgress: Double?
+
+    var body: some View {
+        GeometryReader { geometry in
+            let trackWidth = geometry.size.width
+            let thumbWidth = max(30, trackWidth * visibleFraction)
+            let travel = max(0, trackWidth - thumbWidth)
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(FinTrackTheme.divider)
+                    .frame(height: 4)
+                    .frame(maxHeight: .infinity)
+                    .contentShape(Rectangle())
+                    .onTapGesture { location in
+                        guard travel > 0 else { return }
+                        progress = min(1, max(0, (location.x - thumbWidth / 2) / travel))
+                    }
+                Capsule()
+                    .fill(FinTrackTheme.primary)
+                    .frame(width: thumbWidth, height: 10)
+                    .offset(x: travel * progress)
+                    .contentShape(Rectangle().inset(by: -4))
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { value in
+                                guard travel > 0 else { return }
+                                if dragStartProgress == nil { dragStartProgress = progress }
+                                let start = dragStartProgress ?? progress
+                                progress = min(
+                                    1,
+                                    max(0, start + value.translation.width / travel)
+                                )
+                            }
+                            .onEnded { _ in dragStartProgress = nil }
+                    )
+            }
+            .frame(maxHeight: .infinity)
+        }
+        .accessibilityElement()
+        .accessibilityLabel(isChinese ? "淨值歷史水平捲動條" : "Net worth history horizontal scrollbar")
+        .accessibilityValue("\(Int(progress * 100))%")
     }
 }
 
