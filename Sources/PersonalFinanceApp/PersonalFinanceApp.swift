@@ -4926,9 +4926,18 @@ struct NetWorthHistoryCard: View {
         let selectedStart = historyRange == .all
             ? (allChartSnapshots.first?.date ?? today)
             : (calendar.date(byAdding: .month, value: -historyRange.monthCount, to: today) ?? today)
-        // Don't leave empty space before the first available snapshot or after
-        // the latest one when the selected period contains less history.
-        let lowerBound = max(selectedStart, chartSnapshots.first?.date ?? selectedStart)
+        // Leave a small leading gutter before the first observation. Without
+        // it Swift Charts clips the first point at the plot boundary, making
+        // the oldest snapshot look cut off when the user scrolls fully left.
+        let firstDate = max(selectedStart, chartSnapshots.first?.date ?? selectedStart)
+        let firstInterval = chartSnapshots.count > 1
+            ? chartSnapshots[1].date.timeIntervalSince(chartSnapshots[0].date)
+            : 24 * 60 * 60
+        let leadingGutter = min(
+            24 * 60 * 60,
+            max(60 * 60, firstInterval / 2)
+        )
+        let lowerBound = firstDate.addingTimeInterval(-leadingGutter)
         let latestDate = chartSnapshots.last?.date ?? today
         let dataEnd = calendar.date(byAdding: .day, value: 1, to: latestDate) ?? tomorrow
         let upperBound = min(tomorrow, dataEnd)
