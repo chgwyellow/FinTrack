@@ -5286,6 +5286,9 @@ private func netWorthSnapshotDate(_ value: String) -> Date? {
     let formatter = DateFormatter()
     formatter.calendar = Calendar(identifier: .gregorian)
     formatter.locale = Locale(identifier: "en_US_POSIX")
+    // Snapshot dates are calendar days, not instants. Parse them in UTC so
+    // Swift Charts cannot reinterpret local midnight as the previous date.
+    formatter.timeZone = TimeZone(secondsFromGMT: 0)
     formatter.dateFormat = "yyyy-MM-dd"
     return formatter.date(from: value)
 }
@@ -5302,6 +5305,10 @@ private func snapshotDateString(for date: Date) -> String {
 private func snapshotDateText(_ date: Date, includeYear: Bool) -> String {
     let formatter = DateFormatter()
     formatter.locale = Locale.current
+    formatter.calendar = Calendar(identifier: .gregorian)
+    // Match netWorthSnapshotDate(_:): keep date-only chart ticks on the stored
+    // calendar day rather than shifting them through the machine's time zone.
+    formatter.timeZone = TimeZone(secondsFromGMT: 0)
     formatter.dateStyle = includeYear ? .medium : .medium
     formatter.timeStyle = .none
     if !includeYear { formatter.setLocalizedDateFormatFromTemplate("MMM d") }
