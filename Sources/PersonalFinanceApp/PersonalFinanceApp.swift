@@ -5150,19 +5150,21 @@ private struct NetWorthHistoryChart: View {
         Chart(snapshots, id: \.snapshot.id) { item in
             if snapshots.count >= 2 {
                 LineMark(
-                    x: .value("Date", item.date),
+                    x: .value("Date", xCoordinate(item.date)),
                     y: .value("Net Worth", item.snapshot.netWorth)
                 )
                 .foregroundStyle(FinTrackTheme.primary)
                 .interpolationMethod(.catmullRom)
             }
             PointMark(
-                x: .value("Date", item.date),
+                x: .value("Date", xCoordinate(item.date)),
                 y: .value("Net Worth", item.snapshot.netWorth)
             )
             .foregroundStyle(FinTrackTheme.primary)
         }
-        .chartXScale(domain: xDomain)
+        .chartXScale(
+            domain: xCoordinate(xDomain.lowerBound)...xCoordinate(xDomain.upperBound)
+        )
         .chartYScale(domain: yDomain)
         .chartYAxis {
             AxisMarks(position: .leading, values: yAxisValues(for: yDomain)) { value in
@@ -5177,11 +5179,11 @@ private struct NetWorthHistoryChart: View {
             }
         }
         .chartXAxis {
-            AxisMarks(values: xAxisSnapshots.map(\.date)) { value in
+            AxisMarks(values: xAxisSnapshots.map { xCoordinate($0.date) }) { value in
                 AxisValueLabel(centered: true, collisionResolution: .disabled) {
-                    if let date = value.as(Date.self) {
+                    if let x = value.as(Double.self) {
                         let sourceSnapshot = xAxisSnapshots.first {
-                            abs($0.date.timeIntervalSince(date)) < 1
+                            abs(xCoordinate($0.date) - x) < 0.000_001
                         }
                         if let sourceSnapshot {
                             Text(
@@ -5196,6 +5198,11 @@ private struct NetWorthHistoryChart: View {
             }
         }
         .chartOverlay { proxy in overlay(proxy) }
+    }
+
+    // Keep date-only chart coordinates out of Swift Charts' time-zone date axis.
+    private func xCoordinate(_ date: Date) -> Double {
+        date.timeIntervalSince1970 / 86_400
     }
 
     private func overlay(_ proxy: ChartProxy) -> some View {
@@ -5215,7 +5222,7 @@ private struct NetWorthHistoryChart: View {
                                     )
                                     let nearest = snapshots.compactMap {
                                         item -> (date: Date, distance: CGFloat)? in
-                                        guard let x = proxy.position(forX: item.date),
+                                        guard let x = proxy.position(forX: xCoordinate(item.date)),
                                             let y = proxy.position(forY: item.snapshot.netWorth)
                                         else { return nil }
                                         return (item.date, hypot(point.x - x, point.y - y))
@@ -5228,7 +5235,7 @@ private struct NetWorthHistoryChart: View {
                                 }
                             }
                         if let selectedSnapshot,
-                            let pointX = proxy.position(forX: selectedSnapshot.date),
+                            let pointX = proxy.position(forX: xCoordinate(selectedSnapshot.date)),
                             let pointY = proxy.position(forY: selectedSnapshot.snapshot.netWorth)
                         {
                             NetWorthHoverCallout(
