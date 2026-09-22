@@ -4770,6 +4770,16 @@ struct NetWorthHistoryCard: View {
         case sixMonths
         case oneYear
         case all
+
+        var monthCount: Int {
+            switch self {
+            case .oneMonth: return 1
+            case .threeMonths: return 3
+            case .sixMonths: return 6
+            case .oneYear: return 12
+            case .all: return 0
+            }
+        }
     }
 
     private var isChinese: Bool {
@@ -4777,29 +4787,26 @@ struct NetWorthHistoryCard: View {
     }
 
     private var allChartSnapshots: [(snapshot: DatabaseManager.Snapshot, date: Date)] {
-        appModel.snapshots.compactMap { snapshot in
+        let calendar = Calendar.current
+        let tomorrow = calendar.date(
+            byAdding: .day,
+            value: 1,
+            to: calendar.startOfDay(for: Date())
+        ) ?? Date()
+        return appModel.snapshots.compactMap { snapshot in
             guard let date = netWorthSnapshotDate(snapshot.date) else { return nil }
+            guard date < tomorrow else { return nil }
             return (snapshot, date)
-        }
+        }.sorted { $0.date < $1.date }
     }
 
     private var chartSnapshots: [(snapshot: DatabaseManager.Snapshot, date: Date)] {
-        guard historyRange != .all, let latestDate = allChartSnapshots.last?.date else {
-            return allChartSnapshots
-        }
-        let months: Int
-        switch historyRange {
-        case .oneMonth: months = 1
-        case .threeMonths: months = 3
-        case .sixMonths: months = 6
-        case .oneYear: months = 12
-        case .all: months = 0
-        }
-        let cutoff =
-            Calendar.current.date(byAdding: .month, value: -months, to: latestDate) ?? latestDate
-        let filtered = allChartSnapshots.filter { $0.date >= cutoff }
-        // Keep the latest point visible even when the selected range has no data.
-        return filtered.isEmpty ? Array(allChartSnapshots.suffix(1)) : filtered
+        guard historyRange != .all else { return allChartSnapshots }
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) ?? today
+        let cutoff = calendar.date(byAdding: .month, value: -historyRange.monthCount, to: today) ?? today
+        return allChartSnapshots.filter { $0.date >= cutoff && $0.date < tomorrow }
     }
 
     private var historyRangeLabel: String {
@@ -4926,30 +4933,20 @@ struct NetWorthHistoryCard: View {
     }
 
     private var chartXDomain: ClosedRange<Date> {
-        guard let latestDate = allChartSnapshots.last?.date else {
-            let now = Date()
-            return now.addingTimeInterval(-10 * 24 * 60 * 60)...now
-        }
-        let lowerBound: Date
-        if historyRange == .all {
-            lowerBound = allChartSnapshots.first?.date ?? latestDate
-        } else {
-            let months: Int
-            switch historyRange {
-            case .oneMonth: months = 1
-            case .threeMonths: months = 3
-            case .sixMonths: months = 6
-            case .oneYear: months = 12
-            case .all: months = 0
-            }
-            lowerBound = Calendar.current.date(
-                byAdding: .month,
-                value: -months,
-                to: latestDate
-            ) ?? latestDate
-        }
-        let upperBound = latestDate.addingTimeInterval(2 * 24 * 60 * 60)
-        return lowerBound...max(upperBound, lowerBound.addingTimeInterval(10 * 24 * 60 * 60))
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) ?? today
+        let selectedStart = historyRange == .all
+            ? (allChartSnapshots.first?.date ?? today)
+            : (calendar.date(byAdding: .month, value: -historyRange.monthCount, to: today) ?? today)
+        // Don't leave empty space before the first available snapshot or after
+        // the latest one when the selected period contains less history.
+        let lowerBound = max(selectedStart, chartSnapshots.first?.date ?? selectedStart)
+        let latestDate = chartSnapshots.last?.date ?? today
+        let dataEnd = calendar.date(byAdding: .day, value: 1, to: latestDate) ?? tomorrow
+        let upperBound = min(tomorrow, dataEnd)
+        // Charts require a non-zero domain when only one snapshot is available.
+        return lowerBound...max(upperBound, lowerBound.addingTimeInterval(1))
     }
 
     private var chartSpansMultipleYears: Bool {
@@ -5001,22 +4998,13 @@ private struct NetWorthHistoryChart: View {
     let spansMultipleYears: Bool
     @Binding var selectedDate: Date?
     let isChinese: Bool
-    @State private var scrollProgress = 1.0
 
     private let visibleDuration: TimeInterval = 10 * 24 * 60 * 60
 
-    private var visibleDomain: ClosedRange<Date> {
-        let totalDuration = xDomain.upperBound.timeIntervalSince(xDomain.lowerBound)
-        let windowDuration = min(visibleDuration, totalDuration)
-        let maximumStart = xDomain.upperBound.addingTimeInterval(-windowDuration)
-        let start = xDomain.lowerBound.addingTimeInterval(
-            max(0, maximumStart.timeIntervalSince(xDomain.lowerBound)) * scrollProgress
-        )
-        return start...start.addingTimeInterval(windowDuration)
-    }
-
-    private var visibleAxisDates: [Date] {
-        xAxisDates.filter { visibleDomain.contains($0) }
+    private func contentWidth(for viewportWidth: CGFloat) -> CGFloat {
+        let duration = xDomain.upperBound.timeIntervalSince(xDomain.lowerBound)
+        let scale = max(1, duration / visibleDuration)
+        return viewportWidth * scale
     }
 
     private var selectedSnapshot: (snapshot: DatabaseManager.Snapshot, date: Date)? {
@@ -5028,16 +5016,24 @@ private struct NetWorthHistoryChart: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            chart
-                .frame(height: 218)
-            HorizontalHistoryScrollbar(
-                progress: $scrollProgress,
-                visibleFraction: min(1, visibleDuration / max(visibleDuration, xDomain.upperBound.timeIntervalSince(xDomain.lowerBound))),
-                isChinese: isChinese
-            )
-            .frame(height: 16)
-            .padding(.horizontal, 48)
+        ScrollViewReader { scrollProxy in
+            GeometryReader { geometry in
+                ScrollView(.horizontal) {
+                    chart
+                        .frame(
+                            width: contentWidth(for: geometry.size.width),
+                            height: geometry.size.height
+                        )
+                        .id("net-worth-history-chart-content")
+                }
+                .scrollIndicators(.automatic)
+                .clipped()
+                .onAppear {
+                    DispatchQueue.main.async {
+                        scrollProxy.scrollTo("net-worth-history-chart-content", anchor: .trailing)
+                    }
+                }
+            }
         }
     }
 
@@ -5057,7 +5053,7 @@ private struct NetWorthHistoryChart: View {
             )
             .foregroundStyle(FinTrackTheme.primary)
         }
-        .chartXScale(domain: visibleDomain)
+        .chartXScale(domain: xDomain)
         .chartYScale(domain: yDomain)
         .chartYAxis {
             AxisMarks(position: .leading) { value in
@@ -5071,7 +5067,7 @@ private struct NetWorthHistoryChart: View {
             }
         }
         .chartXAxis {
-            AxisMarks(values: visibleAxisDates) { value in
+            AxisMarks(values: xAxisDates) { value in
                 AxisValueLabel {
                     if let date = value.as(Date.self) {
                         Text(snapshotDateText(date, includeYear: spansMultipleYears))
@@ -5128,54 +5124,6 @@ private struct NetWorthHistoryChart: View {
                 }
             }
         }
-    }
-}
-
-private struct HorizontalHistoryScrollbar: View {
-    @Binding var progress: Double
-    let visibleFraction: Double
-    let isChinese: Bool
-    @State private var dragStartProgress: Double?
-
-    var body: some View {
-        GeometryReader { geometry in
-            let trackWidth = geometry.size.width
-            let thumbWidth = max(30, trackWidth * visibleFraction)
-            let travel = max(0, trackWidth - thumbWidth)
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(FinTrackTheme.divider)
-                    .frame(height: 4)
-                    .frame(maxHeight: .infinity)
-                    .contentShape(Rectangle())
-                    .onTapGesture { location in
-                        guard travel > 0 else { return }
-                        progress = min(1, max(0, (location.x - thumbWidth / 2) / travel))
-                    }
-                Capsule()
-                    .fill(FinTrackTheme.primary)
-                    .frame(width: thumbWidth, height: 10)
-                    .offset(x: travel * progress)
-                    .contentShape(Rectangle().inset(by: -4))
-                    .gesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { value in
-                                guard travel > 0 else { return }
-                                if dragStartProgress == nil { dragStartProgress = progress }
-                                let start = dragStartProgress ?? progress
-                                progress = min(
-                                    1,
-                                    max(0, start + value.translation.width / travel)
-                                )
-                            }
-                            .onEnded { _ in dragStartProgress = nil }
-                    )
-            }
-            .frame(maxHeight: .infinity)
-        }
-        .accessibilityElement()
-        .accessibilityLabel(isChinese ? "淨值歷史水平捲動條" : "Net worth history horizontal scrollbar")
-        .accessibilityValue("\(Int(progress * 100))%")
     }
 }
 
