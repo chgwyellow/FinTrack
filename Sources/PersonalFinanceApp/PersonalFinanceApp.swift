@@ -4763,6 +4763,7 @@ struct NetWorthHistoryCard: View {
     @State private var didSaveSnapshot = false
     @State private var selectedDate: Date?
     @State private var historyRange: HistoryRange = .threeMonths
+    @State private var chartScrollDate = Date()
 
     private enum HistoryRange: String, CaseIterable {
         case oneMonth
@@ -4831,6 +4832,9 @@ struct NetWorthHistoryCard: View {
                         Button {
                             historyRange = range
                             selectedDate = nil
+                            if let latestDate = allChartSnapshots.last?.date {
+                                chartScrollDate = latestDate
+                            }
                         } label: {
                             Text(historyRangeTitle(range))
                         }
@@ -4841,6 +4845,22 @@ struct NetWorthHistoryCard: View {
                 }
                 .menuStyle(.borderlessButton)
                 .help(isChinese ? "選擇圖表時間範圍" : "Choose chart time range")
+                Button {
+                    shiftChart(by: -10)
+                } label: {
+                    Image(systemName: "chevron.left")
+                }
+                .buttonStyle(.borderless)
+                .help(isChinese ? "向左查看較早的快照" : "Scroll to earlier snapshots")
+                .accessibilityLabel(isChinese ? "較早的快照" : "Earlier snapshots")
+                Button {
+                    shiftChart(by: 10)
+                } label: {
+                    Image(systemName: "chevron.right")
+                }
+                .buttonStyle(.borderless)
+                .help(isChinese ? "向右查看較新的快照" : "Scroll to newer snapshots")
+                .accessibilityLabel(isChinese ? "較新的快照" : "Newer snapshots")
                 Button(action: createSnapshot) {
                     Label(
                         didSaveSnapshot
@@ -4977,7 +4997,9 @@ struct NetWorthHistoryCard: View {
                         }
                     }
                 }
-                .historyChartScrolling(isEnabled: true, initialDate: chartSnapshots.last?.date)
+                .chartScrollableAxes(.horizontal)
+                .chartXVisibleDomain(length: 10 * 24 * 60 * 60)
+                .chartScrollPosition(x: $chartScrollDate)
                 .frame(height: 240)
                 .id(appModel.snapshots.last?.id ?? "empty")
             }
@@ -4988,6 +5010,9 @@ struct NetWorthHistoryCard: View {
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(FinTrackTheme.border))
         .onAppear {
             appModel.refreshSnapshots()
+            if let latestDate = allChartSnapshots.last?.date {
+                chartScrollDate = latestDate
+            }
         }
         .alert(
             isChinese ? "建立快照失敗" : "Snapshot Failed",
@@ -5059,6 +5084,15 @@ struct NetWorthHistoryCard: View {
         }
     }
 
+    private func shiftChart(by days: Int) {
+        guard let shiftedDate = Calendar.current.date(
+            byAdding: .day,
+            value: days,
+            to: chartScrollDate
+        ) else { return }
+        chartScrollDate = shiftedDate
+    }
+
     private func historyRangeTitle(_ range: HistoryRange) -> String {
         switch range {
         case .oneMonth: return isChinese ? "最近 1 個月" : "Last month"
@@ -5107,20 +5141,6 @@ private struct Triangle: Shape {
         path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
         path.closeSubpath()
         return path
-    }
-}
-
-extension View {
-    @ViewBuilder
-    fileprivate func historyChartScrolling(isEnabled: Bool, initialDate: Date?) -> some View {
-        if isEnabled, let initialDate {
-            self
-                .chartScrollableAxes(.horizontal)
-                .chartXVisibleDomain(length: 10 * 24 * 60 * 60)
-                .chartScrollPosition(initialX: initialDate)
-        } else {
-            self
-        }
     }
 }
 
