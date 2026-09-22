@@ -4888,7 +4888,6 @@ struct NetWorthHistoryCard: View {
                 NetWorthHistoryChart(
                     snapshots: chartSnapshots,
                     xDomain: chartXDomain,
-                    yDomain: chartYDomain,
                     xAxisDates: chartXAxisDates,
                     spansMultipleYears: chartSpansMultipleYears,
                     selectedDate: $selectedDate,
@@ -4918,19 +4917,6 @@ struct NetWorthHistoryCard: View {
                 appModel.snapshotError
                     ?? (isChinese ? "無法儲存快照。" : "The snapshot could not be saved."))
         }
-    }
-
-    private var chartYDomain: ClosedRange<Double> {
-        let values = chartSnapshots.map { $0.snapshot.netWorth }
-        let minimum = values.min() ?? 0
-        let maximum = values.max() ?? 0
-        let dataSpan = maximum - minimum
-        // Keep the observations near the visual centre. A zero baseline is not
-        // useful here because it pushes a small history to the top of the plot.
-        let padding = max(dataSpan * 0.35, max(abs(minimum), abs(maximum), 1) * 0.15)
-        let lower = minimum - padding
-        let upper = max(maximum + padding, lower + 1)
-        return lower...upper
     }
 
     private var chartXDomain: ClosedRange<Date> {
@@ -4994,13 +4980,31 @@ struct NetWorthHistoryCard: View {
 private struct NetWorthHistoryChart: View {
     let snapshots: [(snapshot: DatabaseManager.Snapshot, date: Date)]
     let xDomain: ClosedRange<Date>
-    let yDomain: ClosedRange<Double>
     let xAxisDates: [Date]
     let spansMultipleYears: Bool
     @Binding var selectedDate: Date?
     let isChinese: Bool
 
+    @State private var contentMinX: CGFloat = 0
+    @State private var plotFrame: CGRect = .zero
+
     private let visibleDuration: TimeInterval = 10 * 24 * 60 * 60
+
+    private struct ContentMinXPreferenceKey: PreferenceKey {
+        static let defaultValue: CGFloat = 0
+
+        static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+            value = nextValue()
+        }
+    }
+
+    private struct PlotFramePreferenceKey: PreferenceKey {
+        static let defaultValue: CGRect = .zero
+
+        static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+            value = nextValue()
+        }
+    }
 
     private func contentWidth(for viewportWidth: CGFloat) -> CGFloat {
         let duration = xDomain.upperBound.timeIntervalSince(xDomain.lowerBound)
@@ -5019,27 +5023,125 @@ private struct NetWorthHistoryChart: View {
     var body: some View {
         ScrollViewReader { scrollProxy in
             GeometryReader { geometry in
-                ScrollView(.horizontal) {
-                    chart
+                ZStack(alignment: .leading) {
+                    ScrollView(.horizontal) {
+                        chart(yDomain: visibleYDomain(
+                            viewportWidth: geometry.size.width,
+                            contentWidth: contentWidth(for: geometry.size.width)
+                        ))
                         .frame(
                             width: contentWidth(for: geometry.size.width),
                             height: max(1, geometry.size.height - 18)
                         )
                         .padding(.bottom, 18)
+                        .background {
+                            GeometryReader { contentGeometry in
+                                Color.clear.preference(
+                                    key: ContentMinXPreferenceKey.self,
+                                    value: contentGeometry.frame(in: .named("netWorthHistoryScroll")).minX
+                                )
+                            }
+                        }
                         .id("net-worth-history-chart-content")
-                }
-                .scrollIndicators(.automatic)
-                .clipped()
-                .onAppear {
-                    DispatchQueue.main.async {
-                        scrollProxy.scrollTo("net-worth-history-chart-content", anchor: .trailing)
                     }
+                    .coordinateSpace(name: "netWorthHistoryScroll")
+                    .scrollIndicators(.automatic)
+                    .clipped()
+                    .onPreferenceChange(ContentMinXPreferenceKey.self) { minX in
+                        contentMinX = minX
+                    }
+                    .onPreferenceChange(PlotFramePreferenceKey.self) { frame in
+                        plotFrame = frame
+                    }
+                    .onAppear {
+                        DispatchQueue.main.async {
+                            scrollProxy.scrollTo("net-worth-history-chart-content", anchor: .trailing)
+                        }
+                    }
+
+                    fixedYAxis(
+                        domain: visibleYDomain(
+                            viewportWidth: geometry.size.width,
+                            contentWidth: contentWidth(for: geometry.size.width)
+                        ),
+                        in: plotFrame
+                    )
+                    .frame(width: 56, height: geometry.size.height)
                 }
             }
         }
     }
 
-    private var chart: some View {
+    private func visibleYDomain(
+        viewportWidth: CGFloat,
+        contentWidth: CGFloat
+    ) -> ClosedRange<Double> {
+        let totalDuration = xDomain.upperBound.timeIntervalSince(xDomain.lowerBound)
+        guard totalDuration > 0, contentWidth > 0, viewportWidth > 0 else {
+            return Self.yDomain(for: snapshots.map { $0.snapshot.netWorth })
+        }
+
+        let clampedOffset = min(max(-contentMinX, 0), max(contentWidth - viewportWidth, 0))
+        let visibleStart = xDomain.lowerBound.addingTimeInterval(
+            totalDuration * Double(clampedOffset / contentWidth)
+        )
+        let visibleEnd = xDomain.lowerBound.addingTimeInterval(
+            totalDuration * Double((clampedOffset + viewportWidth) / contentWidth)
+        )
+        let visibleValues = snapshots
+            .filter { $0.date >= visibleStart && $0.date <= visibleEnd }
+            .map { $0.snapshot.netWorth }
+
+        // Include the nearest observations at either edge so sparse snapshots
+        // don't leave the visible chart with an empty or misleading scale.
+        let edgeValues = [
+            snapshots.last(where: { $0.date < visibleStart })?.snapshot.netWorth,
+            snapshots.first(where: { $0.date > visibleEnd })?.snapshot.netWorth,
+        ].compactMap { $0 }
+        let values = visibleValues.isEmpty ? edgeValues : visibleValues
+        return Self.yDomain(for: values.isEmpty ? snapshots.map { $0.snapshot.netWorth } : values)
+    }
+
+    private static func yDomain(for values: [Double]) -> ClosedRange<Double> {
+        let minimum = values.min() ?? 0
+        let maximum = values.max() ?? minimum
+        let dataSpan = maximum - minimum
+        // Keep visible observations centred while allowing the scale to follow
+        // the currently scrolled window rather than the full selected period.
+        let padding = max(dataSpan * 0.35, max(abs(minimum), abs(maximum), 1) * 0.015)
+        let lower = minimum - padding
+        let upper = max(maximum + padding, lower + 1)
+        return lower...upper
+    }
+
+    private func yAxisValues(for domain: ClosedRange<Double>) -> [Double] {
+        (0...4).map { index in
+            domain.upperBound - (domain.upperBound - domain.lowerBound) * Double(index) / 4
+        }
+    }
+
+    private func fixedYAxis(domain: ClosedRange<Double>, in frame: CGRect) -> some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .topLeading) {
+                FinTrackTheme.cardBackground
+                ForEach(Array(yAxisValues(for: domain).enumerated()), id: \.offset) { item in
+                    Text(compactNTD(item.element, includeCurrency: false))
+                        .font(.caption)
+                        .foregroundStyle(FinTrackTheme.textSecondary)
+                        .frame(width: geometry.size.width - 8, alignment: .trailing)
+                        .position(
+                            x: (geometry.size.width - 8) / 2,
+                            y: frame.minY + frame.height * CGFloat(item.offset) / 4
+                        )
+                }
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+        }
+        .frame(width: 56)
+        .allowsHitTesting(false)
+    }
+
+    private func chart(yDomain: ClosedRange<Double>) -> some View {
         Chart(snapshots, id: \.snapshot.id) { item in
             if snapshots.count >= 2 {
                 LineMark(
@@ -5058,12 +5160,13 @@ private struct NetWorthHistoryChart: View {
         .chartXScale(domain: xDomain)
         .chartYScale(domain: yDomain)
         .chartYAxis {
-            AxisMarks(position: .leading) { value in
+            AxisMarks(position: .leading, values: yAxisValues(for: yDomain)) { value in
                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
                     .foregroundStyle(FinTrackTheme.divider)
                 AxisValueLabel {
                     if let amount = value.as(Double.self) {
                         Text(compactNTD(amount, includeCurrency: false))
+                            .opacity(0)
                     }
                 }
             }
@@ -5084,47 +5187,53 @@ private struct NetWorthHistoryChart: View {
 
     private func overlay(_ proxy: ChartProxy) -> some View {
         GeometryReader { geometry in
-            if let plotFrameAnchor = proxy.plotFrame {
-                let plotFrame = geometry[plotFrameAnchor]
-                ZStack {
-                    Color.clear
-                        .contentShape(Rectangle())
-                        .onContinuousHover { phase in
-                            switch phase {
-                            case .active(let location):
-                                let point = CGPoint(
-                                    x: location.x - plotFrame.origin.x,
-                                    y: location.y - plotFrame.origin.y
-                                )
-                                let nearest = snapshots.compactMap {
-                                    item -> (date: Date, distance: CGFloat)? in
-                                    guard let x = proxy.position(forX: item.date),
-                                        let y = proxy.position(forY: item.snapshot.netWorth)
-                                    else { return nil }
-                                    return (item.date, hypot(point.x - x, point.y - y))
-                                }.min { $0.distance < $1.distance }
-                                selectedDate = nearest.flatMap {
-                                    $0.distance <= 10 ? $0.date : nil
+            let plotFrame = proxy.plotFrame.map { geometry[$0] } ?? .zero
+            ZStack {
+                if proxy.plotFrame != nil {
+                    ZStack {
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .onContinuousHover { phase in
+                                switch phase {
+                                case .active(let location):
+                                    let point = CGPoint(
+                                        x: location.x - plotFrame.origin.x,
+                                        y: location.y - plotFrame.origin.y
+                                    )
+                                    let nearest = snapshots.compactMap {
+                                        item -> (date: Date, distance: CGFloat)? in
+                                        guard let x = proxy.position(forX: item.date),
+                                            let y = proxy.position(forY: item.snapshot.netWorth)
+                                        else { return nil }
+                                        return (item.date, hypot(point.x - x, point.y - y))
+                                    }.min { $0.distance < $1.distance }
+                                    selectedDate = nearest.flatMap {
+                                        $0.distance <= 10 ? $0.date : nil
+                                    }
+                                case .ended:
+                                    selectedDate = nil
                                 }
-                            case .ended:
-                                selectedDate = nil
                             }
+                        if let selectedSnapshot,
+                            let pointX = proxy.position(forX: selectedSnapshot.date),
+                            let pointY = proxy.position(forY: selectedSnapshot.snapshot.netWorth)
+                        {
+                            NetWorthHoverCallout(
+                                value: ntd(selectedSnapshot.snapshot.netWorth),
+                                title: isChinese ? "淨值" : "Net Worth"
+                            )
+                            .position(
+                                x: min(max(plotFrame.minX + pointX, plotFrame.minX + 90), plotFrame.maxX - 90),
+                                y: min(pointY + plotFrame.minY + 52, plotFrame.maxY - 42)
+                            )
                         }
-                    if let selectedSnapshot,
-                        let pointX = proxy.position(forX: selectedSnapshot.date),
-                        let pointY = proxy.position(forY: selectedSnapshot.snapshot.netWorth)
-                    {
-                        NetWorthHoverCallout(
-                            value: ntd(selectedSnapshot.snapshot.netWorth),
-                            title: isChinese ? "淨值" : "Net Worth"
-                        )
-                        .position(
-                            x: min(max(plotFrame.minX + pointX, plotFrame.minX + 90), plotFrame.maxX - 90),
-                            y: min(pointY + plotFrame.minY + 52, plotFrame.maxY - 42)
-                        )
                     }
                 }
-            }
+                }
+            .preference(
+                key: PlotFramePreferenceKey.self,
+                value: CGRect(x: 0, y: plotFrame.minY, width: plotFrame.width, height: plotFrame.height)
+            )
         }
     }
 }
