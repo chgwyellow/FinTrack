@@ -637,8 +637,7 @@ final class AppModel: ObservableObject {
         guard let hour = now.hour, let minute = now.minute,
             hour > parts[0] || (hour == parts[0] && minute >= parts[1])
         else { return }
-        let dateString = snapshotDateString(for: Date())
-        guard !snapshots.contains(where: { $0.date == dateString }) else { return }
+        let dateString = previousSnapshotDateString(for: Date())
         do {
             try databaseManager.saveSnapshot(
                 date: dateString,
@@ -930,11 +929,7 @@ private enum SnapshotBackgroundAgent {
     static func run() {
         do {
             let databaseManager = try DatabaseManager()
-            let dateString = snapshotDateString(for: Date())
-            guard !(try databaseManager.listSnapshots()).contains(where: { $0.date == dateString })
-            else {
-                return
-            }
+            let dateString = previousSnapshotDateString(for: Date())
             try databaseManager.saveSnapshot(
                 date: dateString,
                 assets: try databaseManager.assetTotals(),
@@ -4873,7 +4868,7 @@ struct NetWorthHistoryCard: View {
                 NetWorthHistoryChart(
                     snapshots: chartSnapshots,
                     xDomain: chartXDomain,
-                    xAxisDates: chartXAxisDates,
+                    xAxisSnapshots: chartXAxisSnapshots,
                     spansMultipleYears: chartSpansMultipleYears,
                     selectedDate: $selectedDate,
                     isChinese: isChinese
@@ -4938,16 +4933,20 @@ struct NetWorthHistoryCard: View {
             != Calendar.current.component(.year, from: last)
     }
 
-    private var chartXAxisDates: [Date] {
-        let dates = chartSnapshots.map(\.date).filter { chartXDomain.contains($0) }
-        guard !dates.isEmpty else { return [] }
-        guard dates.count > 10 else { return dates }
+    private var chartXAxisSnapshots: [(snapshot: DatabaseManager.Snapshot, date: Date)] {
+        let snapshots = chartSnapshots.filter { chartXDomain.contains($0.date) }
+        guard !snapshots.isEmpty else { return [] }
+        guard snapshots.count > 10 else { return snapshots }
         // Keep labels tied to actual observations instead of automatic calendar
         // ticks, which can fall between points. For long ranges show a readable
         // subset while retaining both ends of the visible data.
-        let step = max(1, Int(ceil(Double(dates.count - 1) / 8.0)))
-        var selected = stride(from: 0, to: dates.count, by: step).map { dates[$0] }
-        if selected.last != dates.last { selected.append(dates.last!) }
+        let step = max(1, Int(ceil(Double(snapshots.count - 1) / 8.0)))
+        var selected = stride(from: 0, to: snapshots.count, by: step).map { snapshots[$0] }
+        if selected.last?.snapshot.date != snapshots.last?.snapshot.date,
+            let last = snapshots.last
+        {
+            selected.append(last)
+        }
         return selected
     }
 
@@ -4974,7 +4973,7 @@ struct NetWorthHistoryCard: View {
 private struct NetWorthHistoryChart: View {
     let snapshots: [(snapshot: DatabaseManager.Snapshot, date: Date)]
     let xDomain: ClosedRange<Date>
-    let xAxisDates: [Date]
+    let xAxisSnapshots: [(snapshot: DatabaseManager.Snapshot, date: Date)]
     let spansMultipleYears: Bool
     @Binding var selectedDate: Date?
     let isChinese: Bool
@@ -5178,10 +5177,20 @@ private struct NetWorthHistoryChart: View {
             }
         }
         .chartXAxis {
-            AxisMarks(values: xAxisDates) { value in
+            AxisMarks(values: xAxisSnapshots.map(\.date)) { value in
                 AxisValueLabel(centered: true, collisionResolution: .disabled) {
                     if let date = value.as(Date.self) {
-                        Text(snapshotDateText(date, includeYear: spansMultipleYears))
+                        let sourceSnapshot = xAxisSnapshots.first {
+                            abs($0.date.timeIntervalSince(date)) < 1
+                        }
+                        if let sourceSnapshot {
+                            Text(
+                                snapshotDateText(
+                                    sourceSnapshot.snapshot.date,
+                                    includeYear: spansMultipleYears
+                                )
+                            )
+                        }
                     }
                 }
             }
@@ -5311,11 +5320,29 @@ private func snapshotDateString(for date: Date) -> String {
     return formatter.string(from: date)
 }
 
-private func snapshotDateText(_ date: Date, includeYear: Bool) -> String {
+private func previousSnapshotDateString(for date: Date) -> String {
+    let previousDay = Calendar.current.date(byAdding: .day, value: -1, to: date) ?? date
+    return snapshotDateString(for: previousDay)
+}
+
+private func snapshotDateText(_ value: String, includeYear: Bool) -> String {
+    let parts = value.split(separator: "-").compactMap { Int($0) }
+    guard parts.count == 3 else { return value }
+
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? Calendar.current.timeZone
+    var components = DateComponents()
+    components.year = parts[0]
+    components.month = parts[1]
+    components.day = parts[2]
+    components.hour = 12
+    components.timeZone = calendar.timeZone
+    guard let date = calendar.date(from: components) else { return value }
+
     let formatter = DateFormatter()
     formatter.locale = Locale.current
-    formatter.calendar = Calendar(identifier: .gregorian)
-    formatter.timeZone = Calendar.current.timeZone
+    formatter.calendar = calendar
+    formatter.timeZone = calendar.timeZone
     formatter.dateStyle = includeYear ? .medium : .medium
     formatter.timeStyle = .none
     if !includeYear { formatter.setLocalizedDateFormatFromTemplate("MMM d") }
