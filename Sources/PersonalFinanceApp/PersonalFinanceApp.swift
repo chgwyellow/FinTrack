@@ -5182,8 +5182,8 @@ private struct NetWorthHistoryChart: View {
             AxisMarks(values: xAxisSnapshots.map { xCoordinate($0.date) }) { value in
                 AxisValueLabel(centered: true, collisionResolution: .disabled) {
                     if let x = value.as(Double.self) {
-                        let sourceSnapshot = xAxisSnapshots.first {
-                            abs(xCoordinate($0.date) - x) < 0.000_001
+                        let sourceSnapshot = xAxisSnapshots.min {
+                            abs(xCoordinate($0.date) - x) < abs(xCoordinate($1.date) - x)
                         }
                         if let sourceSnapshot {
                             Text(
@@ -5200,9 +5200,28 @@ private struct NetWorthHistoryChart: View {
         .chartOverlay { proxy in overlay(proxy) }
     }
 
-    // Keep date-only chart coordinates out of Swift Charts' time-zone date axis.
+    // Use a local civil-day coordinate, not Unix days. Unix-day fractions vary
+    // by time zone and can make a date tick appear beside the previous day's
+    // point even when both originate from the same snapshot row.
     private func xCoordinate(_ date: Date) -> Double {
-        date.timeIntervalSince1970 / 86_400
+        var localCalendar = Calendar(identifier: .gregorian)
+        localCalendar.timeZone = Calendar.current.timeZone
+        let localDayStart = localCalendar.startOfDay(for: date)
+        let components = localCalendar.dateComponents([.year, .month, .day], from: localDayStart)
+
+        var utcCalendar = Calendar(identifier: .gregorian)
+        utcCalendar.timeZone = TimeZone(secondsFromGMT: 0) ?? localCalendar.timeZone
+        var utcDay = DateComponents()
+        utcDay.year = components.year
+        utcDay.month = components.month
+        utcDay.day = components.day
+        guard let ordinalDayStart = utcCalendar.date(from: utcDay) else {
+            return date.timeIntervalSince1970 / 86_400
+        }
+
+        let dayOrdinal = ordinalDayStart.timeIntervalSince1970 / 86_400
+        let fractionOfLocalDay = date.timeIntervalSince(localDayStart) / 86_400
+        return dayOrdinal + fractionOfLocalDay
     }
 
     private func overlay(_ proxy: ChartProxy) -> some View {
