@@ -5111,7 +5111,6 @@ private struct NetWorthHistoryChart: View {
             let plotFrame = proxy.plotFrame.map { geometry[$0] } ?? .zero
             ZStack {
                 Color.clear
-                    .contentShape(Rectangle())
                     .onContinuousHover { phase in
                         switch phase {
                         case .active(let location):
