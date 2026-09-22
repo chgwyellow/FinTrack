@@ -4936,11 +4936,9 @@ struct NetWorthHistoryCard: View {
     private var chartXAxisSnapshots: [(snapshot: DatabaseManager.Snapshot, date: Date)] {
         let snapshots = chartSnapshots.filter { chartXDomain.contains($0.date) }
         guard !snapshots.isEmpty else { return [] }
-        guard snapshots.count > 10 else { return snapshots }
-        // Keep labels tied to actual observations instead of automatic calendar
-        // ticks, which can fall between points. For long ranges show a readable
-        // subset while retaining both ends of the visible data.
-        let step = max(1, Int(ceil(Double(snapshots.count - 1) / 8.0)))
+        // Daily snapshots are one day apart. Label every other observation so
+        // a ten-day viewport stays legible while scrolling through the range.
+        let step = 2
         var selected = stride(from: 0, to: snapshots.count, by: step).map { snapshots[$0] }
         if selected.last?.snapshot.date != snapshots.last?.snapshot.date,
             let last = snapshots.last
@@ -4978,33 +4976,6 @@ private struct NetWorthHistoryChart: View {
     @Binding var selectedDate: Date?
     let isChinese: Bool
 
-    @State private var contentMinX: CGFloat = 0
-    @State private var plotFrame: CGRect = .zero
-
-    private let visibleDuration: TimeInterval = 10 * 24 * 60 * 60
-
-    private struct ContentMinXPreferenceKey: PreferenceKey {
-        static let defaultValue: CGFloat = 0
-
-        static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-            value = nextValue()
-        }
-    }
-
-    private struct PlotFramePreferenceKey: PreferenceKey {
-        static let defaultValue: CGRect = .zero
-
-        static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
-            value = nextValue()
-        }
-    }
-
-    private func contentWidth(for viewportWidth: CGFloat) -> CGFloat {
-        let duration = xDomain.upperBound.timeIntervalSince(xDomain.lowerBound)
-        let scale = max(1, duration / visibleDuration)
-        return viewportWidth * scale
-    }
-
     private var selectedSnapshot: (snapshot: DatabaseManager.Snapshot, date: Date)? {
         guard let selectedDate else { return nil }
         return snapshots.min {
@@ -5014,105 +4985,14 @@ private struct NetWorthHistoryChart: View {
     }
 
     var body: some View {
-        ScrollViewReader { scrollProxy in
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    ScrollView(.horizontal) {
-                        chart(yDomain: visibleYDomain(
-                            viewportWidth: geometry.size.width,
-                            contentWidth: contentWidth(for: geometry.size.width)
-                        ))
-                        .frame(
-                            width: contentWidth(for: geometry.size.width),
-                            height: max(1, geometry.size.height - 18)
-                        )
-                        .padding(.bottom, 18)
-                        .background {
-                            GeometryReader { contentGeometry in
-                                Color.clear.preference(
-                                    key: ContentMinXPreferenceKey.self,
-                                    value: contentGeometry.frame(in: .named("netWorthHistoryScroll")).minX
-                                )
-                            }
-                        }
-                        .id("net-worth-history-chart-content")
-                    }
-                    .coordinateSpace(name: "netWorthHistoryScroll")
-                    .scrollIndicators(.automatic)
-                    .clipped()
-                    .onPreferenceChange(ContentMinXPreferenceKey.self) { minX in
-                        contentMinX = minX
-                    }
-                    .onPreferenceChange(PlotFramePreferenceKey.self) { frame in
-                        plotFrame = frame
-                    }
-                    .onAppear {
-                        DispatchQueue.main.async {
-                            scrollProxy.scrollTo("net-worth-history-chart-content", anchor: .trailing)
-                        }
-                    }
-                    .onChange(of: snapshots.last?.snapshot.id) { _, _ in
-                        // A manually-created snapshot changes the chart data while
-                        // this scroll view may already be mounted. Re-anchor after
-                        // SwiftUI lays out the wider content so today's point and
-                        // its date are actually brought into view.
-                        DispatchQueue.main.async {
-                            scrollProxy.scrollTo(
-                                "net-worth-history-chart-content",
-                                anchor: .trailing
-                            )
-                        }
-                    }
-
-                    fixedYAxis(
-                        domain: visibleYDomain(
-                            viewportWidth: geometry.size.width,
-                            contentWidth: contentWidth(for: geometry.size.width)
-                        ),
-                        in: plotFrame
-                    )
-                    .frame(width: 56, height: geometry.size.height)
-                }
-            }
-        }
-    }
-
-    private func visibleYDomain(
-        viewportWidth: CGFloat,
-        contentWidth: CGFloat
-    ) -> ClosedRange<Double> {
-        let totalDuration = xDomain.upperBound.timeIntervalSince(xDomain.lowerBound)
-        guard totalDuration > 0, contentWidth > 0, viewportWidth > 0 else {
-            return Self.yDomain(for: snapshots.map { $0.snapshot.netWorth })
-        }
-
-        let clampedOffset = min(max(-contentMinX, 0), max(contentWidth - viewportWidth, 0))
-        let visibleStart = xDomain.lowerBound.addingTimeInterval(
-            totalDuration * Double(clampedOffset / contentWidth)
-        )
-        let visibleEnd = xDomain.lowerBound.addingTimeInterval(
-            totalDuration * Double((clampedOffset + viewportWidth) / contentWidth)
-        )
-        let visibleValues = snapshots
-            .filter { $0.date >= visibleStart && $0.date <= visibleEnd }
-            .map { $0.snapshot.netWorth }
-
-        // Include the nearest observations at either edge so sparse snapshots
-        // don't leave the visible chart with an empty or misleading scale.
-        let edgeValues = [
-            snapshots.last(where: { $0.date < visibleStart })?.snapshot.netWorth,
-            snapshots.first(where: { $0.date > visibleEnd })?.snapshot.netWorth,
-        ].compactMap { $0 }
-        let values = visibleValues.isEmpty ? edgeValues : visibleValues
-        return Self.yDomain(for: values.isEmpty ? snapshots.map { $0.snapshot.netWorth } : values)
+        chart(yDomain: Self.yDomain(for: snapshots.map { $0.snapshot.netWorth }))
     }
 
     private static func yDomain(for values: [Double]) -> ClosedRange<Double> {
         let minimum = values.min() ?? 0
         let maximum = values.max() ?? minimum
         let dataSpan = maximum - minimum
-        // Keep visible observations centred while allowing the scale to follow
-        // the currently scrolled window rather than the full selected period.
+        // Fit the vertical scale to the snapshots in the selected time range.
         let padding = max(dataSpan * 0.35, max(abs(minimum), abs(maximum), 1) * 0.015)
         let lower = minimum - padding
         let upper = max(maximum + padding, lower + 1)
@@ -5125,45 +5005,29 @@ private struct NetWorthHistoryChart: View {
         }
     }
 
-    private func fixedYAxis(domain: ClosedRange<Double>, in frame: CGRect) -> some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .topLeading) {
-                FinTrackTheme.cardBackground
-                ForEach(Array(yAxisValues(for: domain).enumerated()), id: \.offset) { item in
-                    Text(compactNTD(item.element, includeCurrency: false))
-                        .font(.caption)
-                        .foregroundStyle(FinTrackTheme.textSecondary)
-                        .frame(width: geometry.size.width - 8, alignment: .trailing)
-                        .position(
-                            x: (geometry.size.width - 8) / 2,
-                            y: frame.minY + frame.height * CGFloat(item.offset) / 4
-                        )
-                }
-            }
-            .frame(width: geometry.size.width, height: geometry.size.height)
-        }
-        .frame(width: 56)
-        .allowsHitTesting(false)
-    }
-
     private func chart(yDomain: ClosedRange<Double>) -> some View {
         Chart(snapshots, id: \.snapshot.id) { item in
             if snapshots.count >= 2 {
                 LineMark(
-                    x: .value("Date", snapshotDayCoordinate(item.snapshot.date)),
+                    x: .value("Date", xCoordinate(item.date)),
                     y: .value("Net Worth", item.snapshot.netWorth)
                 )
                 .foregroundStyle(FinTrackTheme.primary)
                 .interpolationMethod(.catmullRom)
             }
             PointMark(
-                x: .value("Date", snapshotDayCoordinate(item.snapshot.date)),
+                x: .value("Date", xCoordinate(item.date)),
                 y: .value("Net Worth", item.snapshot.netWorth)
             )
             .foregroundStyle(FinTrackTheme.primary)
         }
         .chartXScale(
             domain: xCoordinate(xDomain.lowerBound)...xCoordinate(xDomain.upperBound)
+        )
+        .chartScrollableAxes(.horizontal)
+        .chartXVisibleDomain(length: 10.0)
+        .chartScrollPosition(
+            initialX: (snapshots.last.map { xCoordinate($0.date) } ?? 0) - 9
         )
         .chartYScale(domain: yDomain)
         .chartYAxis {
@@ -5173,18 +5037,19 @@ private struct NetWorthHistoryChart: View {
                 AxisValueLabel {
                     if let amount = value.as(Double.self) {
                         Text(compactNTD(amount, includeCurrency: false))
-                            .opacity(0)
                     }
                 }
             }
         }
         .chartXAxis {
-            AxisMarks(values: xAxisSnapshots.map { snapshotDayCoordinate($0.snapshot.date) }) { value in
-                AxisValueLabel(centered: true, collisionResolution: .disabled) {
+            AxisMarks(values: xAxisSnapshots.map { xCoordinate($0.date) }) { value in
+                // These are observation dates, so labels must sit on their
+                // own ticks. Centering puts each label between adjacent dates,
+                // making the plotted snapshots appear one day out of alignment.
+                AxisValueLabel(centered: false, anchor: .center, collisionResolution: .disabled) {
                     if let x = value.as(Double.self) {
                         let sourceSnapshot = xAxisSnapshots.min {
-                            abs(snapshotDayCoordinate($0.snapshot.date) - x)
-                                < abs(snapshotDayCoordinate($1.snapshot.date) - x)
+                            abs(xCoordinate($0.date) - x) < abs(xCoordinate($1.date) - x)
                         }
                         if let sourceSnapshot {
                             Text(
@@ -5225,74 +5090,45 @@ private struct NetWorthHistoryChart: View {
         return dayOrdinal + fractionOfLocalDay
     }
 
-    private func snapshotDayCoordinate(_ value: String) -> Double {
-        let parts = value.split(separator: "-").compactMap { Int($0) }
-        guard parts.count == 3 else { return 0 }
-
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? Calendar.current.timeZone
-        var components = DateComponents()
-        components.year = parts[0]
-        components.month = parts[1]
-        components.day = parts[2]
-        components.hour = 12
-        guard let date = calendar.date(from: components) else { return 0 }
-        return date.timeIntervalSince1970 / 86_400
-    }
 
     private func overlay(_ proxy: ChartProxy) -> some View {
         GeometryReader { geometry in
             let plotFrame = proxy.plotFrame.map { geometry[$0] } ?? .zero
             ZStack {
-                if proxy.plotFrame != nil {
-                    ZStack {
-                        Color.clear
-                            .contentShape(Rectangle())
-                            .onContinuousHover { phase in
-                                switch phase {
-                                case .active(let location):
-                                    let point = CGPoint(
-                                        x: location.x - plotFrame.origin.x,
-                                        y: location.y - plotFrame.origin.y
-                                    )
-                                    let nearest = snapshots.compactMap {
-                                        item -> (date: Date, distance: CGFloat)? in
-                                        guard let x = proxy.position(
-                                            forX: snapshotDayCoordinate(item.snapshot.date)
-                                        ),
-                                            let y = proxy.position(forY: item.snapshot.netWorth)
-                                        else { return nil }
-                                        return (item.date, hypot(point.x - x, point.y - y))
-                                    }.min { $0.distance < $1.distance }
-                                    selectedDate = nearest.flatMap {
-                                        $0.distance <= 10 ? $0.date : nil
-                                    }
-                                case .ended:
-                                    selectedDate = nil
+                Color.clear
+                    .onContinuousHover { phase in
+                        switch phase {
+                        case .active(let location):
+                            let point = CGPoint(
+                                x: location.x - plotFrame.origin.x,
+                                y: location.y - plotFrame.origin.y
+                            )
+                            let nearest = snapshots.compactMap {
+                                item -> (date: Date, distance: CGFloat)? in
+                                guard let x = proxy.position(forX: xCoordinate(item.date)),
+                                    let y = proxy.position(forY: item.snapshot.netWorth) else {
+                                    return nil
                                 }
-                            }
-                        if let selectedSnapshot,
-                            let pointX = proxy.position(
-                                forX: snapshotDayCoordinate(selectedSnapshot.snapshot.date)
-                            ),
-                            let pointY = proxy.position(forY: selectedSnapshot.snapshot.netWorth)
-                        {
-                            NetWorthHoverCallout(
-                                value: ntd(selectedSnapshot.snapshot.netWorth),
-                                title: isChinese ? "淨值" : "Net Worth"
-                            )
-                            .position(
-                                x: min(max(plotFrame.minX + pointX, plotFrame.minX + 90), plotFrame.maxX - 90),
-                                y: min(pointY + plotFrame.minY + 52, plotFrame.maxY - 42)
-                            )
+                                return (item.date, hypot(point.x - x, point.y - y))
+                            }.min { $0.distance < $1.distance }
+                            selectedDate = nearest.flatMap { $0.distance <= 10 ? $0.date : nil }
+                        case .ended:
+                            selectedDate = nil
                         }
                     }
+                if let selectedSnapshot,
+                    let pointX = proxy.position(forX: xCoordinate(selectedSnapshot.date)),
+                    let pointY = proxy.position(forY: selectedSnapshot.snapshot.netWorth) {
+                    NetWorthHoverCallout(
+                        value: ntd(selectedSnapshot.snapshot.netWorth),
+                        title: isChinese ? "淨值" : "Net Worth"
+                    )
+                    .position(
+                        x: min(max(plotFrame.minX + pointX, plotFrame.minX + 90), plotFrame.maxX - 90),
+                        y: min(pointY + plotFrame.minY + 52, plotFrame.maxY - 42)
+                    )
                 }
-                }
-            .preference(
-                key: PlotFramePreferenceKey.self,
-                value: CGRect(x: 0, y: plotFrame.minY, width: plotFrame.width, height: plotFrame.height)
-            )
+            }
         }
     }
 }
