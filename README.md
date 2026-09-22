@@ -111,8 +111,8 @@ manually.
 
 - **Financial Overview** — Track assets, liabilities, investments, and net worth
   in one place
-- **Net Worth History** — Create manual and scheduled snapshots and view
-  historical changes
+- **Net Worth History** — Create manual and scheduled snapshots, browse history
+  horizontally, and see the Y-axis adapt to the visible date range
 - **Portfolio Tracking** — Track Taiwan and U.S. stocks and ETFs in their
   original currencies
 - **Portfolio Analytics** — View portfolio value, allocation, capital gains,
@@ -129,17 +129,18 @@ manually.
 ### Download step by step
 
 1. Open [GitHub Releases](https://github.com/chgwyellow/FinTrack/releases).
-2. Open the newest release, such as `v0.1.5`.
+2. Open the newest release, such as `v0.1.6`.
 3. Scroll to **Assets** and expand it if necessary.
-4. Download **`FinTrack-0.1.5.zip`**.
+4. Download **`FinTrack-0.1.6.zip`**.
 5. Open the downloaded ZIP from your Downloads folder.
 6. Move the extracted `FinTrack.app` to `/Applications`.
 7. Right-click the app and select **Open** on its first launch.
 8. If macOS still blocks it, open **System Settings → Privacy & Security** and
    select **Open Anyway**.
 
-The current test release supports Apple Silicon Macs only and is not signed or
-notarized. The version number in the filename may change for future releases.
+The current test release supports Apple Silicon Macs only. It uses an ad-hoc
+signature and is not notarized, so macOS may require you to allow it in Privacy
+& Security. The version number in the filename may change for future releases.
 
 ## Data storage and backup
 

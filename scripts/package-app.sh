@@ -11,7 +11,7 @@ ARCHS_VALUE="${ARCHS:-arm64}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-BUILD_DIR="$ROOT_DIR/.build"
+BUILD_DIR="$ROOT_DIR/.build/package-$VERSION"
 RELEASE_DIR="$ROOT_DIR/releases/$APP_NAME-$VERSION"
 APP_DIR="$RELEASE_DIR/$APP_NAME.app"
 BIN_DIR="$APP_DIR/Contents/MacOS"
@@ -22,13 +22,18 @@ mkdir -p "$BIN_DIR" "$RESOURCE_DIR"
 
 build_arch() {
     local arch="$1"
-    swift build -c release --arch "$arch" --product "$PRODUCT_NAME"
+    # Isolate package builds by version and architecture. Reusing SwiftPM's
+    # default scratch directory can leave stale architecture-specific binaries
+    # that are older than the current generic build output.
+    swift build --scratch-path "$BUILD_DIR/$arch" \
+        -c release --arch "$arch" --product "$PRODUCT_NAME"
 }
 
 binary_for_arch() {
     local arch="$1"
-    local arch_binary="$BUILD_DIR/${arch}-apple-macosx/release/$PRODUCT_NAME"
-    local generic_binary="$BUILD_DIR/release/$PRODUCT_NAME"
+    local arch_build_dir="$BUILD_DIR/$arch"
+    local arch_binary="$arch_build_dir/${arch}-apple-macosx/release/$PRODUCT_NAME"
+    local generic_binary="$arch_build_dir/release/$PRODUCT_NAME"
 
     if [[ -f "$arch_binary" ]]; then
         printf '%s\n' "$arch_binary"
