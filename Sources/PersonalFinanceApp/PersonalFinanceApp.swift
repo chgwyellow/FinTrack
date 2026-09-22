@@ -5009,14 +5009,14 @@ private struct NetWorthHistoryChart: View {
         Chart(snapshots, id: \.snapshot.id) { item in
             if snapshots.count >= 2 {
                 LineMark(
-                    x: .value("Date", snapshotDayCoordinate(item.snapshot.date)),
+                    x: .value("Date", xCoordinate(item.date)),
                     y: .value("Net Worth", item.snapshot.netWorth)
                 )
                 .foregroundStyle(FinTrackTheme.primary)
                 .interpolationMethod(.catmullRom)
             }
             PointMark(
-                x: .value("Date", snapshotDayCoordinate(item.snapshot.date)),
+                x: .value("Date", xCoordinate(item.date)),
                 y: .value("Net Worth", item.snapshot.netWorth)
             )
             .foregroundStyle(FinTrackTheme.primary)
@@ -5027,7 +5027,7 @@ private struct NetWorthHistoryChart: View {
         .chartScrollableAxes(.horizontal)
         .chartXVisibleDomain(length: 10.0)
         .chartScrollPosition(
-            initialX: (snapshots.last.map { snapshotDayCoordinate($0.snapshot.date) } ?? 0) - 9
+            initialX: (snapshots.last.map { xCoordinate($0.date) } ?? 0) - 9
         )
         .chartYScale(domain: yDomain)
         .chartYAxis {
@@ -5042,15 +5042,14 @@ private struct NetWorthHistoryChart: View {
             }
         }
         .chartXAxis {
-            AxisMarks(values: xAxisSnapshots.map { snapshotDayCoordinate($0.snapshot.date) }) { value in
+            AxisMarks(values: xAxisSnapshots.map { xCoordinate($0.date) }) { value in
                 // These are observation dates, so labels must sit on their
                 // own ticks. Centering puts each label between adjacent dates,
                 // making the plotted snapshots appear one day out of alignment.
                 AxisValueLabel(centered: false, anchor: .center, collisionResolution: .disabled) {
                     if let x = value.as(Double.self) {
                         let sourceSnapshot = xAxisSnapshots.min {
-                            abs(snapshotDayCoordinate($0.snapshot.date) - x)
-                                < abs(snapshotDayCoordinate($1.snapshot.date) - x)
+                            abs(xCoordinate($0.date) - x) < abs(xCoordinate($1.date) - x)
                         }
                         if let sourceSnapshot {
                             Text(
@@ -5091,20 +5090,6 @@ private struct NetWorthHistoryChart: View {
         return dayOrdinal + fractionOfLocalDay
     }
 
-    private func snapshotDayCoordinate(_ value: String) -> Double {
-        let parts = value.split(separator: "-").compactMap { Int($0) }
-        guard parts.count == 3 else { return 0 }
-
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? Calendar.current.timeZone
-        var components = DateComponents()
-        components.year = parts[0]
-        components.month = parts[1]
-        components.day = parts[2]
-        components.hour = 12
-        guard let date = calendar.date(from: components) else { return 0 }
-        return date.timeIntervalSince1970 / 86_400
-    }
 
     private func overlay(_ proxy: ChartProxy) -> some View {
         GeometryReader { geometry in
@@ -5120,9 +5105,8 @@ private struct NetWorthHistoryChart: View {
                             )
                             let nearest = snapshots.compactMap {
                                 item -> (date: Date, distance: CGFloat)? in
-                                guard let x = proxy.position(
-                                    forX: snapshotDayCoordinate(item.snapshot.date)
-                                ), let y = proxy.position(forY: item.snapshot.netWorth) else {
+                                guard let x = proxy.position(forX: xCoordinate(item.date)),
+                                    let y = proxy.position(forY: item.snapshot.netWorth) else {
                                     return nil
                                 }
                                 return (item.date, hypot(point.x - x, point.y - y))
@@ -5133,9 +5117,8 @@ private struct NetWorthHistoryChart: View {
                         }
                     }
                 if let selectedSnapshot,
-                    let pointX = proxy.position(
-                        forX: snapshotDayCoordinate(selectedSnapshot.snapshot.date)
-                    ), let pointY = proxy.position(forY: selectedSnapshot.snapshot.netWorth) {
+                    let pointX = proxy.position(forX: xCoordinate(selectedSnapshot.date)),
+                    let pointY = proxy.position(forY: selectedSnapshot.snapshot.netWorth) {
                     NetWorthHoverCallout(
                         value: ntd(selectedSnapshot.snapshot.netWorth),
                         title: isChinese ? "淨值" : "Net Worth"
