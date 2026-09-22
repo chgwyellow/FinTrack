@@ -4847,6 +4847,7 @@ struct NetWorthHistoryCard: View {
                         .foregroundStyle(FinTrackTheme.textSecondary)
                 }
                 .menuStyle(.borderlessButton)
+                .fixedSize(horizontal: true, vertical: false)
                 .help(isChinese ? "選擇圖表時間範圍" : "Choose chart time range")
                 Button(action: createSnapshot) {
                     Label(
@@ -5022,8 +5023,9 @@ private struct NetWorthHistoryChart: View {
                     chart
                         .frame(
                             width: contentWidth(for: geometry.size.width),
-                            height: geometry.size.height
+                            height: max(1, geometry.size.height - 18)
                         )
+                        .padding(.bottom, 18)
                         .id("net-worth-history-chart-content")
                 }
                 .scrollIndicators(.automatic)
