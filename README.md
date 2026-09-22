@@ -28,9 +28,9 @@ FinTrack brings the different parts of your personal finances together so you
 can understand your overall financial position without handing your financial
 information to an online account or subscription service.
 
-Manage cash, assets, liabilities, investments, dividends, recurring
-investments, and foreign-currency balances while keeping your financial
-database on your own Mac.
+Manage cash and other assets, liabilities, Taiwan and U.S. investments,
+dividends, recurring investment plans, foreign-currency balances, and income
+and expense items while keeping your financial database on your own Mac.
 
 Market prices and exchange rates are fetched when needed to calculate current
 values. Your manually entered information, transactions, balances, and
@@ -42,13 +42,15 @@ snapshots remain stored locally.
 
 Track assets, liabilities, investments, and net worth together instead of
 maintaining separate lists or spreadsheets. Create snapshots to see how your
-net worth changes over time.
+net worth changes over time. Edit balances directly or record an increase or
+decrease as a balance adjustment, and group items by asset or liability type.
 
-### Understand your investments
+### Track your investment portfolio
 
-Track Taiwan and U.S. stocks and ETFs in their original currencies. View
-portfolio value, allocation, capital gains, and daily profit and loss while
-keeping your actual purchase information locally.
+Track Taiwan and U.S. stocks and ETFs in their original currencies. Record
+holdings and purchases, then review portfolio value, allocation, average cost,
+capital gains, and daily profit and loss. Dividends are recorded separately and
+included in total investment returns.
 
 FinTrack is designed for portfolio tracking and personal financial analysis,
 not active trading.
@@ -61,21 +63,23 @@ portfolio reflects your actual holdings.
 
 ### Track dividends and income
 
-Manage dividends and income-statement items alongside the rest of your
-financial information. Income-statement sections support a group and one level
-of details only. Detail items can optionally link to an existing destination
-account or a custom account name.
+Record and edit dividends for your holdings. Organize income, expenses, and
+savings in the income statement, with a group and one level of detail beneath
+each group. Leaf items can optionally link to an existing account or a saved
+custom account name.
 
 ### Manage foreign currencies
 
-Track foreign-currency balances, exchange rates, and transactions alongside
-your other assets.
+Track foreign-currency balances and transactions, including exchanges. Review
+current and average exchange rates and the NTD equivalent of each balance.
 
 ### Build a history of your net worth
 
-Create manual or scheduled net worth snapshots and view your history across
-selectable time ranges. Snapshots help you understand how your overall
-financial position changes instead of looking only at today's numbers.
+Create manual or scheduled net worth snapshots and view history across 1M, 3M,
+6M, 1Y, or all-history ranges. Scroll horizontally within the chart to inspect
+older observations. The Y-axis scales to the selected time range. A manual
+snapshot records today's date; the scheduled snapshot records the previous
+calendar day. Multiple snapshots on one date replace that day's value.
 
 ## Private by design
 
@@ -112,35 +116,38 @@ manually.
 - **Financial Overview** — Track assets, liabilities, investments, and net worth
   in one place
 - **Net Worth History** — Create manual and scheduled snapshots, browse history
-  horizontally, and see the Y-axis adapt to the visible date range
+  horizontally, and see the Y-axis adapt to the selected date range
 - **Portfolio Tracking** — Track Taiwan and U.S. stocks and ETFs in their
   original currencies
 - **Portfolio Analytics** — View portfolio value, allocation, capital gains,
   and daily profit and loss
 - **Recurring Investments** — Manage recurring investment plans and completed
   purchases
-- **Dividends & Income** — Manage dividends and income-statement items
+- **Dividends & Income** — Record dividends and organize income, expenses, and
+  savings, with optional account links
 - **Foreign Currency** — Track foreign-currency balances, exchange rates, and
   transactions
 - **Local Storage** — Store financial information locally using SQLite
+- **Preferences** — Choose English or Traditional Chinese, appearance, and
+  portfolio performance colors
 
-## Download the test release
+## Download the latest release
 
 ### Download step by step
 
 1. Open [GitHub Releases](https://github.com/chgwyellow/FinTrack/releases).
-2. Open the newest release, such as `v0.1.6`.
+2. Open the newest release, currently `v0.1.7`.
 3. Scroll to **Assets** and expand it if necessary.
-4. Download **`FinTrack-0.1.6.zip`**.
+4. Download **`FinTrack-0.1.7.zip`**.
 5. Open the downloaded ZIP from your Downloads folder.
 6. Move the extracted `FinTrack.app` to `/Applications`.
 7. Right-click the app and select **Open** on its first launch.
 8. If macOS still blocks it, open **System Settings → Privacy & Security** and
    select **Open Anyway**.
 
-The current test release supports Apple Silicon Macs only. It uses an ad-hoc
+The current release supports Apple Silicon Macs only. It uses an ad-hoc
 signature and is not notarized, so macOS may require you to allow it in Privacy
-& Security. The version number in the filename may change for future releases.
+& Security. Future releases may use a different version number or filename.
 
 ## Data storage and backup
 
@@ -173,12 +180,33 @@ cp "$HOME/Library/Application Support/FinTrack/personal_finance.db" \
 6. Open **Help** inside FinTrack for page-specific guidance.
 
 Market prices and exchange rates are refreshed when relevant pages are opened.
-Scheduled snapshots run while the Mac is available to run the app.
+The scheduled net-worth snapshot runs at the time configured in Settings. The
+Mac must be available in the logged-in user's session; if a scheduled run is
+missed, FinTrack can recover it when it runs again. The snapshot is dated as
+the previous calendar day, while the Snapshot button records the current day.
+
+## Build from source
+
+Requirements: macOS 14 or later and Swift 6 (Xcode Command Line Tools).
+
+```bash
+swift build -c release
+```
+
+To package an app bundle and ZIP for Apple Silicon (the default ad-hoc
+signature is not an Apple Developer ID signature):
+
+```bash
+bash scripts/package-app.sh 0.1.7
+```
+
+The app bundle and ZIP are written under `releases/`. See
+[`docs/releasing.md`](docs/releasing.md) for signing and release notes.
 
 ## Known limitations
 
 - macOS only; the current release artifact supports Apple Silicon only
-- The test release has no Apple Developer ID signature, notarization, or
+- The current release has no Apple Developer ID signature, notarization, or
   automatic updater
 - Market-data availability depends on external public APIs and supported
   symbols
