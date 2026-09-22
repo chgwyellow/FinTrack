@@ -4920,7 +4920,10 @@ struct NetWorthHistoryCard: View {
         let lowerBound = firstDate.addingTimeInterval(-leadingGutter)
         let latestDate = chartSnapshots.last?.date ?? today
         let dataEnd = calendar.date(byAdding: .day, value: 1, to: latestDate) ?? tomorrow
-        let upperBound = min(tomorrow, dataEnd)
+        // Keep enough room for the final date label. Using today's midnight
+        // as the upper bound clips a snapshot taken on today's civil day.
+        let trailingGutter = 18.0 * 60 * 60
+        let upperBound = max(tomorrow, dataEnd.addingTimeInterval(trailingGutter))
         // Charts require a non-zero domain when only one snapshot is available.
         return lowerBound...max(upperBound, lowerBound.addingTimeInterval(1))
     }
@@ -4936,9 +4939,9 @@ struct NetWorthHistoryCard: View {
     private var chartXAxisSnapshots: [(snapshot: DatabaseManager.Snapshot, date: Date)] {
         let snapshots = chartSnapshots.filter { chartXDomain.contains($0.date) }
         guard !snapshots.isEmpty else { return [] }
-        // Daily snapshots are one day apart. Label every other observation so
-        // a ten-day viewport stays legible while scrolling through the range.
-        let step = 2
+        // Show every date for short histories so every point can be verified;
+        // reduce label density only when a longer history needs it.
+        let step = snapshots.count <= 14 ? 1 : 2
         var selected = stride(from: 0, to: snapshots.count, by: step).map { snapshots[$0] }
         if selected.last?.snapshot.date != snapshots.last?.snapshot.date,
             let last = snapshots.last
@@ -4947,6 +4950,7 @@ struct NetWorthHistoryCard: View {
         }
         return selected
     }
+
 
     private func createSnapshot() {
         guard appModel.saveManualSnapshot() else { return }
@@ -5006,34 +5010,39 @@ private struct NetWorthHistoryChart: View {
     }
 
     private func chart(yDomain: ClosedRange<Double>) -> some View {
-        Chart(snapshots, id: \.snapshot.id) { item in
-            if snapshots.count >= 2 {
-                LineMark(
-                    x: .value("Date", xCoordinate(item.date)),
-                    y: .value("Net Worth", item.snapshot.netWorth)
-                )
-                .foregroundStyle(FinTrackTheme.primary)
-                .interpolationMethod(.catmullRom)
+        let xLowerBound = xDomain.lowerBound
+        let xUpperBound = xDomain.upperBound
+        let xScaleSpan = max(xUpperBound.timeIntervalSince(xLowerBound), 1)
+        return GeometryReader { geometry in
+            let axisWidth: CGFloat = 58
+            let viewportWidth = max(geometry.size.width - axisWidth, 1)
+            let contentWidth = max(viewportWidth, CGFloat(xScaleSpan / 86_400) * 96)
+
+            HStack(spacing: 0) {
+                fixedYAxis(yDomain: yDomain)
+                    .frame(width: axisWidth, height: 240)
+                ScrollView(.horizontal) {
+                    dataChart(yDomain: yDomain)
+                        .frame(width: contentWidth, height: 240)
+                        .padding(.bottom, 14)
+                }
+                .scrollIndicators(.visible)
+                .frame(height: 240)
             }
-            PointMark(
-                x: .value("Date", xCoordinate(item.date)),
-                y: .value("Net Worth", item.snapshot.netWorth)
-            )
-            .foregroundStyle(FinTrackTheme.primary)
         }
-        .chartXScale(
-            domain: xCoordinate(xDomain.lowerBound)...xCoordinate(xDomain.upperBound)
-        )
-        .chartScrollableAxes(.horizontal)
-        .chartXVisibleDomain(length: 10.0)
-        .chartScrollPosition(
-            initialX: (snapshots.last.map { xCoordinate($0.date) } ?? 0) - 9
-        )
+    }
+
+    private func fixedYAxis(yDomain: ClosedRange<Double>) -> some View {
+        Chart {
+            ForEach(yAxisValues(for: yDomain), id: \.self) { value in
+                RuleMark(y: .value("Net Worth", value))
+                    .foregroundStyle(.clear)
+            }
+        }
         .chartYScale(domain: yDomain)
+        .chartXAxis(.hidden)
         .chartYAxis {
             AxisMarks(position: .leading, values: yAxisValues(for: yDomain)) { value in
-                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                    .foregroundStyle(FinTrackTheme.divider)
                 AxisValueLabel {
                     if let amount = value.as(Double.self) {
                         Text(compactNTD(amount, includeCurrency: false))
@@ -5041,15 +5050,44 @@ private struct NetWorthHistoryChart: View {
                 }
             }
         }
+    }
+
+    private func dataChart(yDomain: ClosedRange<Double>) -> some View {
+        Chart {
+            ForEach(yAxisValues(for: yDomain), id: \.self) { value in
+                RuleMark(y: .value("Net Worth", value))
+                    .foregroundStyle(FinTrackTheme.divider)
+            }
+            ForEach(snapshots, id: \.snapshot.id) { item in
+            if snapshots.count >= 2 {
+                LineMark(
+                    x: .value("Date", item.date),
+                    y: .value("Net Worth", item.snapshot.netWorth)
+                )
+                .foregroundStyle(FinTrackTheme.primary)
+                .interpolationMethod(.catmullRom)
+            }
+            PointMark(
+                x: .value("Date", item.date),
+                y: .value("Net Worth", item.snapshot.netWorth)
+            )
+            .foregroundStyle(FinTrackTheme.primary)
+            }
+        }
+        .chartXScale(
+            domain: xDomain.lowerBound...xDomain.upperBound
+        )
+        .chartYScale(domain: yDomain)
+        .chartYAxis(.hidden)
         .chartXAxis {
-            AxisMarks(values: xAxisSnapshots.map { xCoordinate($0.date) }) { value in
-                // These are observation dates, so labels must sit on their
-                // own ticks. Centering puts each label between adjacent dates,
-                // making the plotted snapshots appear one day out of alignment.
+            AxisMarks(values: xAxisSnapshots.map { $0.date }) { value in
+                // These are observation dates. Do not use centered=true here:
+                // Swift Charts places centered labels between adjacent ticks.
                 AxisValueLabel(centered: false, anchor: .center, collisionResolution: .disabled) {
-                    if let x = value.as(Double.self) {
+                    if let x = value.as(Date.self) {
                         let sourceSnapshot = xAxisSnapshots.min {
-                            abs(xCoordinate($0.date) - x) < abs(xCoordinate($1.date) - x)
+                            abs($0.date.timeIntervalSince(x))
+                                < abs($1.date.timeIntervalSince(x))
                         }
                         if let sourceSnapshot {
                             Text(
@@ -5058,6 +5096,7 @@ private struct NetWorthHistoryChart: View {
                                     includeYear: spansMultipleYears
                                 )
                             )
+                            .offset(x: -20)
                         }
                     }
                 }
@@ -5065,31 +5104,6 @@ private struct NetWorthHistoryChart: View {
         }
         .chartOverlay { proxy in overlay(proxy) }
     }
-
-    // Use a local civil-day coordinate, not Unix days. Unix-day fractions vary
-    // by time zone and can make a date tick appear beside the previous day's
-    // point even when both originate from the same snapshot row.
-    private func xCoordinate(_ date: Date) -> Double {
-        var localCalendar = Calendar(identifier: .gregorian)
-        localCalendar.timeZone = Calendar.current.timeZone
-        let localDayStart = localCalendar.startOfDay(for: date)
-        let components = localCalendar.dateComponents([.year, .month, .day], from: localDayStart)
-
-        var utcCalendar = Calendar(identifier: .gregorian)
-        utcCalendar.timeZone = TimeZone(secondsFromGMT: 0) ?? localCalendar.timeZone
-        var utcDay = DateComponents()
-        utcDay.year = components.year
-        utcDay.month = components.month
-        utcDay.day = components.day
-        guard let ordinalDayStart = utcCalendar.date(from: utcDay) else {
-            return date.timeIntervalSince1970 / 86_400
-        }
-
-        let dayOrdinal = ordinalDayStart.timeIntervalSince1970 / 86_400
-        let fractionOfLocalDay = date.timeIntervalSince(localDayStart) / 86_400
-        return dayOrdinal + fractionOfLocalDay
-    }
-
 
     private func overlay(_ proxy: ChartProxy) -> some View {
         GeometryReader { geometry in
@@ -5105,7 +5119,7 @@ private struct NetWorthHistoryChart: View {
                             )
                             let nearest = snapshots.compactMap {
                                 item -> (date: Date, distance: CGFloat)? in
-                                guard let x = proxy.position(forX: xCoordinate(item.date)),
+                                guard let x = proxy.position(forX: item.date),
                                     let y = proxy.position(forY: item.snapshot.netWorth) else {
                                     return nil
                                 }
@@ -5117,7 +5131,7 @@ private struct NetWorthHistoryChart: View {
                         }
                     }
                 if let selectedSnapshot,
-                    let pointX = proxy.position(forX: xCoordinate(selectedSnapshot.date)),
+                    let pointX = proxy.position(forX: selectedSnapshot.date),
                     let pointY = proxy.position(forY: selectedSnapshot.snapshot.netWorth) {
                     NetWorthHoverCallout(
                         value: ntd(selectedSnapshot.snapshot.netWorth),
