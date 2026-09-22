@@ -25,16 +25,31 @@ build_arch() {
     swift build -c release --arch "$arch" --product "$PRODUCT_NAME"
 }
 
+binary_for_arch() {
+    local arch="$1"
+    local arch_binary="$BUILD_DIR/${arch}-apple-macosx/release/$PRODUCT_NAME"
+    local generic_binary="$BUILD_DIR/release/$PRODUCT_NAME"
+
+    if [[ -f "$arch_binary" ]]; then
+        printf '%s\n' "$arch_binary"
+    elif [[ -f "$generic_binary" ]]; then
+        printf '%s\n' "$generic_binary"
+    else
+        echo "Could not find the $arch release binary under $BUILD_DIR." >&2
+        return 1
+    fi
+}
+
 if [[ "$ARCHS_VALUE" == "arm64,x86_64" || "$ARCHS_VALUE" == "x86_64,arm64" ]]; then
     build_arch arm64
     build_arch x86_64
     lipo -create \
-        "$BUILD_DIR/arm64-apple-macosx/release/$PRODUCT_NAME" \
-        "$BUILD_DIR/x86_64-apple-macosx/release/$PRODUCT_NAME" \
+        "$(binary_for_arch arm64)" \
+        "$(binary_for_arch x86_64)" \
         -output "$BIN_DIR/$PRODUCT_NAME"
 else
     build_arch "$ARCHS_VALUE"
-    cp "$BUILD_DIR/${ARCHS_VALUE}-apple-macosx/release/$PRODUCT_NAME" "$BIN_DIR/$PRODUCT_NAME"
+    cp "$(binary_for_arch "$ARCHS_VALUE")" "$BIN_DIR/$PRODUCT_NAME"
 fi
 
 cp Resources/FinTrack-Info.plist "$APP_DIR/Contents/Info.plist"
