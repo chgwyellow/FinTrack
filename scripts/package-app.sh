@@ -62,8 +62,11 @@ if [[ -n "$SIGNING_IDENTITY" ]]; then
     codesign --force --deep --options runtime --timestamp \
         --sign "$SIGNING_IDENTITY" "$APP_DIR"
 else
-    echo "Warning: SIGNING_IDENTITY is not set; package is unsigned." >&2
+    codesign --force --deep --sign - "$APP_DIR"
+    echo "Warning: package has an ad-hoc signature only; it is not notarized." >&2
 fi
+
+codesign --verify --deep --strict "$APP_DIR"
 
 ditto -c -k --sequesterRsrc --keepParent "$APP_DIR" \
     "$RELEASE_DIR/$APP_NAME-$VERSION.zip"
