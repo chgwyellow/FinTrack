@@ -637,12 +637,7 @@ final class AppModel: ObservableObject {
         guard let hour = now.hour, let minute = now.minute,
             hour > parts[0] || (hour == parts[0] && minute >= parts[1])
         else { return }
-        let formatter = DateFormatter()
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd"
-        let snapshotDate = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
-        let dateString = formatter.string(from: snapshotDate)
+        let dateString = snapshotDateString(for: Date())
         guard !snapshots.contains(where: { $0.date == dateString }) else { return }
         do {
             try databaseManager.saveSnapshot(
@@ -668,13 +663,9 @@ final class AppModel: ObservableObject {
             snapshotError = "Snapshot storage is unavailable."
             return false
         }
-        let formatter = DateFormatter()
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd"
         do {
             try databaseManager.saveSnapshot(
-                date: formatter.string(from: Date()),
+                date: snapshotDateString(for: Date()),
                 assets: assetTotals,
                 liabilities: liabilityTotals,
                 detailValues: (try? databaseManager.snapshotDetailValues()) ?? [:]
@@ -939,13 +930,7 @@ private enum SnapshotBackgroundAgent {
     static func run() {
         do {
             let databaseManager = try DatabaseManager()
-            let formatter = DateFormatter()
-            formatter.calendar = Calendar(identifier: .gregorian)
-            formatter.locale = Locale(identifier: "en_US_POSIX")
-            formatter.dateFormat = "yyyy-MM-dd"
-            let snapshotDate =
-                Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
-            let dateString = formatter.string(from: snapshotDate)
+            let dateString = snapshotDateString(for: Date())
             guard !(try databaseManager.listSnapshots()).contains(where: { $0.date == dateString })
             else {
                 return
@@ -5067,6 +5052,18 @@ private struct NetWorthHistoryChart: View {
                             scrollProxy.scrollTo("net-worth-history-chart-content", anchor: .trailing)
                         }
                     }
+                    .onChange(of: snapshots.last?.snapshot.id) { _, _ in
+                        // A manually-created snapshot changes the chart data while
+                        // this scroll view may already be mounted. Re-anchor after
+                        // SwiftUI lays out the wider content so today's point and
+                        // its date are actually brought into view.
+                        DispatchQueue.main.async {
+                            scrollProxy.scrollTo(
+                                "net-worth-history-chart-content",
+                                anchor: .trailing
+                            )
+                        }
+                    }
 
                     fixedYAxis(
                         domain: visibleYDomain(
@@ -5182,11 +5179,9 @@ private struct NetWorthHistoryChart: View {
         }
         .chartXAxis {
             AxisMarks(values: xAxisDates) { value in
-                AxisValueLabel {
+                AxisValueLabel(centered: true, collisionResolution: .disabled) {
                     if let date = value.as(Date.self) {
                         Text(snapshotDateText(date, includeYear: spansMultipleYears))
-                            .frame(width: 64, alignment: .center)
-                            .offset(x: -32)
                     }
                 }
             }
@@ -5293,6 +5288,15 @@ private func netWorthSnapshotDate(_ value: String) -> Date? {
     formatter.locale = Locale(identifier: "en_US_POSIX")
     formatter.dateFormat = "yyyy-MM-dd"
     return formatter.date(from: value)
+}
+
+private func snapshotDateString(for date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.timeZone = Calendar.current.timeZone
+    formatter.dateFormat = "yyyy-MM-dd"
+    return formatter.string(from: date)
 }
 
 private func snapshotDateText(_ date: Date, includeYear: Bool) -> String {
