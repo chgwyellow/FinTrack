@@ -639,6 +639,10 @@ final class AppModel: ObservableObject {
         else { return }
         let dateString = previousSnapshotDateString(for: Date())
         do {
+            // The scheduled agent normally creates this record at the
+            // configured time. Only recover a missed run; never overwrite an
+            // existing snapshot when the app is opened later.
+            guard try !databaseManager.hasSnapshot(on: dateString) else { return }
             try databaseManager.saveSnapshot(
                 date: dateString,
                 assets: assetTotals,
