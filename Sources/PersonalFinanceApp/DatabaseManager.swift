@@ -1137,6 +1137,12 @@ final class DatabaseManager {
                 }
             }
             if let receivingAssetID { try adjustFundingAsset(id: receivingAssetID, amount: amount) }
+            if receivingAssetID != nil && currency != "NTD" {
+                _ = try insertForeignCurrencyTransaction(
+                    purpose: "Dividend", currency: currency, foreignAmount: amount,
+                    ntdAmount: nil, rate: nil, tradeDate: payDate,
+                    sourceRecurringPurchaseID: nil)
+            }
             try execute("COMMIT;")
         } catch {
             try? execute("ROLLBACK;")
