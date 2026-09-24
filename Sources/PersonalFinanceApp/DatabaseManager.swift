@@ -1835,22 +1835,6 @@ final class DatabaseManager {
         return snapshots
     }
 
-    /// Returns whether a snapshot already exists for the supplied calendar date.
-    func hasSnapshot(on date: String) throws -> Bool {
-        let sql = "SELECT EXISTS(SELECT 1 FROM snapshots WHERE snapshot_date = ?);"
-        var statement: OpaquePointer?
-        defer { sqlite3_finalize(statement) }
-        guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK else {
-            throw DatabaseError.queryFailed(databaseMessage)
-        }
-        let transientDestructor = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
-        sqlite3_bind_text(statement, 1, date, -1, transientDestructor)
-        guard sqlite3_step(statement) == SQLITE_ROW else {
-            throw DatabaseError.queryFailed(databaseMessage)
-        }
-        return sqlite3_column_int(statement, 0) != 0
-    }
-
     /// Saves the fixed 08:00 Asia/Taipei portfolio baseline once per day.
     func savePortfolioDailyBaseline(date: String, marketValueNTD: Double) throws {
         let sql = """
