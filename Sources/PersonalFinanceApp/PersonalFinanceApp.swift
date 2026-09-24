@@ -639,16 +639,18 @@ final class AppModel: ObservableObject {
         else { return }
         let dateString = previousSnapshotDateString(for: Date())
         do {
-            // The scheduled agent normally creates this record at the
-            // configured time. Only recover a missed run; never overwrite an
-            // existing snapshot when the app is opened later.
-            guard try !databaseManager.hasSnapshot(on: dateString) else { return }
+            // Recover only when the scheduled snapshot for this date has not
+            // succeeded. A manual snapshot must not prevent recovery after a
+            // shutdown, but a successful scheduled snapshot must not run twice.
+            guard UserDefaults.standard.string(forKey: automaticSnapshotDateKey) != dateString
+            else { return }
             try databaseManager.saveSnapshot(
                 date: dateString,
                 assets: assetTotals,
                 liabilities: liabilityTotals,
                 detailValues: (try? databaseManager.snapshotDetailValues()) ?? [:]
             )
+            UserDefaults.standard.set(dateString, forKey: automaticSnapshotDateKey)
             refreshSnapshots()
         } catch {
             NSLog("FinTrack snapshot save failed: %@", error.localizedDescription)
@@ -940,6 +942,7 @@ private enum SnapshotBackgroundAgent {
                 liabilities: try databaseManager.liabilityTotals(),
                 detailValues: (try? databaseManager.snapshotDetailValues()) ?? [:]
             )
+            UserDefaults.standard.set(dateString, forKey: automaticSnapshotDateKey)
         } catch {
             NSLog("FinTrack background snapshot failed: %@", error.localizedDescription)
         }
@@ -997,6 +1000,7 @@ private enum TodayBaselineBackgroundAgent {
 
 private enum SnapshotScheduler {
     private static let label = "com.fintrack.snapshot"
+    private static let todayBaselineLabel = "com.fintrack.today-baseline"
 
     private static var launchAgentURL: URL {
         FileManager.default.homeDirectoryForCurrentUser
@@ -1033,11 +1037,13 @@ private enum SnapshotScheduler {
                 format: .xml,
                 options: 0
             )
-            try data.write(to: launchAgentURL, options: .atomic)
-
             let domain = "gui/\(getuid())"
-            runLaunchctl(["bootout", domain, launchAgentURL.path])
-            runLaunchctl(["bootstrap", domain, launchAgentURL.path])
+            installAgent(
+                data: data,
+                url: launchAgentURL,
+                label: label,
+                domain: domain
+            )
             installTodayBaselineAgent(executablePath: executablePath, domain: domain)
         } catch {
             NSLog("FinTrack snapshot scheduler setup failed: %@", error.localizedDescription)
@@ -1048,7 +1054,7 @@ private enum SnapshotScheduler {
         let url = launchAgentURL.deletingLastPathComponent().appendingPathComponent(
             "com.fintrack.today-baseline.plist")
         let agent: [String: Any] = [
-            "Label": "com.fintrack.today-baseline",
+            "Label": todayBaselineLabel,
             "ProgramArguments": [executablePath, "--fintrack-today-baseline"],
             "StartCalendarInterval": ["Hour": 8, "Minute": 0],
             "ProcessType": "Background",
@@ -1057,23 +1063,37 @@ private enum SnapshotScheduler {
         do {
             let data = try PropertyListSerialization.data(
                 fromPropertyList: agent, format: .xml, options: 0)
-            try data.write(to: url, options: .atomic)
-            runLaunchctl(["bootout", domain, url.path])
-            runLaunchctl(["bootstrap", domain, url.path])
+            installAgent(data: data, url: url, label: todayBaselineLabel, domain: domain)
         } catch {
             NSLog("FinTrack TODAY scheduler setup failed: %@", error.localizedDescription)
         }
     }
 
-    private static func runLaunchctl(_ arguments: [String]) {
+    private static func installAgent(data: Data, url: URL, label: String, domain: String) {
+        let existingData = try? Data(contentsOf: url)
+        let isLoaded = runLaunchctl(["print", "\(domain)/\(label)"]) == 0
+        do {
+            try data.write(to: url, options: .atomic)
+            guard existingData != data || !isLoaded else { return }
+            runLaunchctl(["bootout", domain, url.path])
+            runLaunchctl(["bootstrap", domain, url.path])
+        } catch {
+            NSLog("FinTrack scheduler file write failed: %@", error.localizedDescription)
+        }
+    }
+
+    @discardableResult
+    private static func runLaunchctl(_ arguments: [String]) -> Int32 {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/launchctl")
         process.arguments = arguments
         do {
             try process.run()
             process.waitUntilExit()
+            return process.terminationStatus
         } catch {
             NSLog("FinTrack launchctl failed: %@", error.localizedDescription)
+            return -1
         }
     }
 }
@@ -5224,6 +5244,8 @@ private func previousSnapshotDateString(for date: Date) -> String {
     let previousDay = Calendar.current.date(byAdding: .day, value: -1, to: date) ?? date
     return snapshotDateString(for: previousDay)
 }
+
+private let automaticSnapshotDateKey = "lastAutomaticSnapshotDate"
 
 private func snapshotDateText(_ value: String, includeYear: Bool) -> String {
     let parts = value.split(separator: "-").compactMap { Int($0) }
