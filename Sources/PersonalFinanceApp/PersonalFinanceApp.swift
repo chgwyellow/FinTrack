@@ -244,7 +244,9 @@ final class AppModel: ObservableObject {
         try databaseManager.addDividend(
             holdingID: holdingID, payDate: payDate, amount: amount, currency: currency,
             receivingAssetID: receivingAssetID)
+        refreshAssets()
         refreshDividends()
+        refreshForeignCurrencyTransactions()
         refreshHoldings()
         refreshPortfolioTotals()
     }
@@ -364,6 +366,7 @@ final class AppModel: ObservableObject {
         try databaseManager.updateDividend(
             id: id, payDate: payDate, amount: amount, currency: currency,
             receivingAssetID: receivingAssetID)
+        refreshAssets()
         refreshDividends()
         refreshHoldings()
         refreshPortfolioTotals()
@@ -373,6 +376,7 @@ final class AppModel: ObservableObject {
         guard let databaseManager else { return }
         do {
             try databaseManager.deleteDividend(id: id)
+            refreshAssets()
             refreshDividends()
             refreshHoldings()
             refreshPortfolioTotals()
