@@ -1418,7 +1418,7 @@ enum L10n {
         "Bank Accounts": "銀行帳戶", "Cash": "現金", "Margin Deposit": "期貨保證金",
         "U.S. Stocks": "美股", "U.S. ETFs": "美股 ETF", "Taiwan ETFs": "台股 ETF",
         "Retirement Fund": "勞退基金", "House Deposit": "房屋押金", "Other": "其他",
-        "Financial Indicators": "財務指數", "Free Cash Flow": "自由現金流量", "Liability Ratio": "負債比率",
+        "Financial Indicators": "財務指數", "Net Liquid Assets": "淨流動資產", "Liability Ratio": "負債比率",
         "Cash Ratio": "現金比率", "Equity Multiplier": "權益乘數", "Net Worth Growth Rate": "淨值成長率",
         "Net Worth History": "淨值歷史", "Chart area — to be connected to snapshots": "圖表區域 — 將連接資產快照",
         "Use the sidebar to switch between your financial sections. Market prices and exchange rates are refreshed when the relevant page is opened.":
@@ -4720,7 +4720,7 @@ struct FinancialIndicatorsCard: View {
         let equityMultiplier = netWorth > 0 ? totalAssets / netWorth : 0
 
         return [
-            ("Free Cash Flow", ntd(netWorth - assetTotals.otherAsset)),
+            ("Net Liquid Assets", ntd(netWorth - assetTotals.otherAsset)),
             ("Liability Ratio", String(format: "%.2f%%", liabilityRatio)),
             ("Cash Ratio", String(format: "%.2f%%", cashRatio)),
             ("Equity Multiplier", String(format: "%.2f", equityMultiplier)),
