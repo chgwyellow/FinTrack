@@ -2707,13 +2707,18 @@ struct OverviewView: View {
     }
 
     private var monthlyBaseline: DatabaseManager.Snapshot? {
-        guard let latest = appModel.snapshots.last,
-            let currentDate = snapshotDate(latest.date),
-            let cutoff = Calendar.current.date(byAdding: .month, value: -1, to: currentDate)
+        let calendar = Calendar.current
+        let now = Date()
+        let currentMonthStart = calendar.date(
+            from: calendar.dateComponents([.calendar, .year, .month], from: now))
+        guard let currentMonthStart,
+            let previousMonthStart = calendar.date(
+                byAdding: .month, value: -1, to: currentMonthStart)
         else { return nil }
+
         return appModel.snapshots.last { snapshot in
             guard let date = snapshotDate(snapshot.date) else { return false }
-            return date <= cutoff
+            return date >= previousMonthStart && date < currentMonthStart
         }
     }
 
