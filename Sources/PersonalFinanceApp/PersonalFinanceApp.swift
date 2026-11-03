@@ -2549,7 +2549,8 @@ struct OverviewView: View {
                     title: "Total Liabilities", value: ntd(appModel.liabilityTotals.total),
                     change: percentageChange(
                         appModel.liabilityTotals.total, previousValue(for: "totalLiabilities"))
-                        + " vs last month")
+                        + " vs last month",
+                    reverseChangeColor: true)
                 MetricCard(
                     title: "Net Worth",
                     value: ntd(appModel.assetTotals.total - appModel.liabilityTotals.total),
@@ -2578,7 +2579,7 @@ struct OverviewView: View {
                                 title: "Total Liabilities Details", showChanges: showChanges,
                                 onAdd: {
                                     showingAddLiability = true
-                                }, sections: liabilitySections)
+                                }, sections: liabilitySections, reverseChangeColor: true)
                             FinancialIndicatorsCard(
                                 assetTotals: appModel.assetTotals,
                                 liabilityTotals: appModel.liabilityTotals
@@ -7094,6 +7095,7 @@ struct MetricCard: View {
     let value: String
     let change: String
     var warning = false
+    var reverseChangeColor = false
     @AppStorage("appLanguage") private var appLanguage = AppLanguage.english.rawValue
 
     var body: some View {
@@ -7116,7 +7118,10 @@ struct MetricCard: View {
                         ? " 較上月" : " vs last month")
             )
             .font(.caption).foregroundStyle(
-                warning || change.hasPrefix("-") ? FinTrackTheme.negative : FinTrackTheme.positive)
+                warning
+                    ? FinTrackTheme.negative
+                    : (change.hasPrefix("-") != reverseChangeColor
+                        ? FinTrackTheme.negative : FinTrackTheme.positive))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(18)
@@ -7130,6 +7135,7 @@ struct DetailCard: View {
     let showChanges: Bool
     let onAdd: (() -> Void)?
     let sections: [DetailSection]
+    var reverseChangeColor = false
     @AppStorage("appLanguage") private var appLanguage = AppLanguage.english.rawValue
 
     var body: some View {
@@ -7151,14 +7157,14 @@ struct DetailCard: View {
                 }
                 detailRow(
                     name: section.title, value: section.value, change: section.change,
-                    showChange: showChanges
+                    showChange: showChanges, reverseChangeColor: reverseChangeColor
                 )
                 .fontWeight(.semibold)
 
                 ForEach(section.children, id: \.name) { child in
                     detailRow(
                         name: child.name, value: child.value, change: child.change,
-                        showChange: showChanges
+                        showChange: showChanges, reverseChangeColor: reverseChangeColor
                     )
                     .padding(.leading, 18)
                     .font(.callout)
@@ -7181,7 +7187,10 @@ struct DetailCard: View {
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(FinTrackTheme.border))
     }
 
-    private func detailRow(name: String, value: String, change: String, showChange: Bool)
+    private func detailRow(
+        name: String, value: String, change: String, showChange: Bool,
+        reverseChangeColor: Bool
+    )
         -> some View
     {
         HStack(alignment: .top) {
@@ -7189,20 +7198,22 @@ struct DetailCard: View {
             Spacer()
             VStack(alignment: .trailing, spacing: 3) {
                 Text(value)
-                    .foregroundStyle(showChange ? changeColor(change) : FinTrackTheme.textPrimary)
+                    .foregroundStyle(
+                        showChange
+                            ? changeColor(change, reverse: reverseChangeColor)
+                            : FinTrackTheme.textPrimary)
                 if showChange {
                     Text(change)
                         .font(.caption)
-                        .foregroundStyle(changeColor(change))
+                        .foregroundStyle(changeColor(change, reverse: reverseChangeColor))
                 }
             }
         }
     }
 
-    private func changeColor(_ change: String) -> Color {
-        change.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("-")
-            ? FinTrackTheme.negative
-            : FinTrackTheme.positive
+    private func changeColor(_ change: String, reverse: Bool) -> Color {
+        let isNegative = change.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("-")
+        return isNegative != reverse ? FinTrackTheme.negative : FinTrackTheme.positive
     }
 }
 
