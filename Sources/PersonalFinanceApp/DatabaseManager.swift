@@ -409,6 +409,7 @@ final class DatabaseManager {
         do {
             try execute(schemaSQL)
             try addNTDValueColumnIfNeeded()
+            try addLiabilityIsActiveColumnIfNeeded()
             try addHoldingsClassificationColumnsIfNeeded()
             try addRecurringPurchaseFundingColumnIfNeeded()
             try addRecurringInvestmentFundingColumnIfNeeded()
@@ -1571,7 +1572,7 @@ final class DatabaseManager {
         let sql = """
             SELECT liability_group, COALESCE(SUM(balance), 0)
             FROM liabilities
-            WHERE currency = 'NTD'
+            WHERE currency = 'NTD' AND is_active = 1
             GROUP BY liability_group;
             """
         var statement: OpaquePointer?
@@ -1634,6 +1635,7 @@ final class DatabaseManager {
         let sql = """
             SELECT id, name, liability_group, category, currency, balance, interest_rate
             FROM liabilities
+            WHERE is_active = 1
             ORDER BY name COLLATE NOCASE DESC;
             """
         var statement: OpaquePointer?
@@ -2138,6 +2140,18 @@ final class DatabaseManager {
     private func addDividendReceivingAssetColumnIfNeeded() throws {
         do {
             try execute("ALTER TABLE dividends ADD COLUMN receiving_asset_id INTEGER;")
+        } catch DatabaseError.queryFailed(let message)
+            where message.contains("duplicate column name")
+        {
+            // The column already exists.
+        }
+    }
+
+    private func addLiabilityIsActiveColumnIfNeeded() throws {
+        do {
+            try execute(
+                "ALTER TABLE liabilities ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1;"
+            )
         } catch DatabaseError.queryFailed(let message)
             where message.contains("duplicate column name")
         {
