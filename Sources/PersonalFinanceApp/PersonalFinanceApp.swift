@@ -1013,7 +1013,7 @@ private enum SnapshotScheduler {
     }
 
     static func install() {
-        guard let executablePath = Bundle.main.executablePath else { return }
+        let applicationPath = Bundle.main.bundleURL.path
         let configuredTime = UserDefaults.standard.string(forKey: "snapshotTime") ?? "23:00"
         let components = configuredTime.split(separator: ":").compactMap { Int($0) }
         guard components.count == 2,
@@ -1023,7 +1023,9 @@ private enum SnapshotScheduler {
 
         let launchAgent: [String: Any] = [
             "Label": label,
-            "ProgramArguments": [executablePath, "--fintrack-snapshot"],
+            "ProgramArguments": [
+                "/usr/bin/open", "-a", applicationPath, "--args", "--fintrack-snapshot",
+            ],
             "StartCalendarInterval": [
                 "Hour": components[0],
                 "Minute": components[1],
@@ -1048,18 +1050,20 @@ private enum SnapshotScheduler {
                 label: label,
                 domain: domain
             )
-            installTodayBaselineAgent(executablePath: executablePath, domain: domain)
+            installTodayBaselineAgent(applicationPath: applicationPath, domain: domain)
         } catch {
             NSLog("FinTrack snapshot scheduler setup failed: %@", error.localizedDescription)
         }
     }
 
-    private static func installTodayBaselineAgent(executablePath: String, domain: String) {
+    private static func installTodayBaselineAgent(applicationPath: String, domain: String) {
         let url = launchAgentURL.deletingLastPathComponent().appendingPathComponent(
             "com.fintrack.today-baseline.plist")
         let agent: [String: Any] = [
             "Label": todayBaselineLabel,
-            "ProgramArguments": [executablePath, "--fintrack-today-baseline"],
+            "ProgramArguments": [
+                "/usr/bin/open", "-a", applicationPath, "--args", "--fintrack-today-baseline",
+            ],
             "StartCalendarInterval": ["Hour": 8, "Minute": 0],
             "ProcessType": "Background",
             "RunAtLoad": false,
