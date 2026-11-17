@@ -58,6 +58,9 @@ final class AppModel: ObservableObject {
     private let marketDataClient = MarketDataClient()
     private var marketStreamTask: Task<Void, Never>?
     private var streamedSymbols: Set<String> = []
+    private var lastMarketStreamUpdateAt = Date.distantPast
+    private var lastMarketRefreshAt: Date?
+    private var lastForeignExchangeRefreshAt: Date?
 
     init() {
         databaseManager = try? DatabaseManager()
@@ -443,6 +446,15 @@ final class AppModel: ObservableObject {
     func refreshMarketData() async {
         guard let databaseManager else { return }
         guard !isRefreshingMarketData else { return }
+        // Page appearance and app activation can happen back-to-back. Avoid
+        // starting another full REST refresh while the previous result is
+        // still fresh; manual snapshot remains available separately.
+        if let lastMarketRefreshAt,
+            Date().timeIntervalSince(lastMarketRefreshAt) < 60
+        {
+            return
+        }
+        lastMarketRefreshAt = Date()
         isRefreshingMarketData = true
         defer { isRefreshingMarketData = false }
         let records = holdingRecords
@@ -598,6 +610,14 @@ final class AppModel: ObservableObject {
     }
 
     private func applyMarketStreamTick(_ tick: YahooMarketStream.Tick) {
+        // Yahoo can deliver several ticks per second. Persisting every tick
+        // and recomputing all portfolio queries on the main actor makes page
+        // transitions contend with the stream. Sample the stream at most once
+        // per second; the REST refresh still provides the complete recovery
+        // path when needed.
+        let now = Date()
+        guard now.timeIntervalSince(lastMarketStreamUpdateAt) >= 1 else { return }
+        lastMarketStreamUpdateAt = now
         guard let databaseManager,
             let holding = holdingRecords.first(where: { $0.symbol == tick.symbol })
         else { return }
@@ -691,6 +711,12 @@ final class AppModel: ObservableObject {
 
     func refreshForeignExchangeRates() async {
         guard let databaseManager else { return }
+        if let lastForeignExchangeRefreshAt,
+            Date().timeIntervalSince(lastForeignExchangeRefreshAt) < 300
+        {
+            return
+        }
+        lastForeignExchangeRefreshAt = Date()
         let currencies = Set(assets.map(\.currency)).filter { $0 != "NTD" }
         var refreshedRates: [String: Double] = [:]
 
@@ -2609,11 +2635,6 @@ struct OverviewView: View {
         .sheet(item: $editingLiability) { liability in
             EditLiabilitySheet(liability: liability)
         }
-        .onAppear {
-            appModel.refreshAssets()
-            appModel.refreshLiabilities()
-            Task { await appModel.refreshMarketData() }
-        }
     }
 
     private var assetSections: [DetailSection] {
@@ -3756,10 +3777,6 @@ struct PortfolioView: View {
                 },
                 secondaryButton: .cancel()
             )
-        }
-        .onAppear {
-            appModel.refreshHoldings()
-            Task { await appModel.refreshMarketData() }
         }
     }
 
@@ -4919,9 +4936,6 @@ struct NetWorthHistoryCard: View {
         .padding(20)
         .background(FinTrackTheme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(FinTrackTheme.border))
-        .onAppear {
-            appModel.refreshSnapshots()
-        }
         .alert(
             isChinese ? "建立快照失敗" : "Snapshot Failed",
             isPresented: Binding(
