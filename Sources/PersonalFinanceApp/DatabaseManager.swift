@@ -23,14 +23,14 @@ final class DatabaseManager {
         }
     }
 
-    struct PortfolioTotals {
+    struct PortfolioTotals: Sendable {
         let investedNTD: Double
         let marketValueNTD: Double
         let totalPLNTD: Double
         let pricedHoldings: Int
     }
 
-    struct AllocationRecord: Identifiable {
+    struct AllocationRecord: Identifiable, Sendable {
         let id: Int64
         let name: String
         let valueNTD: Double
@@ -66,7 +66,7 @@ final class DatabaseManager {
         var id: String { date }
     }
 
-    struct HoldingRecord: Identifiable {
+    struct HoldingRecord: Identifiable, Sendable {
         let id: Int64
         let assetID: Int64
         let symbol: String

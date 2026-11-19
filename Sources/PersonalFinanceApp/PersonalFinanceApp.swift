@@ -56,6 +56,7 @@ final class AppModel: ObservableObject {
     @Published var snapshotError: String?
     private let databaseManager: DatabaseManager?
     private let marketDataClient = MarketDataClient()
+    private let marketStreamDatabaseStore = MarketStreamDatabaseStore()
     private var marketStreamTask: Task<Void, Never>?
     private var marketStreamFlushTask: Task<Void, Never>?
     private var pendingMarketTicks: [String: YahooMarketStream.Tick] = [:]
@@ -627,56 +628,26 @@ final class AppModel: ObservableObject {
 
     private func flushPendingMarketTicks() {
         marketStreamFlushTask = nil
-        guard let databaseManager, !pendingMarketTicks.isEmpty else { return }
+        guard !pendingMarketTicks.isEmpty else { return }
 
-        let ticks = pendingMarketTicks
+        let ticks = Array(pendingMarketTicks.values)
         pendingMarketTicks.removeAll(keepingCapacity: true)
-        let timestamp = ISO8601DateFormatter().string(from: Date())
-        var quotes: [(DatabaseManager.HoldingRecord, MarketDataClient.Quote)] = []
-
-        for tick in ticks.values {
-            guard let holding = holdingRecords.first(where: { $0.symbol == tick.symbol }) else {
-                continue
-            }
-            do {
-                let currency = tick.currency ?? holding.currency
-                try databaseManager.insertMarketPrice(
-                    symbol: holding.symbol,
-                    market: holding.market,
-                    price: tick.price,
-                    currency: currency,
-                    observedAt: timestamp,
-                    source: "Yahoo Finance WebSocket"
-                )
-                if let previousClose = tick.previousClose, previousClose > 0 {
-                    try databaseManager.savePreviousClose(
-                        symbol: holding.symbol,
-                        market: holding.market,
-                        price: previousClose,
-                        currency: currency,
-                        observedAt: timestamp
-                    )
-                }
-                quotes.append(
-                    (holding, MarketDataClient.Quote(
-                        price: tick.price,
-                        currency: currency,
-                        previousClose: tick.previousClose
-                    ))
-                )
-            } catch {
-                NSLog(
-                    "FinTrack WebSocket price update failed for %@: %@", tick.symbol,
-                    error.localizedDescription)
+        let holdings = holdingRecords
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let result = await marketStreamDatabaseStore.flush(
+                ticks: ticks,
+                holdings: holdings
+            )
+            guard let result else { return }
+            holdingRecords = result.holdings
+            portfolioTotals = result.portfolioTotals
+            allocationRecords = result.allocationRecords
+            if let todayPLNTD = result.todayPLNTD {
+                self.todayPLNTD = todayPLNTD
+                UserDefaults.standard.set(todayPLNTD, forKey: "portfolio.todayPnl")
             }
         }
-
-        guard !quotes.isEmpty else { return }
-        updateTodayProfitLoss(
-            records: holdingRecords, quotes: quotes, databaseManager: databaseManager)
-        refreshHoldings()
-        refreshPortfolioTotals()
-        refreshAllocations()
     }
 
     func saveDailySnapshotIfDue() {
