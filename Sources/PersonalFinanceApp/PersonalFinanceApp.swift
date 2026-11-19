@@ -1030,11 +1030,59 @@ private enum FinTrackTheme {
     ]
 }
 
+private actor CompanyLogoMemoryCache {
+    private var values: [String: Data] = [:]
+
+    func value(for symbol: String) -> Data? {
+        values[symbol]
+    }
+
+    func insert(_ data: Data, for symbol: String) {
+        values[symbol] = data
+    }
+}
+
+private actor CompanyLogoDownloadLimiter {
+    private let limit: Int
+    private var activeDownloads = 0
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    init(limit: Int) {
+        self.limit = limit
+    }
+
+    func acquire() async {
+        if activeDownloads < limit {
+            activeDownloads += 1
+            return
+        }
+        await withCheckedContinuation { continuation in
+            waiters.append(continuation)
+        }
+        activeDownloads += 1
+    }
+
+    func release() {
+        if let continuation = waiters.first {
+            waiters.removeFirst()
+            continuation.resume()
+        } else {
+            activeDownloads = max(0, activeDownloads - 1)
+        }
+    }
+}
+
 private enum CompanyLogoRepository {
     private static let maxCacheBytes = 50 * 1024 * 1024
     private static let refreshInterval: TimeInterval = 30 * 24 * 60 * 60
+    private static let memoryCache = CompanyLogoMemoryCache()
+    private static let downloadLimiter = CompanyLogoDownloadLimiter(limit: 2)
 
     static func data(for symbol: String) async -> Data? {
+        if let cachedData = await memoryCache.value(for: symbol) {
+            return cachedData
+        }
+
         let fileURL = cacheURL(for: symbol)
         let cachedData = try? Data(contentsOf: fileURL)
         if let cachedData,
@@ -1042,9 +1090,12 @@ private enum CompanyLogoRepository {
                 .contentModificationDate,
             Date().timeIntervalSince(modified) < refreshInterval
         {
+            await memoryCache.insert(cachedData, for: symbol)
             return cachedData
         }
 
+        await downloadLimiter.acquire()
+        let result: Data?
         do {
             let encodedSymbol =
                 symbol.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? symbol
@@ -1052,7 +1103,9 @@ private enum CompanyLogoRepository {
                 let url = URL(
                     string: "https://financialmodelingprep.com/image-stock/\(encodedSymbol).png")
             else {
-                return cachedData
+                result = cachedData
+                await downloadLimiter.release()
+                return result
             }
             var request = URLRequest(url: url)
             request.timeoutInterval = 8
@@ -1061,16 +1114,23 @@ private enum CompanyLogoRepository {
                 (200..<300).contains(httpResponse.statusCode),
                 NSImage(data: data) != nil
             else {
-                return cachedData
+                result = cachedData
+                await downloadLimiter.release()
+                return result
             }
             try FileManager.default.createDirectory(
                 at: cacheDirectory, withIntermediateDirectories: true)
             try data.write(to: fileURL, options: .atomic)
             trimCache()
-            return data
+            result = data
         } catch {
-            return cachedData
+            result = cachedData
         }
+        await downloadLimiter.release()
+        if let result {
+            await memoryCache.insert(result, for: symbol)
+        }
+        return result
     }
 
     private static var cacheDirectory: URL {
