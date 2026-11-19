@@ -4944,8 +4944,16 @@ private struct NetWorthHistoryChart: View {
                         / max(contentWidth, 1)
                 )
             )
+            // Include a small amount of data just outside the viewport so a
+            // point at either edge cannot fall outside the dynamically scaled
+            // Y-axis while the user is dragging.
+            let visiblePadding = max(
+                24 * 60 * 60,
+                xScaleSpan / Double(max(snapshots.count, 1) * 2)
+            )
             let visibleValues = snapshots.filter {
-                $0.date >= visibleStart && $0.date <= visibleEnd
+                $0.date >= visibleStart.addingTimeInterval(-visiblePadding)
+                    && $0.date <= visibleEnd.addingTimeInterval(visiblePadding)
             }.map { $0.snapshot.netWorth }
             let visibleYDomain = Self.yDomain(
                 for: visibleValues.isEmpty
@@ -5036,20 +5044,14 @@ private struct NetWorthHistoryChart: View {
                 // Swift Charts places centered labels between adjacent ticks.
                 AxisValueLabel(centered: false, anchor: .top, collisionResolution: .disabled) {
                     if let x = value.as(Date.self) {
-                        let sourceSnapshot = xAxisSnapshots.min {
-                            abs($0.date.timeIntervalSince(x))
-                                < abs($1.date.timeIntervalSince(x))
-                        }
-                        if let sourceSnapshot {
-                            Text(
-                                snapshotDateText(
-                                    sourceSnapshot.snapshot.date,
-                                    includeYear: spansMultipleYears
-                                )
+                        Text(
+                            snapshotDateText(
+                                snapshotDateString(for: x),
+                                includeYear: spansMultipleYears
                             )
+                        )
                             // Keep the date centered under the corresponding point.
                             .offset(y: 8)
-                        }
                     }
                 }
             }
