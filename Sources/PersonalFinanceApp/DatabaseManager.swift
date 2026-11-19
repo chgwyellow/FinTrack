@@ -408,6 +408,7 @@ final class DatabaseManager {
 
         do {
             try execute(schemaSQL)
+            try createPerformanceIndexes()
             try addNTDValueColumnIfNeeded()
             try addLiabilityIsActiveColumnIfNeeded()
             try addHoldingsClassificationColumnsIfNeeded()
@@ -2056,6 +2057,21 @@ final class DatabaseManager {
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
         """
+
+    /// Indexes the access paths used by the live market and portfolio queries.
+    /// IF NOT EXISTS keeps this migration safe for existing databases.
+    private func createPerformanceIndexes() throws {
+        try execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_market_prices_symbol_market_observed
+                ON market_prices(symbol, market, observed_at DESC, id DESC);
+            CREATE INDEX IF NOT EXISTS idx_exchange_rates_pair_observed
+                ON exchange_rates(base_currency, quote_currency, observed_at DESC, id DESC);
+            CREATE INDEX IF NOT EXISTS idx_dividends_holding
+                ON dividends(holding_id);
+            """
+        )
+    }
 
     private func addNTDValueColumnIfNeeded() throws {
         do {
