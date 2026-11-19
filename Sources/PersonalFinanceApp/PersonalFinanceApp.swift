@@ -4643,7 +4643,7 @@ struct NetWorthHistoryCard: View {
     @AppStorage("appLanguage") private var appLanguage = AppLanguage.english.rawValue
     @State private var didSaveSnapshot = false
     @State private var selectedDate: Date?
-    @State private var historyRange: HistoryRange = .threeMonths
+    @State private var historyRange: HistoryRange = .oneMonth
 
     private enum HistoryRange: String, CaseIterable {
         case oneMonth
@@ -4667,7 +4667,7 @@ struct NetWorthHistoryCard: View {
         appLanguage == AppLanguage.traditionalChinese.rawValue
     }
 
-    private var allChartSnapshots: [(snapshot: DatabaseManager.Snapshot, date: Date)] {
+    private func allChartSnapshots() -> [(snapshot: DatabaseManager.Snapshot, date: Date)] {
         let calendar = Calendar.current
         let tomorrow = calendar.date(
             byAdding: .day,
@@ -4681,13 +4681,15 @@ struct NetWorthHistoryCard: View {
         }.sorted { $0.date < $1.date }
     }
 
-    private var chartSnapshots: [(snapshot: DatabaseManager.Snapshot, date: Date)] {
-        guard historyRange != .all else { return allChartSnapshots }
+    private func chartSnapshots(
+        from allSnapshots: [(snapshot: DatabaseManager.Snapshot, date: Date)]
+    ) -> [(snapshot: DatabaseManager.Snapshot, date: Date)] {
+        guard historyRange != .all else { return allSnapshots }
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) ?? today
         let cutoff = calendar.date(byAdding: .month, value: -historyRange.monthCount, to: today) ?? today
-        return allChartSnapshots.filter { $0.date >= cutoff && $0.date < tomorrow }
+        return allSnapshots.filter { $0.date >= cutoff && $0.date < tomorrow }
     }
 
     private var historyRangeLabel: String {
@@ -4700,15 +4702,13 @@ struct NetWorthHistoryCard: View {
         }
     }
 
-    private var selectedSnapshot: (snapshot: DatabaseManager.Snapshot, date: Date)? {
-        guard let selectedDate, !chartSnapshots.isEmpty else { return nil }
-        return chartSnapshots.min {
-            abs($0.date.timeIntervalSince(selectedDate))
-                < abs($1.date.timeIntervalSince(selectedDate))
-        }
-    }
-
     var body: some View {
+        let allSnapshots = allChartSnapshots()
+        let visibleSnapshots = chartSnapshots(from: allSnapshots)
+        let xDomain = chartXDomain(for: visibleSnapshots, allSnapshots: allSnapshots)
+        let xAxisSnapshots = chartXAxisSnapshots(for: visibleSnapshots, domain: xDomain)
+        let spansMultipleYears = chartSpansMultipleYears(for: visibleSnapshots)
+
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top) {
                 Text(L10n.text("Net Worth History", language: appLanguage))
@@ -4767,15 +4767,14 @@ struct NetWorthHistoryCard: View {
                 .frame(maxWidth: .infinity, minHeight: 190)
             } else {
                 NetWorthHistoryChart(
-                    snapshots: chartSnapshots,
-                    xDomain: chartXDomain,
-                    xAxisSnapshots: chartXAxisSnapshots,
-                    spansMultipleYears: chartSpansMultipleYears,
+                    snapshots: visibleSnapshots,
+                    xDomain: xDomain,
+                    xAxisSnapshots: xAxisSnapshots,
+                    spansMultipleYears: spansMultipleYears,
                     selectedDate: $selectedDate,
                     isChinese: isChinese
                 )
                 .frame(height: 240)
-                .id("\(historyRange.rawValue)-\(appModel.snapshots.last?.id ?? "empty")")
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -4797,26 +4796,29 @@ struct NetWorthHistoryCard: View {
         }
     }
 
-    private var chartXDomain: ClosedRange<Date> {
+    private func chartXDomain(
+        for snapshots: [(snapshot: DatabaseManager.Snapshot, date: Date)],
+        allSnapshots: [(snapshot: DatabaseManager.Snapshot, date: Date)]
+    ) -> ClosedRange<Date> {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) ?? today
         let selectedStart = historyRange == .all
-            ? (allChartSnapshots.first?.date ?? today)
+            ? (allSnapshots.first?.date ?? today)
             : (calendar.date(byAdding: .month, value: -historyRange.monthCount, to: today) ?? today)
         // Leave a small leading gutter before the first observation. Without
         // it Swift Charts clips the first point at the plot boundary, making
         // the oldest snapshot look cut off when the user scrolls fully left.
-        let firstDate = max(selectedStart, chartSnapshots.first?.date ?? selectedStart)
-        let firstInterval = chartSnapshots.count > 1
-            ? chartSnapshots[1].date.timeIntervalSince(chartSnapshots[0].date)
+        let firstDate = max(selectedStart, snapshots.first?.date ?? selectedStart)
+        let firstInterval = snapshots.count > 1
+            ? snapshots[1].date.timeIntervalSince(snapshots[0].date)
             : 24 * 60 * 60
         let leadingGutter = min(
             24 * 60 * 60,
             max(60 * 60, firstInterval / 2)
         )
         let lowerBound = firstDate.addingTimeInterval(-leadingGutter)
-        let latestDate = chartSnapshots.last?.date ?? today
+        let latestDate = snapshots.last?.date ?? today
         let dataEnd = calendar.date(byAdding: .day, value: 1, to: latestDate) ?? tomorrow
         // Keep enough room for the final date label. Using today's midnight
         // as the upper bound clips a snapshot taken on today's civil day.
@@ -4826,23 +4828,30 @@ struct NetWorthHistoryCard: View {
         return lowerBound...max(upperBound, lowerBound.addingTimeInterval(1))
     }
 
-    private var chartSpansMultipleYears: Bool {
-        guard let first = chartSnapshots.first?.date, let last = chartSnapshots.last?.date else {
+    private func chartSpansMultipleYears(
+        for snapshots: [(snapshot: DatabaseManager.Snapshot, date: Date)]
+    ) -> Bool {
+        guard let first = snapshots.first?.date, let last = snapshots.last?.date else {
             return false
         }
         return Calendar.current.component(.year, from: first)
             != Calendar.current.component(.year, from: last)
     }
 
-    private var chartXAxisSnapshots: [(snapshot: DatabaseManager.Snapshot, date: Date)] {
-        let snapshots = chartSnapshots.filter { chartXDomain.contains($0.date) }
-        guard !snapshots.isEmpty else { return [] }
+    private func chartXAxisSnapshots(
+        for snapshots: [(snapshot: DatabaseManager.Snapshot, date: Date)],
+        domain: ClosedRange<Date>
+    ) -> [(snapshot: DatabaseManager.Snapshot, date: Date)] {
+        let axisSnapshots = snapshots.filter { domain.contains($0.date) }
+        guard !axisSnapshots.isEmpty else { return [] }
         // Show every date for short histories so every point can be verified;
         // reduce label density only when a longer history needs it.
-        let step = snapshots.count <= 14 ? 1 : 2
-        var selected = stride(from: 0, to: snapshots.count, by: step).map { snapshots[$0] }
-        if selected.last?.snapshot.date != snapshots.last?.snapshot.date,
-            let last = snapshots.last
+        let step = axisSnapshots.count <= 14 ? 1 : 2
+        var selected = stride(from: 0, to: axisSnapshots.count, by: step).map {
+            axisSnapshots[$0]
+        }
+        if selected.last?.snapshot.date != axisSnapshots.last?.snapshot.date,
+            let last = axisSnapshots.last
         {
             selected.append(last)
         }
@@ -4924,6 +4933,7 @@ private struct NetWorthHistoryChart: View {
                         .frame(width: contentWidth, height: 240)
                         .padding(.bottom, 14)
                 }
+                .defaultScrollAnchor(.trailing)
                 .scrollIndicators(.visible)
                 .frame(height: 240)
             }
