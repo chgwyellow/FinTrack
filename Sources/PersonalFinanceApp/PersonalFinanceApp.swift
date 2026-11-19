@@ -4934,7 +4934,13 @@ private struct NetWorthHistoryChart: View {
             let viewportWidth = max(geometry.size.width - axisWidth, 1)
             let contentWidth = max(viewportWidth, CGFloat(xScaleSpan / 86_400) * 96)
             let maxScrollOffset = max(contentWidth - viewportWidth, 0)
-            let scrollOffset = min(max(-scrollContentMinX, 0), maxScrollOffset)
+            // Use the window coordinate space because macOS ScrollView's named
+            // coordinate space can remain content-relative while scrolling.
+            let scrollViewportMinX = geometry.frame(in: .global).minX + axisWidth
+            let scrollOffset = min(
+                max(scrollViewportMinX - scrollContentMinX, 0),
+                maxScrollOffset
+            )
             let visibleStart = xLowerBound.addingTimeInterval(
                 xScaleSpan * Double(scrollOffset / max(contentWidth, 1))
             )
@@ -4972,9 +4978,7 @@ private struct NetWorthHistoryChart: View {
                             GeometryReader { contentGeometry in
                                 Color.clear.preference(
                                     key: ScrollContentOffsetKey.self,
-                                    value: contentGeometry.frame(
-                                        in: .named("netWorthHistoryScroll")
-                                    ).minX
+                                    value: contentGeometry.frame(in: .global).minX
                                 )
                             }
                         }
@@ -4982,7 +4986,6 @@ private struct NetWorthHistoryChart: View {
                 .defaultScrollAnchor(.trailing)
                 .scrollIndicators(.visible)
                 .frame(height: 240)
-                .coordinateSpace(name: "netWorthHistoryScroll")
                 .onPreferenceChange(ScrollContentOffsetKey.self) { minX in
                     guard abs(scrollContentMinX - minX) > 0.5 else { return }
                     scrollContentMinX = minX
