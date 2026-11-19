@@ -4931,7 +4931,7 @@ private struct NetWorthHistoryChart: View {
                 ScrollView(.horizontal) {
                     dataChart(yDomain: yDomain)
                         .frame(width: contentWidth, height: 240)
-                        .padding(.bottom, 14)
+                        .padding(.bottom, 32)
                 }
                 .defaultScrollAnchor(.trailing)
                 .scrollIndicators(.visible)
@@ -4988,10 +4988,10 @@ private struct NetWorthHistoryChart: View {
         .chartYScale(domain: yDomain)
         .chartYAxis(.hidden)
         .chartXAxis {
-            AxisMarks(values: xAxisSnapshots.map { $0.date }) { value in
+            AxisMarks(position: .bottom, values: xAxisSnapshots.map { $0.date }) { value in
                 // These are observation dates. Do not use centered=true here:
                 // Swift Charts places centered labels between adjacent ticks.
-                AxisValueLabel(centered: false, anchor: .center, collisionResolution: .disabled) {
+                AxisValueLabel(centered: false, anchor: .top, collisionResolution: .disabled) {
                     if let x = value.as(Date.self) {
                         let sourceSnapshot = xAxisSnapshots.min {
                             abs($0.date.timeIntervalSince(x))
@@ -5004,7 +5004,7 @@ private struct NetWorthHistoryChart: View {
                                     includeYear: spansMultipleYears
                                 )
                             )
-                            .offset(x: -20)
+                            .offset(x: -20, y: 8)
                         }
                     }
                 }
