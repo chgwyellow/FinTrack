@@ -4886,6 +4886,15 @@ private struct NetWorthHistoryChart: View {
     let spansMultipleYears: Bool
     @Binding var selectedDate: Date?
     let isChinese: Bool
+    @State private var scrollContentMinX: CGFloat = 0
+
+    private struct ScrollContentOffsetKey: PreferenceKey {
+        static let defaultValue: CGFloat = 0
+
+        static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+            value = nextValue()
+        }
+    }
 
     private var selectedSnapshot: (snapshot: DatabaseManager.Snapshot, date: Date)? {
         guard let selectedDate else { return nil }
@@ -4896,7 +4905,7 @@ private struct NetWorthHistoryChart: View {
     }
 
     var body: some View {
-        chart(yDomain: Self.yDomain(for: snapshots.map { $0.snapshot.netWorth }))
+        chart()
     }
 
     private static func yDomain(for values: [Double]) -> ClosedRange<Double> {
@@ -4916,7 +4925,7 @@ private struct NetWorthHistoryChart: View {
         }
     }
 
-    private func chart(yDomain: ClosedRange<Double>) -> some View {
+    private func chart() -> some View {
         let xLowerBound = xDomain.lowerBound
         let xUpperBound = xDomain.upperBound
         let xScaleSpan = max(xUpperBound.timeIntervalSince(xLowerBound), 1)
@@ -4924,18 +4933,52 @@ private struct NetWorthHistoryChart: View {
             let axisWidth: CGFloat = 58
             let viewportWidth = max(geometry.size.width - axisWidth, 1)
             let contentWidth = max(viewportWidth, CGFloat(xScaleSpan / 86_400) * 96)
+            let maxScrollOffset = max(contentWidth - viewportWidth, 0)
+            let scrollOffset = min(max(-scrollContentMinX, 0), maxScrollOffset)
+            let visibleStart = xLowerBound.addingTimeInterval(
+                xScaleSpan * Double(scrollOffset / max(contentWidth, 1))
+            )
+            let visibleEnd = xLowerBound.addingTimeInterval(
+                xScaleSpan * Double(
+                    min(scrollOffset + viewportWidth, contentWidth)
+                        / max(contentWidth, 1)
+                )
+            )
+            let visibleValues = snapshots.filter {
+                $0.date >= visibleStart && $0.date <= visibleEnd
+            }.map { $0.snapshot.netWorth }
+            let visibleYDomain = Self.yDomain(
+                for: visibleValues.isEmpty
+                    ? snapshots.map { $0.snapshot.netWorth }
+                    : visibleValues
+            )
 
             HStack(spacing: 0) {
-                fixedYAxis(yDomain: yDomain)
+                fixedYAxis(yDomain: visibleYDomain)
                     .frame(width: axisWidth, height: 240)
                 ScrollView(.horizontal) {
-                    dataChart(yDomain: yDomain)
+                    dataChart(yDomain: visibleYDomain)
                         .frame(width: contentWidth, height: 240)
                         .padding(.bottom, 32)
+                        .background {
+                            GeometryReader { contentGeometry in
+                                Color.clear.preference(
+                                    key: ScrollContentOffsetKey.self,
+                                    value: contentGeometry.frame(
+                                        in: .named("netWorthHistoryScroll")
+                                    ).minX
+                                )
+                            }
+                        }
                 }
                 .defaultScrollAnchor(.trailing)
                 .scrollIndicators(.visible)
                 .frame(height: 240)
+                .coordinateSpace(name: "netWorthHistoryScroll")
+                .onPreferenceChange(ScrollContentOffsetKey.self) { minX in
+                    guard abs(scrollContentMinX - minX) > 0.5 else { return }
+                    scrollContentMinX = minX
+                }
             }
         }
     }
