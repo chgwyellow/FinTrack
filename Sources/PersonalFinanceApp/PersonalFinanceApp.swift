@@ -4886,15 +4886,6 @@ private struct NetWorthHistoryChart: View {
     let spansMultipleYears: Bool
     @Binding var selectedDate: Date?
     let isChinese: Bool
-    @State private var scrollContentMinX: CGFloat = 0
-
-    private struct ScrollContentOffsetKey: PreferenceKey {
-        static let defaultValue: CGFloat = 0
-
-        static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-            value = nextValue()
-        }
-    }
 
     private var selectedSnapshot: (snapshot: DatabaseManager.Snapshot, date: Date)? {
         guard let selectedDate else { return nil }
@@ -4905,7 +4896,7 @@ private struct NetWorthHistoryChart: View {
     }
 
     var body: some View {
-        chart()
+        chart(yDomain: Self.yDomain(for: snapshots.map { $0.snapshot.netWorth }))
     }
 
     private static func yDomain(for values: [Double]) -> ClosedRange<Double> {
@@ -4925,7 +4916,7 @@ private struct NetWorthHistoryChart: View {
         }
     }
 
-    private func chart() -> some View {
+    private func chart(yDomain: ClosedRange<Double>) -> some View {
         let xLowerBound = xDomain.lowerBound
         let xUpperBound = xDomain.upperBound
         let xScaleSpan = max(xUpperBound.timeIntervalSince(xLowerBound), 1)
@@ -4933,63 +4924,18 @@ private struct NetWorthHistoryChart: View {
             let axisWidth: CGFloat = 58
             let viewportWidth = max(geometry.size.width - axisWidth, 1)
             let contentWidth = max(viewportWidth, CGFloat(xScaleSpan / 86_400) * 96)
-            let maxScrollOffset = max(contentWidth - viewportWidth, 0)
-            // Use the window coordinate space because macOS ScrollView's named
-            // coordinate space can remain content-relative while scrolling.
-            let scrollViewportMinX = geometry.frame(in: .global).minX + axisWidth
-            let scrollOffset = min(
-                max(scrollViewportMinX - scrollContentMinX, 0),
-                maxScrollOffset
-            )
-            let visibleStart = xLowerBound.addingTimeInterval(
-                xScaleSpan * Double(scrollOffset / max(contentWidth, 1))
-            )
-            let visibleEnd = xLowerBound.addingTimeInterval(
-                xScaleSpan * Double(
-                    min(scrollOffset + viewportWidth, contentWidth)
-                        / max(contentWidth, 1)
-                )
-            )
-            // Include a small amount of data just outside the viewport so a
-            // point at either edge cannot fall outside the dynamically scaled
-            // Y-axis while the user is dragging.
-            let visiblePadding = max(
-                24 * 60 * 60,
-                xScaleSpan / Double(max(snapshots.count, 1) * 2)
-            )
-            let visibleValues = snapshots.filter {
-                $0.date >= visibleStart.addingTimeInterval(-visiblePadding)
-                    && $0.date <= visibleEnd.addingTimeInterval(visiblePadding)
-            }.map { $0.snapshot.netWorth }
-            let visibleYDomain = Self.yDomain(
-                for: visibleValues.isEmpty
-                    ? snapshots.map { $0.snapshot.netWorth }
-                    : visibleValues
-            )
 
             HStack(spacing: 0) {
-                fixedYAxis(yDomain: visibleYDomain)
+                fixedYAxis(yDomain: yDomain)
                     .frame(width: axisWidth, height: 240)
                 ScrollView(.horizontal) {
-                    dataChart(yDomain: visibleYDomain)
+                    dataChart(yDomain: yDomain)
                         .frame(width: contentWidth, height: 240)
                         .padding(.bottom, 32)
-                        .background {
-                            GeometryReader { contentGeometry in
-                                Color.clear.preference(
-                                    key: ScrollContentOffsetKey.self,
-                                    value: contentGeometry.frame(in: .global).minX
-                                )
-                            }
-                        }
                 }
                 .defaultScrollAnchor(.trailing)
                 .scrollIndicators(.visible)
                 .frame(height: 240)
-                .onPreferenceChange(ScrollContentOffsetKey.self) { minX in
-                    guard abs(scrollContentMinX - minX) > 0.5 else { return }
-                    scrollContentMinX = minX
-                }
             }
         }
     }
@@ -5047,14 +4993,20 @@ private struct NetWorthHistoryChart: View {
                 // Swift Charts places centered labels between adjacent ticks.
                 AxisValueLabel(centered: false, anchor: .top, collisionResolution: .disabled) {
                     if let x = value.as(Date.self) {
-                        Text(
-                            snapshotDateText(
-                                snapshotDateString(for: x),
-                                includeYear: spansMultipleYears
+                        let sourceSnapshot = xAxisSnapshots.min {
+                            abs($0.date.timeIntervalSince(x))
+                                < abs($1.date.timeIntervalSince(x))
+                        }
+                        if let sourceSnapshot {
+                            Text(
+                                snapshotDateText(
+                                    sourceSnapshot.snapshot.date,
+                                    includeYear: spansMultipleYears
+                                )
                             )
-                        )
                             // Keep the date centered under the corresponding point.
                             .offset(y: 8)
+                        }
                     }
                 }
             }
