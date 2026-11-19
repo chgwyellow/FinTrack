@@ -5004,7 +5004,10 @@ private struct NetWorthHistoryChart: View {
                                     includeYear: spansMultipleYears
                                 )
                             )
-                            .offset(x: -20, y: 8)
+                            // Keep the date centered under the corresponding point.
+                            // AxisValueLabel's non-centered placement leaves the
+                            // label slightly left of the tick in this chart layout.
+                            .offset(x: 20, y: 8)
                         }
                     }
                 }
