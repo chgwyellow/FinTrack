@@ -3,7 +3,7 @@ import Foundation
 /// The small part of Yahoo Finance's protobuf stream that FinTrack needs.
 /// This intentionally accepts only regular-session ticks (marketHours == 1).
 enum YahooMarketStream {
-    struct Tick {
+    struct Tick: Sendable {
         let symbol: String
         let price: Double
         let currency: String?

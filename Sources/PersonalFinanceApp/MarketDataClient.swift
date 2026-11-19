@@ -16,7 +16,7 @@ struct MarketDataClient {
         let quotes: [SearchResult]
     }
 
-    struct Quote {
+    struct Quote: Sendable {
         let price: Double
         let currency: String
         let previousClose: Double?
