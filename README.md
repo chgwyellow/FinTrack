@@ -136,9 +136,9 @@ manually.
 ### Download step by step
 
 1. Open [GitHub Releases](https://github.com/chgwyellow/FinTrack/releases).
-2. Open the newest release, currently `v0.1.7`.
+2. Open the newest release, currently `v0.1.12`.
 3. Scroll to **Assets** and expand it if necessary.
-4. Download **`FinTrack-0.1.7.zip`**.
+4. Download **`FinTrack-0.1.12.zip`**.
 5. Open the downloaded ZIP from your Downloads folder.
 6. Move the extracted `FinTrack.app` to `/Applications`.
 7. Right-click the app and select **Open** on its first launch.
@@ -197,7 +197,7 @@ To package an app bundle and ZIP for Apple Silicon (the default ad-hoc
 signature is not an Apple Developer ID signature):
 
 ```bash
-bash scripts/package-app.sh 0.1.7
+bash scripts/package-app.sh 0.1.12
 ```
 
 The app bundle and ZIP are written under `releases/`. See

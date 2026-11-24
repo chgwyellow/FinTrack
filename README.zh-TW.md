@@ -101,9 +101,9 @@ FinTrack 不是券商，也不是交易終端。它不會代理股票下單、�
 ### 下載步驟
 
 1. 開啟 [GitHub Releases](https://github.com/chgwyellow/FinTrack/releases)。
-2. 開啟最新版本，目前為 `v0.1.7`。
+2. 開啟最新版本，目前為 `v0.1.12`。
 3. 往下捲動到 **Assets**，必要時點擊展開。
-4. 下載 **`FinTrack-0.1.7.zip`**。
+4. 下載 **`FinTrack-0.1.12.zip`**。
 5. 在「下載項目」中開啟剛下載的 ZIP。
 6. 將解壓縮後的 `FinTrack.app` 移到 `/Applications`。
 7. 第一次開啟時，對 App 按右鍵並選擇「打開」。
@@ -157,7 +157,7 @@ swift build -c release
 簽章）：
 
 ```bash
-bash scripts/package-app.sh 0.1.7
+bash scripts/package-app.sh 0.1.12
 ```
 
 產物會放在 `releases/`。簽章與發布流程請參閱
