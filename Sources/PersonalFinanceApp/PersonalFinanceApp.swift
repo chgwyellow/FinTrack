@@ -1258,7 +1258,7 @@ enum L10n {
         "Add foreign-currency transaction": "新增外幣交易", "Transaction type": "交易類型", "Exchange": "換匯",
         "Exchange direction": "換匯方向", "Buy foreign currency": "買入外幣",
         "Sell foreign currency back to NTD": "賣出外幣換回新台幣", "Other purpose": "其他用途",
-        "Original currency": "原幣別", "NTD account": "台幣帳戶", "Foreign amount": "原幣金額",
+        "Original currency": "原幣別", "NTD account": "台幣帳戶", "Average cost rate": "平均成本匯率", "Foreign amount": "原幣金額",
         "Foreign amount (+ income / - expense)": "原幣金額（收入＋／支出－）", "NTD amount": "新台幣金額",
         "Rate (NTD per unit)": "匯率（每單位新台幣）", "NTD amount (exchange only)": "新台幣金額（僅換匯）",
         "Rate (NTD per unit, exchange only)": "匯率（每單位新台幣，僅換匯）", "Purpose": "用途", "Date": "日期",
@@ -1776,13 +1776,25 @@ struct ForeignCurrencyView: View {
             let amount = assets.reduce(0) { $0 + $1.value }
             let rate = appModel.foreignExchangeRates[currency]
             let ntdValue = rate.map { amount * $0 } ?? assets.reduce(0) { $0 + $1.ntdValue }
-            let averageNTDCost = assets.reduce(0) { $0 + $1.ntdValue }
+            let purchaseTransactions = appModel.foreignCurrencyTransactions.filter {
+                $0.currency == currency && $0.foreignAmount > 0 && $0.ntdAmount != nil
+            }
+            let purchasedForeignAmount = purchaseTransactions.reduce(0) {
+                $0 + $1.foreignAmount
+            }
+            let purchasedNTDAmount = purchaseTransactions.reduce(0) {
+                $0 + ($1.ntdAmount ?? 0)
+            }
+            let assetAverageRate = assets.reduce(0) { $0 + $1.ntdValue }
+                / max(amount, 0.0000001)
             return ForeignCurrencySummary(
                 currency: currency,
                 amount: amount,
                 ntdValue: ntdValue,
                 rate: rate ?? (amount > 0 ? ntdValue / amount : nil),
-                averageRate: amount > 0 ? averageNTDCost / amount : nil,
+                averageRate: purchasedForeignAmount > 0
+                    ? purchasedNTDAmount / purchasedForeignAmount
+                    : (amount > 0 && assetAverageRate > 0 ? assetAverageRate : nil),
                 assetIDs: assets.map(\.id)
             )
         }
@@ -2980,6 +2992,7 @@ struct EditAssetSheet: View {
     @State private var name: String
     @State private var currency: String
     @State private var amount: String
+    @State private var averageRate: String
     @State private var adjustmentType = "increase"
     @State private var adjustmentAmount = ""
     @State private var errorMessage: String?
@@ -2993,6 +3006,11 @@ struct EditAssetSheet: View {
         _name = State(initialValue: asset.name)
         _currency = State(initialValue: asset.currency)
         _amount = State(initialValue: String(asset.value))
+        _averageRate = State(
+            initialValue: asset.currency == "NTD" || asset.value <= 0
+                ? ""
+                : String(format: "%.4f", asset.ntdValue / asset.value)
+        )
     }
 
     var body: some View {
@@ -3009,6 +3027,15 @@ struct EditAssetSheet: View {
             LabeledContent(L10n.text("Amount", language: appLanguage)) {
                 TextField(L10n.text("Enter current amount", language: appLanguage), text: $amount)
                     .textFieldStyle(.roundedBorder)
+            }
+            if currency != "NTD" {
+                LabeledContent(L10n.text("Average cost rate", language: appLanguage)) {
+                    TextField(
+                        L10n.text("Rate (NTD per unit)", language: appLanguage),
+                        text: $averageRate
+                    )
+                    .textFieldStyle(.roundedBorder)
+                }
             }
             if asset.assetGroup != "liquid_investment" {
                 Text(L10n.text("Balance adjustment", language: appLanguage))
@@ -3060,7 +3087,16 @@ struct EditAssetSheet: View {
             errorMessage = "The balance cannot be less than zero."
             return
         }
-        let ntdValue = currency == "NTD" ? adjustedValue : asset.ntdValue
+        let ntdValue: Double
+        if currency == "NTD" {
+            ntdValue = adjustedValue
+        } else {
+            guard let parsedAverageRate = Double(averageRate), parsedAverageRate >= 0 else {
+                errorMessage = "Enter a valid average cost rate for a foreign-currency asset."
+                return
+            }
+            ntdValue = adjustedValue * parsedAverageRate
+        }
         do {
             try appModel.updateAsset(
                 id: asset.id,
