@@ -248,7 +248,8 @@ final class DatabaseManager {
         do {
             try adjustForeignCurrencyBalance(
                 currency: transaction.currency, foreignAmount: -transaction.foreignAmount,
-                ntdAmount: transaction.ntdAmount.map { -$0 }, rate: transaction.rate)
+                ntdAmount: transaction.ntdAmount.map { -$0 }, rate: transaction.rate,
+                reversing: true)
             if let ntdAssetID = transaction.ntdAssetID, let ntdAmount = transaction.ntdAmount {
                 let adjustment = transaction.foreignAmount >= 0 ? ntdAmount : -ntdAmount
                 try adjustNTDAccount(id: ntdAssetID, amount: adjustment)
@@ -345,7 +346,11 @@ final class DatabaseManager {
     }
 
     private func adjustForeignCurrencyBalance(
-        currency: String, foreignAmount: Double, ntdAmount: Double?, rate: Double?
+        currency: String,
+        foreignAmount: Double,
+        ntdAmount: Double?,
+        rate: Double?,
+        reversing: Bool = false
     ) throws {
         let sql =
             "SELECT id, value, ntd_value FROM assets WHERE is_active = 1 AND currency = ? AND category = 'Foreign Currency' ORDER BY id LIMIT 1;"
@@ -382,7 +387,19 @@ final class DatabaseManager {
                 "The transaction exceeds the current \(currency) balance.")
         }
         let averageRate = currentValue > 0 ? currentNTDValue / currentValue : (rate ?? 0)
-        let costChange = foreignAmount >= 0 ? (ntdAmount ?? 0) : (-abs(foreignAmount) * averageRate)
+        // A normal sale removes cost at the current average rate. When that
+        // sale is deleted, the same cost must be restored; the sale's NTD
+        // proceeds are not its cost basis and must never be used here.
+        let costChange: Double
+        if reversing {
+            costChange = foreignAmount >= 0
+                ? abs(foreignAmount) * averageRate
+                : -abs(foreignAmount) * averageRate
+        } else {
+            costChange = foreignAmount >= 0
+                ? (ntdAmount ?? 0)
+                : (-abs(foreignAmount) * averageRate)
+        }
         let updateSQL =
             "UPDATE assets SET value = ?, ntd_value = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?;"
         try executePrepared(updateSQL) { statement in
