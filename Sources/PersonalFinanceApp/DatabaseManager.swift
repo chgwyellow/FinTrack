@@ -145,6 +145,7 @@ final class DatabaseManager {
         let rate: Double?
         let tradeDate: String
         let sourceRecurringPurchaseID: Int64?
+        let ntdAssetID: Int64?
     }
 
     struct IncomeStatementItem: Identifiable {
@@ -180,7 +181,8 @@ final class DatabaseManager {
 
     func listForeignCurrencyTransactions() throws -> [ForeignCurrencyTransactionRecord] {
         let sql = """
-            SELECT id, purpose, currency, foreign_amount, ntd_amount, rate, trade_date, source_recurring_purchase_id
+            SELECT id, purpose, currency, foreign_amount, ntd_amount, rate, trade_date,
+                   source_recurring_purchase_id, ntd_asset_id
             FROM foreign_currency_transactions
             ORDER BY trade_date DESC, id DESC;
             """
@@ -204,7 +206,9 @@ final class DatabaseManager {
                         ? nil : sqlite3_column_double(statement, 5),
                     tradeDate: String(cString: sqlite3_column_text(statement, 6)),
                     sourceRecurringPurchaseID: sqlite3_column_type(statement, 7) == SQLITE_NULL
-                        ? nil : sqlite3_column_int64(statement, 7)
+                        ? nil : sqlite3_column_int64(statement, 7),
+                    ntdAssetID: sqlite3_column_type(statement, 8) == SQLITE_NULL
+                        ? nil : sqlite3_column_int64(statement, 8)
                 ))
         }
         return records
@@ -216,16 +220,21 @@ final class DatabaseManager {
         foreignAmount: Double,
         ntdAmount: Double?,
         rate: Double?,
-        tradeDate: String
+        tradeDate: String,
+        ntdAssetID: Int64? = nil
     ) throws {
         try execute("BEGIN TRANSACTION;")
         do {
             try adjustForeignCurrencyBalance(
                 currency: currency, foreignAmount: foreignAmount, ntdAmount: ntdAmount, rate: rate)
+            if let ntdAssetID, let ntdAmount {
+                let adjustment = foreignAmount >= 0 ? -ntdAmount : ntdAmount
+                try adjustNTDAccount(id: ntdAssetID, amount: adjustment)
+            }
             _ = try insertForeignCurrencyTransaction(
                 purpose: purpose, currency: currency, foreignAmount: foreignAmount,
                 ntdAmount: ntdAmount, rate: rate, tradeDate: tradeDate,
-                sourceRecurringPurchaseID: nil)
+                sourceRecurringPurchaseID: nil, ntdAssetID: ntdAssetID)
             try execute("COMMIT;")
         } catch {
             try? execute("ROLLBACK;")
@@ -240,6 +249,10 @@ final class DatabaseManager {
             try adjustForeignCurrencyBalance(
                 currency: transaction.currency, foreignAmount: -transaction.foreignAmount,
                 ntdAmount: transaction.ntdAmount.map { -$0 }, rate: transaction.rate)
+            if let ntdAssetID = transaction.ntdAssetID, let ntdAmount = transaction.ntdAmount {
+                let adjustment = transaction.foreignAmount >= 0 ? ntdAmount : -ntdAmount
+                try adjustNTDAccount(id: ntdAssetID, amount: adjustment)
+            }
             if let purchaseID = transaction.sourceRecurringPurchaseID,
                 let purchase = try recurringPurchase(id: purchaseID)
             {
@@ -258,7 +271,7 @@ final class DatabaseManager {
 
     private func foreignCurrencyTransaction(id: Int64) throws -> ForeignCurrencyTransactionRecord? {
         let sql =
-            "SELECT id, purpose, currency, foreign_amount, ntd_amount, rate, trade_date, source_recurring_purchase_id FROM foreign_currency_transactions WHERE id = ?;"
+            "SELECT id, purpose, currency, foreign_amount, ntd_amount, rate, trade_date, source_recurring_purchase_id, ntd_asset_id FROM foreign_currency_transactions WHERE id = ?;"
         var statement: OpaquePointer?
         defer { sqlite3_finalize(statement) }
         guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK else {
@@ -277,7 +290,9 @@ final class DatabaseManager {
                 ? nil : sqlite3_column_double(statement, 5),
             tradeDate: String(cString: sqlite3_column_text(statement, 6)),
             sourceRecurringPurchaseID: sqlite3_column_type(statement, 7) == SQLITE_NULL
-                ? nil : sqlite3_column_int64(statement, 7)
+                ? nil : sqlite3_column_int64(statement, 7),
+            ntdAssetID: sqlite3_column_type(statement, 8) == SQLITE_NULL
+                ? nil : sqlite3_column_int64(statement, 8)
         )
     }
 
@@ -289,13 +304,15 @@ final class DatabaseManager {
         ntdAmount: Double?,
         rate: Double?,
         tradeDate: String,
-        sourceRecurringPurchaseID: Int64?
+        sourceRecurringPurchaseID: Int64?,
+        ntdAssetID: Int64? = nil
     ) throws -> Int64 {
         try executePrepared(
             """
             INSERT INTO foreign_currency_transactions
-                (purpose, currency, foreign_amount, ntd_amount, rate, trade_date, source_recurring_purchase_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?);
+                (purpose, currency, foreign_amount, ntd_amount, rate, trade_date,
+                 source_recurring_purchase_id, ntd_asset_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
             """
         ) { statement in
             let destructor = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
@@ -317,6 +334,11 @@ final class DatabaseManager {
                 sqlite3_bind_int64(statement, 7, sourceRecurringPurchaseID)
             } else {
                 sqlite3_bind_null(statement, 7)
+            }
+            if let ntdAssetID {
+                sqlite3_bind_int64(statement, 8, ntdAssetID)
+            } else {
+                sqlite3_bind_null(statement, 8)
             }
         }
         return sqlite3_last_insert_rowid(database)
@@ -416,6 +438,7 @@ final class DatabaseManager {
             try addRecurringInvestmentFundingColumnIfNeeded()
             try addRecurringPurchaseTransactionColumnsIfNeeded()
             try addForeignTransactionSourceColumnIfNeeded()
+            try addForeignTransactionNTDAssetColumnIfNeeded()
             try addDividendReceivingAssetColumnIfNeeded()
             try normalizeLegacyLiabilityCategories()
             try backfillRecurringPurchaseForeignTransactions()
@@ -1059,6 +1082,28 @@ final class DatabaseManager {
         }
         guard sqlite3_changes(database) > 0 else {
             throw DatabaseError.queryFailed("The funding account does not have enough balance.")
+        }
+    }
+
+    private func adjustNTDAccount(id: Int64, amount: Double) throws {
+        try executePrepared(
+            """
+            UPDATE assets
+            SET value = MAX(0, value + ?),
+                ntd_value = MAX(0, ntd_value + ?),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND is_active = 1 AND asset_group = 'liquid_asset'
+              AND category != 'Foreign Currency' AND currency = 'NTD'
+              AND value + ? >= -0.0000001;
+            """
+        ) { statement in
+            sqlite3_bind_double(statement, 1, amount)
+            sqlite3_bind_double(statement, 2, amount)
+            sqlite3_bind_int64(statement, 3, id)
+            sqlite3_bind_double(statement, 4, amount)
+        }
+        guard sqlite3_changes(database) > 0 else {
+            throw DatabaseError.queryFailed("The NTD account does not have enough balance.")
         }
     }
 
@@ -1988,6 +2033,7 @@ final class DatabaseManager {
             rate NUMERIC,
             trade_date TEXT NOT NULL,
             source_recurring_purchase_id INTEGER,
+            ntd_asset_id INTEGER,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -2145,6 +2191,18 @@ final class DatabaseManager {
         do {
             try execute(
                 "ALTER TABLE foreign_currency_transactions ADD COLUMN source_recurring_purchase_id INTEGER;"
+            )
+        } catch DatabaseError.queryFailed(let message)
+            where message.contains("duplicate column name")
+        {
+            // The column already exists.
+        }
+    }
+
+    private func addForeignTransactionNTDAssetColumnIfNeeded() throws {
+        do {
+            try execute(
+                "ALTER TABLE foreign_currency_transactions ADD COLUMN ntd_asset_id INTEGER;"
             )
         } catch DatabaseError.queryFailed(let message)
             where message.contains("duplicate column name")
