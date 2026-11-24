@@ -272,7 +272,8 @@ final class AppModel: ObservableObject {
         foreignAmount: Double,
         ntdAmount: Double?,
         rate: Double?,
-        tradeDate: String
+        tradeDate: String,
+        ntdAssetID: Int64? = nil
     ) throws {
         guard let databaseManager else {
             throw DatabaseManager.DatabaseError.openFailed("Database is unavailable")
@@ -283,7 +284,8 @@ final class AppModel: ObservableObject {
             foreignAmount: foreignAmount,
             ntdAmount: ntdAmount,
             rate: rate,
-            tradeDate: tradeDate
+            tradeDate: tradeDate,
+            ntdAssetID: ntdAssetID
         )
         refreshForeignCurrencyTransactions()
         refreshAssets()
@@ -1256,7 +1258,7 @@ enum L10n {
         "Add foreign-currency transaction": "新增外幣交易", "Transaction type": "交易類型", "Exchange": "換匯",
         "Exchange direction": "換匯方向", "Buy foreign currency": "買入外幣",
         "Sell foreign currency back to NTD": "賣出外幣換回新台幣", "Other purpose": "其他用途",
-        "Original currency": "原幣別", "Foreign amount": "原幣金額",
+        "Original currency": "原幣別", "NTD account": "台幣帳戶", "Foreign amount": "原幣金額",
         "Foreign amount (+ income / - expense)": "原幣金額（收入＋／支出－）", "NTD amount": "新台幣金額",
         "Rate (NTD per unit)": "匯率（每單位新台幣）", "NTD amount (exchange only)": "新台幣金額（僅換匯）",
         "Rate (NTD per unit, exchange only)": "匯率（每單位新台幣，僅換匯）", "Purpose": "用途", "Date": "日期",
@@ -1774,26 +1776,13 @@ struct ForeignCurrencyView: View {
             let amount = assets.reduce(0) { $0 + $1.value }
             let rate = appModel.foreignExchangeRates[currency]
             let ntdValue = rate.map { amount * $0 } ?? assets.reduce(0) { $0 + $1.ntdValue }
-            let transactions = appModel.foreignCurrencyTransactions.filter {
-                $0.currency == currency
-            }
-            let exchangeTransactions = transactions.filter { $0.ntdAmount != nil }
-            let historicalForeignActivity = transactions.reduce(0) { $0 + $1.foreignAmount }
-            let openingAmount = amount - historicalForeignActivity
-            let exchangeForeignAmount =
-                openingAmount + exchangeTransactions.reduce(0) { $0 + $1.foreignAmount }
-            let openingNTDCost =
-                assets.reduce(0) { $0 + $1.ntdValue }
-                - exchangeTransactions.reduce(0) { $0 + ($1.ntdAmount ?? 0) }
-            let exchangeNTDCost =
-                openingNTDCost + exchangeTransactions.reduce(0) { $0 + ($1.ntdAmount ?? 0) }
+            let averageNTDCost = assets.reduce(0) { $0 + $1.ntdValue }
             return ForeignCurrencySummary(
                 currency: currency,
                 amount: amount,
                 ntdValue: ntdValue,
                 rate: rate ?? (amount > 0 ? ntdValue / amount : nil),
-                averageRate: exchangeForeignAmount > 0
-                    ? exchangeNTDCost / exchangeForeignAmount : nil,
+                averageRate: amount > 0 ? averageNTDCost / amount : nil,
                 assetIDs: assets.map(\.id)
             )
         }
@@ -1852,6 +1841,8 @@ struct ForeignCurrencyView: View {
                             Button(action: { toggleSort(.currency) }) {
                                 HStack(spacing: 6) {
                                     Text(L10n.text("CURRENCY", language: appLanguage))
+                                        .lineLimit(1)
+                                        .fixedSize(horizontal: true, vertical: false)
                                     sortIndicator(for: .currency)
                                 }
                             }
@@ -2047,9 +2038,9 @@ struct ForeignCurrencyView: View {
                                     ? FinTrackTheme.negative : FinTrackTheme.textPrimary
                             )
                             .frame(maxWidth: .infinity, alignment: .trailing)
-                        Text(transaction.ntdAmount.map(ntd) ?? "—")
+                        Text(transaction.ntdAmount.map { plainNTD($0) } ?? "—")
                             .frame(maxWidth: .infinity, alignment: .trailing)
-                        Text(transaction.rate.map { String(format: "NTD %.4f", $0) } ?? "—")
+                        Text(transaction.rate.map { String(format: "%.4f", $0) } ?? "—")
                             .frame(maxWidth: .infinity, alignment: .trailing)
                         Text(transaction.tradeDate)
                             .frame(maxWidth: .infinity, alignment: .trailing)
@@ -2111,11 +2102,20 @@ private struct ForeignCurrencyTransactionSheet: View {
     @State private var foreignAmount = ""
     @State private var ntdAmount = ""
     @State private var rate = ""
+    @State private var ntdAssetID: Int64 = 0
     @State private var tradeDate = Date()
     @State private var errorMessage: String?
 
     private var currencies: [String] {
         Array(Set(appModel.assets.map(\.currency).filter { $0 != "NTD" })).sorted()
+    }
+
+    private var ntdAccounts: [DatabaseManager.AssetRecord] {
+        appModel.assets.filter {
+            $0.assetGroup == "liquid_asset"
+                && $0.currency == "NTD"
+                && $0.category != "Foreign Currency"
+        }
     }
 
     var body: some View {
@@ -2162,6 +2162,13 @@ private struct ForeignCurrencyTransactionSheet: View {
                     .textFieldStyle(.roundedBorder)
                 TextField(L10n.text("Rate (NTD per unit)", language: appLanguage), text: $rate)
                     .textFieldStyle(.roundedBorder)
+                Picker(L10n.text("NTD account", language: appLanguage), selection: $ntdAssetID) {
+                    Text(L10n.text("No linked account", language: appLanguage)).tag(Int64(0))
+                    ForEach(ntdAccounts) { account in
+                        Text(account.name).tag(account.id)
+                    }
+                }
+                .pickerStyle(.menu)
             }
             DatePicker(
                 L10n.text("Date", language: appLanguage), selection: $tradeDate,
@@ -2246,7 +2253,9 @@ private struct ForeignCurrencyTransactionSheet: View {
                 foreignAmount: foreignValue,
                 ntdAmount: parsedNTD,
                 rate: parsedRate,
-                tradeDate: Self.dateFormatter.string(from: tradeDate)
+                tradeDate: Self.dateFormatter.string(from: tradeDate),
+                ntdAssetID: transactionType == "exchange" && ntdAssetID != 0
+                    ? ntdAssetID : nil
             )
             dismiss()
         } catch {
@@ -2622,6 +2631,14 @@ private func ntd(_ value: Double) -> String {
     formatter.maximumFractionDigits = 0
     formatter.minimumFractionDigits = 0
     return "NTD \(formatter.string(from: NSNumber(value: value)) ?? "0")"
+}
+
+private func plainNTD(_ value: Double) -> String {
+    let formatter = NumberFormatter()
+    formatter.numberStyle = .decimal
+    formatter.maximumFractionDigits = 0
+    formatter.minimumFractionDigits = 0
+    return formatter.string(from: NSNumber(value: value)) ?? "0"
 }
 
 private func money(_ value: Double, currency: String) -> String {
